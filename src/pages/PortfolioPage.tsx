@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -65,6 +65,25 @@ const PortfolioPage = () => {
   ];
 
   const handleRequestIntro = (company) => {
+    // Create a new request object
+    const newRequest = {
+      id: Date.now().toString(),
+      type: 'intro',
+      company: company.name,
+      status: 'pending',
+      date: new Date().toISOString(),
+      details: `Introduction request to ${company.name}`
+    };
+    
+    // Get existing requests from localStorage or initialize empty array
+    const existingRequests = JSON.parse(localStorage.getItem('userRequests') || '[]');
+    
+    // Add new request to the array
+    const updatedRequests = [newRequest, ...existingRequests];
+    
+    // Save back to localStorage
+    localStorage.setItem('userRequests', JSON.stringify(updatedRequests));
+    
     toast({
       title: "Introduction Requested",
       description: `Your introduction request to ${company.name} has been submitted.`,

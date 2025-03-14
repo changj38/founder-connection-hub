@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,10 +13,33 @@ import {
   ClipboardList 
 } from 'lucide-react';
 
+interface Request {
+  id: string;
+  type: 'intro' | 'portfolio';
+  company?: string;
+  status: 'pending' | 'completed' | 'rejected';
+  date: string;
+  details: string;
+}
+
 const DashboardPage = () => {
   const { currentUser } = useAuth();
+  const [requestData, setRequestData] = useState<Request[]>([]);
   
-  const formatDate = (date?: Date) => {
+  useEffect(() => {
+    // Load requests from localStorage on component mount
+    const savedRequests = localStorage.getItem('userRequests');
+    if (savedRequests) {
+      try {
+        const parsedRequests = JSON.parse(savedRequests);
+        setRequestData(parsedRequests);
+      } catch (error) {
+        console.error('Failed to parse saved requests:', error);
+      }
+    }
+  }, []);
+  
+  const formatDate = (date?: Date | string) => {
     if (!date) return 'N/A';
     return new Intl.DateTimeFormat('en-US', {
       dateStyle: 'medium',
@@ -25,9 +48,16 @@ const DashboardPage = () => {
     }).format(new Date(date));
   };
 
-  const requestData = [
-    // Empty by default - would be populated from API in real implementation
-  ];
+  const getRequestTypeLabel = (type: string) => {
+    switch (type) {
+      case 'intro': return 'Introduction Request';
+      case 'portfolio': return 'Portfolio Ask';
+      default: return 'Request';
+    }
+  };
+
+  const filteredPortfolioRequests = requestData.filter(request => request.type === 'portfolio');
+  const filteredIntroRequests = requestData.filter(request => request.type === 'intro');
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -147,9 +177,22 @@ const DashboardPage = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {requestData.map((request, index) => (
-                        <tr key={index}>
-                          {/* Table row data would go here */}
+                      {requestData.map((request) => (
+                        <tr key={request.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(request.date)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {getRequestTypeLabel(request.type)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {request.details}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                              {request.status === 'pending' ? 'Pending' : request.status}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -163,15 +206,77 @@ const DashboardPage = () => {
             </TabsContent>
             
             <TabsContent value="portfolio" className="mt-0">
-              <div className="text-center py-10 border rounded-md">
-                <p className="text-gray-500">No portfolio asks found</p>
-              </div>
+              {filteredPortfolioRequests.length > 0 ? (
+                <div className="border rounded-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredPortfolioRequests.map((request) => (
+                        <tr key={request.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(request.date)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {request.details}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                              {request.status === 'pending' ? 'Pending' : request.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-gray-500">No portfolio asks found</p>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="intro" className="mt-0">
-              <div className="text-center py-10 border rounded-md">
-                <p className="text-gray-500">No intro requests found</p>
-              </div>
+              {filteredIntroRequests.length > 0 ? (
+                <div className="border rounded-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredIntroRequests.map((request) => (
+                        <tr key={request.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(request.date)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {request.company}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                              {request.status === 'pending' ? 'Pending' : request.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-gray-500">No intro requests found</p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

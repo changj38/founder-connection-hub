@@ -24,6 +24,24 @@ const HelpPage = () => {
     
     setIsSubmitting(true);
     
+    // Create a new request object
+    const newRequest = {
+      id: Date.now().toString(),
+      type: 'portfolio',
+      status: 'pending',
+      date: new Date().toISOString(),
+      details: helpRequest.substring(0, 100) + (helpRequest.length > 100 ? '...' : '')
+    };
+    
+    // Get existing requests from localStorage or initialize empty array
+    const existingRequests = JSON.parse(localStorage.getItem('userRequests') || '[]');
+    
+    // Add new request to the array
+    const updatedRequests = [newRequest, ...existingRequests];
+    
+    // Save back to localStorage
+    localStorage.setItem('userRequests', JSON.stringify(updatedRequests));
+    
     // Simulate API call
     setTimeout(() => {
       toast({
