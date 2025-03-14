@@ -18,7 +18,7 @@ const ForumPage = () => {
     {
       id: 1,
       title: 'Fundraising strategies in a down market',
-      content: 'I'm preparing for our Series A and wondering what strategies are working best in the current economic climate. Has anyone successfully raised in the last 6 months? What channels or approaches yielded the best results?',
+      content: "I'm preparing for our Series A and wondering what strategies are working best in the current economic climate. Has anyone successfully raised in the last 6 months? What channels or approaches yielded the best results?",
       author: 'Alex Chen',
       date: '2 days ago',
       replies: 5
@@ -26,7 +26,7 @@ const ForumPage = () => {
     {
       id: 2,
       title: 'Best practices for remote engineering teams',
-      content: 'We've been fully remote since day one, but as we scale past 15 engineers, I'm noticing some communication challenges. Would love to hear what tools and processes are working well for other remote-first startups.',
+      content: "We've been fully remote since day one, but as we scale past 15 engineers, I'm noticing some communication challenges. Would love to hear what tools and processes are working well for other remote-first startups.",
       author: 'Sarah Johnson',
       date: '3 days ago',
       replies: 8
@@ -34,7 +34,7 @@ const ForumPage = () => {
     {
       id: 3,
       title: 'Marketing channels that worked for early-stage B2B',
-      content: 'We're a B2B SaaS with a $15K ACV and trying to figure out which marketing channels to prioritize. Content marketing has been slow to gain traction. Has anyone found success with alternative approaches?',
+      content: "We're a B2B SaaS with a $15K ACV and trying to figure out which marketing channels to prioritize. Content marketing has been slow to gain traction. Has anyone found success with alternative approaches?",
       author: 'Michael Rodriguez',
       date: '5 days ago',
       replies: 12
