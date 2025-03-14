@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { MessageSquare, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 const ForumPage = () => {
   const [postTitle, setPostTitle] = useState('');
   const [postContent, setPostContent] = useState('');
+  const [replyContent, setReplyContent] = useState('');
   const [selectedDiscussion, setSelectedDiscussion] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [discussions, setDiscussions] = useState([
@@ -21,7 +22,21 @@ const ForumPage = () => {
       content: "I'm preparing for our Series A and wondering what strategies are working best in the current economic climate. Has anyone successfully raised in the last 6 months? What channels or approaches yielded the best results?",
       author: 'Alex Chen',
       date: '2 days ago',
-      replies: 5
+      replies: 5,
+      replyList: [
+        {
+          id: 1,
+          author: 'Sarah Miller',
+          content: "We raised our Series A two months ago. What worked for us was focusing on profitability and unit economics rather than pure growth. Investors are much more focused on sustainable business models now.",
+          date: '1 day ago'
+        },
+        {
+          id: 2,
+          author: 'David Wong',
+          content: "Strategic investors were key for us. We found that industry-specific VCs were still actively deploying capital, while generalist funds were being more cautious.",
+          date: '1 day ago'
+        }
+      ]
     },
     {
       id: 2,
@@ -29,7 +44,15 @@ const ForumPage = () => {
       content: "We've been fully remote since day one, but as we scale past 15 engineers, I'm noticing some communication challenges. Would love to hear what tools and processes are working well for other remote-first startups.",
       author: 'Sarah Johnson',
       date: '3 days ago',
-      replies: 8
+      replies: 8,
+      replyList: [
+        {
+          id: 1,
+          author: 'Michael Chen',
+          content: "We've had great success with Notion for documentation, Linear for project management, and asynchronous stand-ups where everyone records a quick video update.",
+          date: '2 days ago'
+        }
+      ]
     },
     {
       id: 3,
@@ -37,7 +60,15 @@ const ForumPage = () => {
       content: "We're a B2B SaaS with a $15K ACV and trying to figure out which marketing channels to prioritize. Content marketing has been slow to gain traction. Has anyone found success with alternative approaches?",
       author: 'Michael Rodriguez',
       date: '5 days ago',
-      replies: 12
+      replies: 12,
+      replyList: [
+        {
+          id: 1,
+          author: 'Lisa Park',
+          content: "Targeted LinkedIn campaigns worked surprisingly well for us, especially when we focused on specific job titles and company sizes.",
+          date: '4 days ago'
+        }
+      ]
     }
   ]);
   const { toast } = useToast();
@@ -68,7 +99,8 @@ const ForumPage = () => {
       content: postContent,
       author: "You",
       date: "Just now",
-      replies: 0
+      replies: 0,
+      replyList: []
     };
 
     setDiscussions([newPost, ...discussions]);
@@ -84,6 +116,57 @@ const ForumPage = () => {
   const handleViewDiscussion = (discussion) => {
     setSelectedDiscussion(discussion);
     setDialogOpen(true);
+    setReplyContent('');
+  };
+
+  const handlePostReply = () => {
+    if (!replyContent.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter some content for your reply.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update the selected discussion with the new reply
+    const newReply = {
+      id: selectedDiscussion.replyList ? selectedDiscussion.replyList.length + 1 : 1,
+      author: "You",
+      content: replyContent,
+      date: "Just now"
+    };
+
+    const updatedDiscussions = discussions.map(discussion => {
+      if (discussion.id === selectedDiscussion.id) {
+        const updatedReplyList = [...(discussion.replyList || []), newReply];
+        return {
+          ...discussion,
+          replies: discussion.replies + 1,
+          replyList: updatedReplyList
+        };
+      }
+      return discussion;
+    });
+
+    // Update the discussions state
+    setDiscussions(updatedDiscussions);
+    
+    // Update the selected discussion to include the new reply
+    const updatedSelectedDiscussion = {
+      ...selectedDiscussion,
+      replies: selectedDiscussion.replies + 1,
+      replyList: [...(selectedDiscussion.replyList || []), newReply]
+    };
+    setSelectedDiscussion(updatedSelectedDiscussion);
+    
+    // Clear the reply input
+    setReplyContent('');
+    
+    toast({
+      title: "Success",
+      description: "Your reply has been posted!",
+    });
   };
 
   return (
@@ -169,18 +252,30 @@ const ForumPage = () => {
           </div>
           <div className="mt-4 pt-4 border-t">
             <h4 className="text-sm font-semibold mb-2">Replies ({selectedDiscussion?.replies})</h4>
-            {selectedDiscussion?.replies > 0 ? (
+            {selectedDiscussion?.replyList && selectedDiscussion.replyList.length > 0 ? (
               <div className="space-y-4">
-                {/* Placeholder for replies */}
-                <p className="text-gray-500 text-sm italic">In a real implementation, replies would be displayed here.</p>
+                {selectedDiscussion.replyList.map((reply) => (
+                  <div key={reply.id} className="border-b pb-3 last:border-b-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-medium">{reply.author}</span>
+                      <span className="text-xs text-gray-500">{reply.date}</span>
+                    </div>
+                    <p className="text-sm text-gray-700">{reply.content}</p>
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-sm text-gray-500">No replies yet. Be the first to respond!</p>
             )}
           </div>
           <div className="mt-4">
-            <Textarea placeholder="Write a reply..." className="mb-2" />
-            <Button size="sm">Post Reply</Button>
+            <Textarea 
+              placeholder="Write a reply..." 
+              className="mb-2" 
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+            />
+            <Button size="sm" onClick={handlePostReply}>Post Reply</Button>
           </div>
         </DialogContent>
       </Dialog>

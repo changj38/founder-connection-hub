@@ -4,9 +4,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Building, User, Globe } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 const PortfolioPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const { toast } = useToast();
+  
   const portfolioCompanies = [
     {
       id: 1,
@@ -57,6 +63,18 @@ const PortfolioPage = () => {
       website: 'cybershield.example.com'
     }
   ];
+
+  const handleRequestIntro = (company) => {
+    toast({
+      title: "Introduction Requested",
+      description: `Your introduction request to ${company.name} has been submitted.`,
+    });
+  };
+
+  const handleViewDetails = (company) => {
+    setSelectedCompany(company);
+    setDetailsOpen(true);
+  };
 
   const filteredCompanies = portfolioCompanies.filter(company => 
     company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -124,10 +142,18 @@ const PortfolioPage = () => {
               </div>
               
               <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                <Button variant="outline" className="text-purple-600 border-purple-200 hover:bg-purple-50">
+                <Button 
+                  variant="outline" 
+                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                  onClick={() => handleRequestIntro(company)}
+                >
                   Request Intro
                 </Button>
-                <Button variant="ghost" className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  className="flex items-center gap-1"
+                  onClick={() => handleViewDetails(company)}
+                >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 15L12 9L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
@@ -138,6 +164,55 @@ const PortfolioPage = () => {
           </Card>
         ))}
       </div>
+
+      {/* Company Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          {selectedCompany && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl">{selectedCompany.name}</DialogTitle>
+                <DialogDescription className="text-sm text-purple-600">
+                  {selectedCompany.category}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4">
+                <h3 className="text-sm font-medium mb-2">About</h3>
+                <p className="text-gray-700 mb-4">{selectedCompany.description}</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="border p-3 rounded-md">
+                    <h4 className="text-xs text-gray-500 mb-1">CEO</h4>
+                    <div className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-purple-600" />
+                      <span>{selectedCompany.ceo}</span>
+                    </div>
+                  </div>
+                  <div className="border p-3 rounded-md">
+                    <h4 className="text-xs text-gray-500 mb-1">Website</h4>
+                    <div className="flex items-center">
+                      <Globe className="h-4 w-4 mr-2 text-purple-600" />
+                      <a href={`https://${selectedCompany.website}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+                        {selectedCompany.website}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  className="w-full mt-4" 
+                  onClick={() => {
+                    handleRequestIntro(selectedCompany);
+                    setDetailsOpen(false);
+                  }}
+                >
+                  Request Introduction
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
