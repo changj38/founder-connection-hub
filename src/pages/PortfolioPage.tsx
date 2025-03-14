@@ -1,31 +1,138 @@
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Building, User, Globe } from 'lucide-react';
 
 const PortfolioPage = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const portfolioCompanies = [
+    {
+      id: 1,
+      name: 'Quantum AI',
+      category: 'Artificial Intelligence',
+      description: 'Pioneering quantum machine learning algorithms for real-world applications in finance, healthcare, and logistics.',
+      ceo: 'Elena Vasquez',
+      website: 'quantumai.example.com'
+    },
+    {
+      id: 2,
+      name: 'EcoSphere',
+      category: 'CleanTech',
+      description: 'Developing sustainable packaging solutions using biodegradable materials derived from agricultural waste.',
+      ceo: 'Michael Chen',
+      website: 'ecosphere.example.com'
+    },
+    {
+      id: 3,
+      name: 'HealthPulse',
+      category: 'HealthTech',
+      description: 'Creating wearable technology that continuously monitors vital signs and provides early warning for health issues.',
+      ceo: 'Sarah Johnson',
+      website: 'healthpulse.example.com'
+    },
+    {
+      id: 4,
+      name: 'DataFlow',
+      category: 'Enterprise Software',
+      description: 'Building next-generation data integration platform for modern enterprises with AI-powered insights.',
+      ceo: 'James Wilson',
+      website: 'dataflow.example.com'
+    },
+    {
+      id: 5,
+      name: 'UrbanMobility',
+      category: 'Transportation',
+      description: 'Reimagining urban transportation with electric, autonomous vehicles optimized for city infrastructure.',
+      ceo: 'Lisa Park',
+      website: 'urbanmobility.example.com'
+    },
+    {
+      id: 6,
+      name: 'CyberShield',
+      category: 'Cybersecurity',
+      description: 'Protecting critical infrastructure with AI-driven threat detection and automated response systems.',
+      ceo: 'David Kumar',
+      website: 'cybershield.example.com'
+    }
+  ];
+
+  const filteredCompanies = portfolioCompanies.filter(company => 
+    company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    company.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">Portfolio Companies</h1>
+      <h1 className="text-4xl font-bold text-purple-700 mb-2">Portfolio Companies</h1>
+      <p className="text-gray-600 text-lg mb-8">
+        Browse through the companies we've invested in. You can view detailed information and
+        request introductions to their founders.
+      </p>
+      
+      <div className="flex justify-between items-center mb-6">
+        <div className="relative w-full max-w-md">
+          <Input
+            type="text"
+            placeholder="Search companies by name, sector..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-4 pr-10 py-2 w-full"
+          />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+        
+        <div className="text-gray-500">
+          Showing {filteredCompanies.length} of {portfolioCompanies.length} companies
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* This would eventually be populated with real data */}
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xl">Portfolio Company {i}</CardTitle>
-              <CardDescription>Series A • SaaS</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-40 mb-4 bg-gray-200 rounded">
-                <Skeleton className="h-full w-full" />
+        {filteredCompanies.map((company) => (
+          <Card key={company.id} className="overflow-hidden border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="bg-purple-100 p-3 rounded-lg">
+                  <Building className="h-8 w-8 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-xl mb-1">{company.name}</h3>
+                  <span className="inline-block bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">
+                    {company.category}
+                  </span>
+                </div>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
-                A cutting-edge startup revolutionizing their industry with innovative technology and exceptional leadership.
+              
+              <p className="text-gray-600 mb-4 line-clamp-3">
+                {company.description}
               </p>
-              <div className="flex justify-between text-sm text-gray-500">
-                <span>Founded: 2022</span>
-                <span>DayDream Investment: 2023</span>
+              
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center text-sm text-gray-600">
+                  <User className="h-4 w-4 mr-2" />
+                  <span>CEO: {company.ceo}</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <Globe className="h-4 w-4 mr-2" />
+                  <span>{company.website}</span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                <Button variant="outline" className="text-purple-600 border-purple-200 hover:bg-purple-50">
+                  Request Intro
+                </Button>
+                <Button variant="ghost" className="flex items-center gap-1">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 15L12 9L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  View Details
+                </Button>
               </div>
             </CardContent>
           </Card>

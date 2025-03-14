@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -118,17 +117,38 @@ const AdminPage = () => {
     });
   };
 
+  // Listen for tab changes from AdminLayout
+  useEffect(() => {
+    const handleTabChange = (event: CustomEvent) => {
+      if (event.detail && event.detail.tab) {
+        setActiveTab(event.detail.tab);
+      }
+    };
+
+    const element = document.getElementById('admin-page');
+    if (element) {
+      element.addEventListener('tabChange', handleTabChange as EventListener);
+    }
+
+    return () => {
+      if (element) {
+        element.removeEventListener('tabChange', handleTabChange as EventListener);
+      }
+    };
+  }, []);
+
   return (
-    <div className="container mx-auto p-6">
+    <div id="admin-page" className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
       
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="network">Network Contacts</TabsTrigger>
           <TabsTrigger value="portfolio">Portfolio Companies</TabsTrigger>
           <TabsTrigger value="requests">Help Requests</TabsTrigger>
           <TabsTrigger value="forum">Forum Management</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
@@ -528,6 +548,69 @@ const AdminPage = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Settings</CardTitle>
+              <CardDescription>Configure application settings and preferences</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">General Settings</h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="site-name">Site Name</Label>
+                        <Input id="site-name" defaultValue="DayDream Ventures Portal" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="support-email">Support Email</Label>
+                        <Input id="support-email" type="email" defaultValue="support@daydreamvc.com" />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="welcome-message">Welcome Message</Label>
+                      <Textarea 
+                        id="welcome-message" 
+                        defaultValue="Welcome to the DayDream Ventures Portal. Connect with our portfolio, network with other founders, and get the help you need."
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Email Notifications</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" id="notify-requests" className="h-4 w-4 rounded border-gray-300" defaultChecked />
+                      <Label htmlFor="notify-requests">Notify on new help requests</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" id="notify-forum" className="h-4 w-4 rounded border-gray-300" defaultChecked />
+                      <Label htmlFor="notify-forum">Notify on new forum posts</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" id="notify-registrations" className="h-4 w-4 rounded border-gray-300" defaultChecked />
+                      <Label htmlFor="notify-registrations">Notify on new user registrations</Label>
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex justify-end">
+                  <Button className="mr-2" variant="outline">Cancel</Button>
+                  <Button>Save Settings</Button>
+                </div>
               </div>
             </CardContent>
           </Card>

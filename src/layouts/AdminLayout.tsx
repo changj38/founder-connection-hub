@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -26,6 +26,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const handleLogout = () => {
     logout();
@@ -33,12 +34,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   const navItems = [
-    { path: '/admin', label: 'Dashboard', icon: <Shield className="w-5 h-5" /> },
-    { path: '/admin/users', label: 'Manage Users', icon: <Users className="w-5 h-5" /> },
-    { path: '/admin/portfolio', label: 'Manage Portfolio', icon: <Building className="w-5 h-5" /> },
-    { path: '/admin/forum', label: 'Manage Forum', icon: <MessagesSquare className="w-5 h-5" /> },
-    { path: '/admin/help', label: 'Help Requests', icon: <HelpCircle className="w-5 h-5" /> },
-    { path: '/admin/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
+    { path: '/admin', label: 'Dashboard', icon: <Shield className="w-5 h-5" />, tab: 'overview' },
+    { path: '/admin/users', label: 'Manage Users', icon: <Users className="w-5 h-5" />, tab: 'network' },
+    { path: '/admin/portfolio', label: 'Manage Portfolio', icon: <Building className="w-5 h-5" />, tab: 'portfolio' },
+    { path: '/admin/forum', label: 'Manage Forum', icon: <MessagesSquare className="w-5 h-5" />, tab: 'forum' },
+    { path: '/admin/help', label: 'Help Requests', icon: <HelpCircle className="w-5 h-5" />, tab: 'requests' },
+    { path: '/admin/settings', label: 'Settings', icon: <Settings className="w-5 h-5" />, tab: 'settings' },
   ];
 
   const toggleMobileMenu = () => {
@@ -52,6 +53,22 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       .join('')
       .toUpperCase();
   };
+
+  // Set active tab based on current path
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const matchedItem = navItems.find(item => item.path === currentPath);
+    if (matchedItem) {
+      setActiveTab(matchedItem.tab);
+      
+      // Pass the active tab to AdminPage if it's a child
+      const adminPageElement = document.getElementById('admin-page');
+      if (adminPageElement) {
+        const event = new CustomEvent('tabChange', { detail: { tab: matchedItem.tab } });
+        adminPageElement.dispatchEvent(event);
+      }
+    }
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -115,7 +132,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   key={item.path}
                   to={item.path}
                   className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    location.pathname === item.path
+                    activeTab === item.tab
                       ? 'bg-gray-100 text-daydream-purple'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-daydream-purple'
                   }`}
@@ -164,7 +181,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                       key={item.path}
                       to={item.path}
                       className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        location.pathname === item.path
+                        activeTab === item.tab
                           ? 'bg-gray-100 text-daydream-purple'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-daydream-purple'
                       }`}
