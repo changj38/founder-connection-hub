@@ -2,9 +2,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Network, Briefcase, MessagesSquare, HelpCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  HelpCircle, 
+  Users, 
+  Building2, 
+  MessageSquare, 
+  ClipboardList 
+} from 'lucide-react';
 
 const DashboardPage = () => {
   const { currentUser } = useAuth();
@@ -18,85 +25,157 @@ const DashboardPage = () => {
     }).format(new Date(date));
   };
 
-  const menuItems = [
-    {
-      title: 'DayDream Network',
-      icon: <Network className="w-10 h-10 text-daydream-blue" />,
-      description: 'Connect with our extended network of partners, advisors, and experts.',
-      link: '/network'
-    },
-    {
-      title: 'Portfolio Companies',
-      icon: <Briefcase className="w-10 h-10 text-daydream-purple" />,
-      description: 'View and connect with other companies in the DayDream portfolio.',
-      link: '/portfolio'
-    },
-    {
-      title: 'Founder Forum',
-      icon: <MessagesSquare className="w-10 h-10 text-daydream-pink" />,
-      description: 'Share knowledge and discuss challenges with fellow founders.',
-      link: '/forum'
-    },
-    {
-      title: 'Request Help',
-      icon: <HelpCircle className="w-10 h-10 text-gray-800" />,
-      description: 'Need support? Reach out to the DayDream team for assistance.',
-      link: '/help'
-    }
+  const requestData = [
+    // Empty by default - would be populated from API in real implementation
   ];
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome, {currentUser?.name}</h1>
-        <p className="text-gray-500 mt-1">
-          Last login: {formatDate(currentUser?.lastLogin)} GMT
+        <h1 className="text-4xl font-bold tracking-tight">Welcome back, <span className="text-daydream-blue">{currentUser?.name}</span></h1>
+        <p className="text-gray-500 mt-1 flex items-center">
+          <span className="mr-1">Last login:</span> {formatDate(currentUser?.lastLogin)} GMT
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {menuItems.map((item, index) => (
-          <Card key={index} className="overflow-hidden border-gray-200 hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                {item.icon}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="overflow-hidden hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl flex items-center">
+              <HelpCircle className="w-5 h-5 mr-2 text-daydream-blue" />
+              Portfolio Ask
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-6">
+              Have questions about our portfolio companies? Ask for information or request introductions.
+            </p>
+            <Link to="/help">
+              <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600">
+                Ask Now
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl flex items-center">
+              <Users className="w-5 h-5 mr-2 text-purple-500" />
+              Access CRM
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-6">
+              Browse our network of contacts and request introductions to potential partners.
+            </p>
+            <Link to="/network">
+              <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600">
+                View Contacts
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl flex items-center">
+              <Building2 className="w-5 h-5 mr-2 text-pink-500" />
+              Portfolio Companies
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-6">
+              Explore our portfolio of companies and connect with founders in our network.
+            </p>
+            <Link to="/portfolio">
+              <Button className="w-full bg-gradient-to-r from-pink-500 to-pink-600">
+                View Portfolio
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl flex items-center">
+              <MessageSquare className="w-5 h-5 mr-2 text-cyan-500" />
+              Founder Forum
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-6">
+              Connect with other founders, share experiences, and ask questions in our community forum.
+            </p>
+            <Link to="/forum">
+              <Button className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600">
+                Join Discussion
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="overflow-hidden border-gray-200">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <ClipboardList className="w-5 h-5 mr-2" />
+            Your Requests
+          </CardTitle>
+          <p className="text-sm text-gray-500">
+            Track the status of your portfolio asks and introduction requests
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="all">
+            <TabsList className="w-full justify-start mb-4">
+              <TabsTrigger value="all">All Requests</TabsTrigger>
+              <TabsTrigger value="portfolio">Portfolio Asks</TabsTrigger>
+              <TabsTrigger value="intro">Intro Requests</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all" className="mt-0">
+              {requestData.length > 0 ? (
+                <div className="border rounded-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {requestData.map((request, index) => (
+                        <tr key={index}>
+                          {/* Table row data would go here */}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-gray-500">No requests found</p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="portfolio" className="mt-0">
+              <div className="text-center py-10 border rounded-md">
+                <p className="text-gray-500">No portfolio asks found</p>
               </div>
-              <CardTitle className="text-xl mt-2">{item.title}</CardTitle>
-              <CardDescription>{item.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link to={item.link}>
-                <Button variant="secondary" className="w-full">
-                  Explore
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl p-6 border border-gray-200">
-        <h2 className="text-xl font-semibold mb-2">What's New</h2>
-        <p className="text-gray-600 mb-4">
-          Latest updates from the DayDream Ventures team.
-        </p>
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <p className="text-sm text-gray-500">November 15, 2023</p>
-            <h3 className="font-medium">New Portfolio Company: Quantum AI</h3>
-            <p className="text-gray-600 text-sm mt-1">
-              We're excited to welcome Quantum AI to the DayDream family! They're revolutionizing the AI space with their quantum computing approach.
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <p className="text-sm text-gray-500">October 27, 2023</p>
-            <h3 className="font-medium">Upcoming Founder Summit</h3>
-            <p className="text-gray-600 text-sm mt-1">
-              Mark your calendars for the annual DayDream Founder Summit, February 12-14, 2024 in San Francisco.
-            </p>
-          </div>
-        </div>
-      </div>
+            </TabsContent>
+            
+            <TabsContent value="intro" className="mt-0">
+              <div className="text-center py-10 border rounded-md">
+                <p className="text-gray-500">No intro requests found</p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
