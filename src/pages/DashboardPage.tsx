@@ -72,16 +72,16 @@ const DashboardPage = () => {
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center">
-              <HelpCircle className="w-5 h-5 mr-2 text-daydream-blue" />
+              <HelpCircle className="w-5 h-5 mr-2 text-indigo-500" />
               Portfolio Ask
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-6">
+          <CardContent className="flex flex-col h-full">
+            <p className="text-gray-600 mb-6 flex-grow">
               Have questions about our portfolio companies? Ask for information or request introductions.
             </p>
-            <Link to="/help">
-              <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600">
+            <Link to="/help" className="mt-auto">
+              <Button variant="sleek" className="w-full">
                 Ask Now
               </Button>
             </Link>
@@ -91,16 +91,16 @@ const DashboardPage = () => {
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center">
-              <Users className="w-5 h-5 mr-2 text-purple-500" />
+              <Users className="w-5 h-5 mr-2 text-indigo-500" />
               Access CRM
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-6">
+          <CardContent className="flex flex-col h-full">
+            <p className="text-gray-600 mb-6 flex-grow">
               Browse our network of contacts and request introductions to potential partners.
             </p>
-            <Link to="/network">
-              <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600">
+            <Link to="/network" className="mt-auto">
+              <Button variant="sleek" className="w-full">
                 View Contacts
               </Button>
             </Link>
@@ -110,16 +110,16 @@ const DashboardPage = () => {
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center">
-              <Building2 className="w-5 h-5 mr-2 text-pink-500" />
+              <Building2 className="w-5 h-5 mr-2 text-indigo-500" />
               Portfolio Companies
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-6">
+          <CardContent className="flex flex-col h-full">
+            <p className="text-gray-600 mb-6 flex-grow">
               Explore our portfolio of companies and connect with founders in our network.
             </p>
-            <Link to="/portfolio">
-              <Button className="w-full bg-gradient-to-r from-pink-500 to-pink-600">
+            <Link to="/portfolio" className="mt-auto">
+              <Button variant="sleek" className="w-full">
                 View Portfolio
               </Button>
             </Link>
@@ -129,16 +129,16 @@ const DashboardPage = () => {
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center">
-              <MessageSquare className="w-5 h-5 mr-2 text-cyan-500" />
+              <MessageSquare className="w-5 h-5 mr-2 text-indigo-500" />
               Founder Forum
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-6">
+          <CardContent className="flex flex-col h-full">
+            <p className="text-gray-600 mb-6 flex-grow">
               Connect with other founders, share experiences, and ask questions in our community forum.
             </p>
-            <Link to="/forum">
-              <Button className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600">
+            <Link to="/forum" className="mt-auto">
+              <Button variant="sleek" className="w-full">
                 Join Discussion
               </Button>
             </Link>

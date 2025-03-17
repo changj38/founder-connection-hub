@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -83,9 +84,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   alt="DayDream Ventures" 
                   className="h-8 w-auto"
                 />
-                <span className="ml-2 text-sm font-medium text-daydream-purple">Admin</span>
+                <span className="ml-2 text-sm font-medium text-indigo-600">Admin</span>
               </Link>
-              <Button variant="daydream" size="sm" asChild>
+              <Button variant="sleek" size="sm" asChild>
                 <Link to="/dashboard" className="flex items-center text-sm">
                   <ArrowLeft className="h-4 w-4 mr-1" />
                   Back to Dashboard

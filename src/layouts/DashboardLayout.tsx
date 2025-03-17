@@ -80,8 +80,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   to={item.path}
                   className={`text-sm font-medium transition-colors ${
                     location.pathname === item.path
-                      ? 'text-daydream-blue'
-                      : 'text-gray-600 hover:text-daydream-blue'
+                      ? 'text-indigo-600'
+                      : 'text-gray-600 hover:text-indigo-600'
                   }`}
                 >
                   {item.label}
@@ -93,8 +93,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   to={adminNavItem.path}
                   className={`text-sm font-medium transition-colors ${
                     location.pathname === adminNavItem.path
-                      ? 'text-daydream-blue'
-                      : 'text-gray-600 hover:text-daydream-blue'
+                      ? 'text-indigo-600'
+                      : 'text-gray-600 hover:text-indigo-600'
                   }`}
                 >
                   {adminNavItem.label}
@@ -102,10 +102,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               )}
               
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm"
                 onClick={handleLogout}
-                className="text-red-500 hover:text-red-600 hover:bg-transparent"
+                className="text-red-500 hover:text-red-600 border-red-200 hover:bg-red-50"
               >
                 Logout
               </Button>
@@ -146,7 +146,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="px-4 py-4">
                 <div className="flex items-center gap-3 mb-2">
                   <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-daydream-purple text-white">
+                    <AvatarFallback className="bg-indigo-100 text-indigo-800">
                       {getInitials(currentUser?.name || '')}
                     </AvatarFallback>
                   </Avatar>
@@ -165,8 +165,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     to={item.path}
                     className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === item.path
-                        ? 'bg-gray-100 text-daydream-blue'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-daydream-blue'
+                        ? 'bg-indigo-50 text-indigo-600'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -180,8 +180,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     to={adminNavItem.path}
                     className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       location.pathname === adminNavItem.path
-                        ? 'bg-gray-100 text-daydream-blue'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-daydream-blue'
+                        ? 'bg-indigo-50 text-indigo-600'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
