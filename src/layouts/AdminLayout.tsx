@@ -11,7 +11,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  Shield
+  Shield,
+  ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -76,7 +77,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
               <Link to="/admin" className="flex items-center">
                 <img 
                   src="/lovable-uploads/29aac53d-4e8a-4190-8ceb-8d4edb8e6a1c.png" 
@@ -84,6 +85,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   className="h-8 w-auto"
                 />
                 <span className="ml-2 text-sm font-medium text-daydream-purple">Admin</span>
+              </Link>
+              <Link to="/dashboard" className="flex items-center text-sm text-gray-600 hover:text-daydream-purple">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back to Dashboard
               </Link>
             </div>
             

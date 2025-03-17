@@ -4,13 +4,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Building, User, Globe } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const PortfolioPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [introDialogOpen, setIntroDialogOpen] = useState(false);
+  const [introReason, setIntroReason] = useState('');
   const { toast } = useToast();
   
   const portfolioCompanies = [
@@ -88,11 +92,19 @@ const PortfolioPage = () => {
       title: "Introduction Requested",
       description: `Your introduction request to ${company.name} has been submitted.`,
     });
+
+    setIntroDialogOpen(false);
+    setIntroReason('');
   };
 
   const handleViewDetails = (company) => {
     setSelectedCompany(company);
     setDetailsOpen(true);
+  };
+
+  const handleOpenIntroDialog = (company) => {
+    setSelectedCompany(company);
+    setIntroDialogOpen(true);
   };
 
   const filteredCompanies = portfolioCompanies.filter(company => 
@@ -164,7 +176,7 @@ const PortfolioPage = () => {
                 <Button 
                   variant="outline" 
                   className="text-purple-600 border-purple-200 hover:bg-purple-50"
-                  onClick={() => handleRequestIntro(company)}
+                  onClick={() => handleOpenIntroDialog(company)}
                 >
                   Request Intro
                 </Button>
@@ -221,13 +233,62 @@ const PortfolioPage = () => {
                 <Button 
                   className="w-full mt-4" 
                   onClick={() => {
-                    handleRequestIntro(selectedCompany);
                     setDetailsOpen(false);
+                    handleOpenIntroDialog(selectedCompany);
                   }}
                 >
                   Request Introduction
                 </Button>
               </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Introduction Request Dialog */}
+      <Dialog open={introDialogOpen} onOpenChange={setIntroDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          {selectedCompany && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Request Introduction</DialogTitle>
+                <DialogDescription>
+                  Tell us why you'd like to be introduced to {selectedCompany.name}.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
+                  <div className="bg-purple-100 p-2 rounded-lg">
+                    <Building className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">{selectedCompany.name}</h4>
+                    <p className="text-sm text-gray-500">{selectedCompany.category} • CEO: {selectedCompany.ceo}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Why would you like an introduction?</Label>
+                  <Textarea
+                    id="reason"
+                    placeholder="Briefly explain the purpose of the introduction and how it might be valuable to both parties."
+                    value={introReason}
+                    onChange={(e) => setIntroReason(e.target.value)}
+                    rows={5}
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIntroDialogOpen(false)}>Cancel</Button>
+                <Button 
+                  onClick={() => handleRequestIntro(selectedCompany)}
+                  disabled={!introReason.trim()}
+                >
+                  Send Request
+                </Button>
+              </DialogFooter>
             </>
           )}
         </DialogContent>

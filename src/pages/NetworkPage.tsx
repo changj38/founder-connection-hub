@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,7 +20,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
-// Mock data for network contacts
 const networkContacts = [
   {
     id: 1,
@@ -145,7 +143,23 @@ const NetworkPage = () => {
   });
 
   const handleIntroRequest = () => {
-    // In a real app, this would send the request to your backend
+    if (!selectedContact) return;
+    
+    const newRequest = {
+      id: Date.now().toString(),
+      type: 'intro',
+      company: selectedContact.company,
+      status: 'pending',
+      date: new Date().toISOString(),
+      details: `Introduction request to ${selectedContact.name} at ${selectedContact.company}`
+    };
+    
+    const existingRequests = JSON.parse(localStorage.getItem('userRequests') || '[]');
+    
+    const updatedRequests = [newRequest, ...existingRequests];
+    
+    localStorage.setItem('userRequests', JSON.stringify(updatedRequests));
+    
     toast.success(`Introduction request to ${selectedContact.name} has been sent`);
     setIsDialogOpen(false);
     setIntroReason('');
