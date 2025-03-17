@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   PlusCircle, 
@@ -40,6 +50,10 @@ const AdminPage = () => {
     industry: '',
     website: ''
   });
+  
+  // Dialog states
+  const [networkDialogOpen, setNetworkDialogOpen] = useState(false);
+  const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
   
   // Mock data
   const [helpRequests, setHelpRequests] = useState([
@@ -86,6 +100,7 @@ const AdminPage = () => {
       email: '',
       linkedin: ''
     });
+    setNetworkDialogOpen(false);
   };
   
   const handleAddPortfolioCompany = (e: React.FormEvent) => {
@@ -103,6 +118,7 @@ const AdminPage = () => {
       industry: '',
       website: ''
     });
+    setPortfolioDialogOpen(false);
   };
   
   const updateHelpRequestStatus = (id: number, status: string) => {
@@ -137,6 +153,143 @@ const AdminPage = () => {
     };
   }, []);
 
+  // Network Contact Form Dialog
+  const NetworkContactForm = () => (
+    <form onSubmit={handleAddNetworkContact} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input 
+          id="name" 
+          value={newNetworkContact.name}
+          onChange={(e) => setNewNetworkContact({...newNetworkContact, name: e.target.value})}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="company">Company</Label>
+        <Input 
+          id="company" 
+          value={newNetworkContact.company}
+          onChange={(e) => setNewNetworkContact({...newNetworkContact, company: e.target.value})}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="position">Position</Label>
+        <Input 
+          id="position" 
+          value={newNetworkContact.position}
+          onChange={(e) => setNewNetworkContact({...newNetworkContact, position: e.target.value})}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input 
+          id="email" 
+          type="email"
+          value={newNetworkContact.email}
+          onChange={(e) => setNewNetworkContact({...newNetworkContact, email: e.target.value})}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="linkedin">LinkedIn URL</Label>
+        <Input 
+          id="linkedin" 
+          value={newNetworkContact.linkedin}
+          onChange={(e) => setNewNetworkContact({...newNetworkContact, linkedin: e.target.value})}
+        />
+      </div>
+      
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => setNetworkDialogOpen(false)}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="daydream">
+          <PlusCircle className="w-4 h-4 mr-2" />
+          Add Contact
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+
+  // Portfolio Company Form Dialog
+  const PortfolioCompanyForm = () => (
+    <form onSubmit={handleAddPortfolioCompany} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="company-name">Company Name</Label>
+        <Input 
+          id="company-name" 
+          value={newPortfolioCompany.name}
+          onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, name: e.target.value})}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea 
+          id="description" 
+          value={newPortfolioCompany.description}
+          onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, description: e.target.value})}
+          required
+        />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="founded-year">Founded Year</Label>
+          <Input 
+            id="founded-year" 
+            value={newPortfolioCompany.foundedYear}
+            onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, foundedYear: e.target.value})}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="investment-year">Investment Year</Label>
+          <Input 
+            id="investment-year" 
+            value={newPortfolioCompany.investmentYear}
+            onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, investmentYear: e.target.value})}
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="industry">Industry</Label>
+        <Input 
+          id="industry" 
+          value={newPortfolioCompany.industry}
+          onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, industry: e.target.value})}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="website">Website</Label>
+        <Input 
+          id="website" 
+          value={newPortfolioCompany.website}
+          onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, website: e.target.value})}
+        />
+      </div>
+      
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => setPortfolioDialogOpen(false)}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="daydream">
+          <PlusCircle className="w-4 h-4 mr-2" />
+          Add Company
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+
   return (
     <div id="admin-page" className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
@@ -164,7 +317,7 @@ const AdminPage = () => {
                 <p className="text-3xl font-bold">24</p>
                 <div className="flex justify-end">
                   <Button 
-                    variant="outline" 
+                    variant="daydream" 
                     size="sm" 
                     className="mt-4"
                     onClick={() => setActiveTab('network')}
@@ -186,7 +339,7 @@ const AdminPage = () => {
                 <p className="text-3xl font-bold">18</p>
                 <div className="flex justify-end">
                   <Button 
-                    variant="outline" 
+                    variant="daydream" 
                     size="sm" 
                     className="mt-4"
                     onClick={() => setActiveTab('portfolio')}
@@ -208,7 +361,7 @@ const AdminPage = () => {
                 <p className="text-3xl font-bold">5</p>
                 <div className="flex justify-end">
                   <Button 
-                    variant="outline" 
+                    variant="daydream" 
                     size="sm" 
                     className="mt-4"
                     onClick={() => setActiveTab('requests')}
@@ -222,240 +375,129 @@ const AdminPage = () => {
         </TabsContent>
         
         <TabsContent value="network">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Add Network Contact</CardTitle>
-                <CardDescription>Add new contacts to the DayDream network</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleAddNetworkContact} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input 
-                      id="name" 
-                      value={newNetworkContact.name}
-                      onChange={(e) => setNewNetworkContact({...newNetworkContact, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="company">Company</Label>
-                    <Input 
-                      id="company" 
-                      value={newNetworkContact.company}
-                      onChange={(e) => setNewNetworkContact({...newNetworkContact, company: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="position">Position</Label>
-                    <Input 
-                      id="position" 
-                      value={newNetworkContact.position}
-                      onChange={(e) => setNewNetworkContact({...newNetworkContact, position: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email"
-                      value={newNetworkContact.email}
-                      onChange={(e) => setNewNetworkContact({...newNetworkContact, email: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin">LinkedIn URL</Label>
-                    <Input 
-                      id="linkedin" 
-                      value={newNetworkContact.linkedin}
-                      onChange={(e) => setNewNetworkContact({...newNetworkContact, linkedin: e.target.value})}
-                    />
-                  </div>
-                  
-                  <Button type="submit" className="w-full">
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Add Contact
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-            
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Network Contacts</CardTitle>
-                <CardDescription>Manage existing network contacts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <tr key={i}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium">Contact {i}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Company {i}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {["CEO", "CTO", "CFO", "VP Sales", "Investor"][i % 5]}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="mb-6 flex justify-between items-center">
+            <h2 className="text-2xl font-semibold">Network Contacts</h2>
+            <Dialog open={networkDialogOpen} onOpenChange={setNetworkDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="daydream">
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Add Contact
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Network Contact</DialogTitle>
+                  <DialogDescription>Add a new contact to the DayDream network</DialogDescription>
+                </DialogHeader>
+                <NetworkContactForm />
+              </DialogContent>
+            </Dialog>
           </div>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="border rounded-md overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <tr key={i}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium">Contact {i}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          Company {i}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {["CEO", "CTO", "CFO", "VP Sales", "Investor"][i % 5]}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="portfolio">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Add Portfolio Company</CardTitle>
-                <CardDescription>Add a new company to the portfolio</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleAddPortfolioCompany} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="company-name">Company Name</Label>
-                    <Input 
-                      id="company-name" 
-                      value={newPortfolioCompany.name}
-                      onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea 
-                      id="description" 
-                      value={newPortfolioCompany.description}
-                      onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, description: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="founded-year">Founded Year</Label>
-                      <Input 
-                        id="founded-year" 
-                        value={newPortfolioCompany.foundedYear}
-                        onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, foundedYear: e.target.value})}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="investment-year">Investment Year</Label>
-                      <Input 
-                        id="investment-year" 
-                        value={newPortfolioCompany.investmentYear}
-                        onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, investmentYear: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="industry">Industry</Label>
-                    <Input 
-                      id="industry" 
-                      value={newPortfolioCompany.industry}
-                      onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, industry: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="website">Website</Label>
-                    <Input 
-                      id="website" 
-                      value={newPortfolioCompany.website}
-                      onChange={(e) => setNewPortfolioCompany({...newPortfolioCompany, website: e.target.value})}
-                    />
-                  </div>
-                  
-                  <Button type="submit" className="w-full">
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Add Company
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-            
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Portfolio Companies</CardTitle>
-                <CardDescription>Manage existing portfolio companies</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <tr key={i}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium">Portfolio Company {i}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {["SaaS", "FinTech", "HealthTech", "AI", "Robotics"][i % 5]}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {["2021", "2022", "2023"][i % 3]}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="mb-6 flex justify-between items-center">
+            <h2 className="text-2xl font-semibold">Portfolio Companies</h2>
+            <Dialog open={portfolioDialogOpen} onOpenChange={setPortfolioDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="daydream">
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Add Company
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Portfolio Company</DialogTitle>
+                  <DialogDescription>Add a new company to the portfolio</DialogDescription>
+                </DialogHeader>
+                <PortfolioCompanyForm />
+              </DialogContent>
+            </Dialog>
           </div>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="border rounded-md overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <tr key={i}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium">Portfolio Company {i}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {["SaaS", "FinTech", "HealthTech", "AI", "Robotics"][i % 5]}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {["2021", "2022", "2023"][i % 3]}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="requests">
@@ -488,8 +530,7 @@ const AdminPage = () => {
                         {request.status !== 'In Progress' && (
                           <Button 
                             size="sm" 
-                            variant="outline"
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                            variant="daydream"
                             onClick={() => updateHelpRequestStatus(request.id, 'In Progress')}
                           >
                             Mark In Progress
@@ -498,8 +539,7 @@ const AdminPage = () => {
                         {request.status !== 'Completed' && (
                           <Button 
                             size="sm" 
-                            variant="outline"
-                            className="text-green-600 border-green-200 hover:bg-green-50"
+                            variant="daydream"
                             onClick={() => updateHelpRequestStatus(request.id, 'Completed')}
                           >
                             <Check className="w-4 h-4 mr-1" />
@@ -528,11 +568,11 @@ const AdminPage = () => {
                     <div className="flex justify-between mb-2">
                       <h3 className="font-medium">Discussion topic {i}</h3>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" className="h-8 text-blue-600">
+                        <Button variant="daydream" size="sm">
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 text-red-600">
+                        <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
                           <Trash2 className="h-4 w-4 mr-1" />
                           Delete
                         </Button>
@@ -544,7 +584,7 @@ const AdminPage = () => {
                     </p>
                     <div className="flex justify-between items-center">
                       <div className="text-sm text-gray-500">{3 + i} replies</div>
-                      <Button size="sm" variant="outline">View Discussion</Button>
+                      <Button size="sm" variant="daydream">View Discussion</Button>
                     </div>
                   </div>
                 ))}
@@ -609,7 +649,7 @@ const AdminPage = () => {
                 
                 <div className="flex justify-end">
                   <Button className="mr-2" variant="outline">Cancel</Button>
-                  <Button>Save Settings</Button>
+                  <Button variant="daydream">Save Settings</Button>
                 </div>
               </div>
             </CardContent>

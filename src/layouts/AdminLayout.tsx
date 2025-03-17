@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -86,10 +85,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 />
                 <span className="ml-2 text-sm font-medium text-daydream-purple">Admin</span>
               </Link>
-              <Link to="/dashboard" className="flex items-center text-sm text-gray-600 hover:text-daydream-purple">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Dashboard
-              </Link>
+              <Button variant="daydream" size="sm" asChild>
+                <Link to="/dashboard" className="flex items-center text-sm">
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Back to Dashboard
+                </Link>
+              </Button>
             </div>
             
             <div className="hidden md:flex items-center gap-4">
