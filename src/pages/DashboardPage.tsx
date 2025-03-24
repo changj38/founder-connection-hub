@@ -76,13 +76,13 @@ const DashboardPage = () => {
               Portfolio Ask
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col h-full">
-            <p className="text-gray-600 mb-6 flex-grow">
+          <CardContent className="flex flex-col">
+            <p className="text-gray-600 mb-4 flex-grow">
               Have questions about our portfolio companies? Ask for information or request introductions.
             </p>
-            <div className="mt-auto">
+            <div className="mt-2 pb-3">
               <Link to="/help">
-                <Button variant="sleek" className="w-full">
+                <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
                   Ask Now
                 </Button>
               </Link>
@@ -97,13 +97,13 @@ const DashboardPage = () => {
               Access CRM
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col h-full">
-            <p className="text-gray-600 mb-6 flex-grow">
+          <CardContent className="flex flex-col">
+            <p className="text-gray-600 mb-4 flex-grow">
               Browse our network of contacts and request introductions to potential partners.
             </p>
-            <div className="mt-auto">
+            <div className="mt-2 pb-3">
               <Link to="/network">
-                <Button variant="sleek" className="w-full">
+                <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
                   View Contacts
                 </Button>
               </Link>
@@ -118,13 +118,13 @@ const DashboardPage = () => {
               Portfolio Companies
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col h-full">
-            <p className="text-gray-600 mb-6 flex-grow">
+          <CardContent className="flex flex-col">
+            <p className="text-gray-600 mb-4 flex-grow">
               Explore our portfolio of companies and connect with founders in our network.
             </p>
-            <div className="mt-auto">
+            <div className="mt-2 pb-3">
               <Link to="/portfolio">
-                <Button variant="sleek" className="w-full">
+                <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
                   View Portfolio
                 </Button>
               </Link>
@@ -139,13 +139,13 @@ const DashboardPage = () => {
               Founder Forum
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col h-full">
-            <p className="text-gray-600 mb-6 flex-grow">
+          <CardContent className="flex flex-col">
+            <p className="text-gray-600 mb-4 flex-grow">
               Connect with other founders, share experiences, and ask questions in our community forum.
             </p>
-            <div className="mt-auto">
+            <div className="mt-2 pb-3">
               <Link to="/forum">
-                <Button variant="sleek" className="w-full">
+                <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
                   Join Discussion
                 </Button>
               </Link>
