@@ -102,10 +102,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               )}
               
               <Button 
-                variant="outline" 
+                variant="sleek" 
                 size="sm"
                 onClick={handleLogout}
-                className="text-red-500 hover:text-red-600 border-red-200 hover:bg-red-50"
+                className="text-white hover:bg-indigo-700"
               >
                 Logout
               </Button>
@@ -194,8 +194,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             
             <div className="p-4 border-t border-gray-200">
               <Button 
-                variant="outline" 
-                className="w-full justify-start gap-2 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600" 
+                variant="sleek" 
+                className="w-full justify-start gap-2" 
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />

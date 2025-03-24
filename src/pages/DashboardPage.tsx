@@ -80,11 +80,13 @@ const DashboardPage = () => {
             <p className="text-gray-600 mb-6 flex-grow">
               Have questions about our portfolio companies? Ask for information or request introductions.
             </p>
-            <Link to="/help" className="mt-auto">
-              <Button variant="sleek" className="w-full">
-                Ask Now
-              </Button>
-            </Link>
+            <div className="mt-auto">
+              <Link to="/help">
+                <Button variant="sleek" className="w-full">
+                  Ask Now
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
@@ -99,11 +101,13 @@ const DashboardPage = () => {
             <p className="text-gray-600 mb-6 flex-grow">
               Browse our network of contacts and request introductions to potential partners.
             </p>
-            <Link to="/network" className="mt-auto">
-              <Button variant="sleek" className="w-full">
-                View Contacts
-              </Button>
-            </Link>
+            <div className="mt-auto">
+              <Link to="/network">
+                <Button variant="sleek" className="w-full">
+                  View Contacts
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
@@ -118,11 +122,13 @@ const DashboardPage = () => {
             <p className="text-gray-600 mb-6 flex-grow">
               Explore our portfolio of companies and connect with founders in our network.
             </p>
-            <Link to="/portfolio" className="mt-auto">
-              <Button variant="sleek" className="w-full">
-                View Portfolio
-              </Button>
-            </Link>
+            <div className="mt-auto">
+              <Link to="/portfolio">
+                <Button variant="sleek" className="w-full">
+                  View Portfolio
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
@@ -137,11 +143,13 @@ const DashboardPage = () => {
             <p className="text-gray-600 mb-6 flex-grow">
               Connect with other founders, share experiences, and ask questions in our community forum.
             </p>
-            <Link to="/forum" className="mt-auto">
-              <Button variant="sleek" className="w-full">
-                Join Discussion
-              </Button>
-            </Link>
+            <div className="mt-auto">
+              <Link to="/forum">
+                <Button variant="sleek" className="w-full">
+                  Join Discussion
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
