@@ -69,19 +69,19 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="overflow-hidden hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center">
               <HelpCircle className="w-5 h-5 mr-2 text-indigo-500" />
               Portfolio Ask
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col">
+          <CardContent className="flex flex-col flex-grow">
             <p className="text-gray-600 mb-4 flex-grow">
               Have questions about our portfolio companies? Ask for information or request introductions.
             </p>
-            <div className="mt-2 pb-3">
-              <Link to="/help">
+            <div className="mt-auto pb-3">
+              <Link to="/help" className="block">
                 <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
                   Ask Now
                 </Button>
@@ -90,19 +90,19 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center">
               <Users className="w-5 h-5 mr-2 text-indigo-500" />
               Access CRM
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col">
+          <CardContent className="flex flex-col flex-grow">
             <p className="text-gray-600 mb-4 flex-grow">
               Browse our network of contacts and request introductions to potential partners.
             </p>
-            <div className="mt-2 pb-3">
-              <Link to="/network">
+            <div className="mt-auto pb-3">
+              <Link to="/network" className="block">
                 <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
                   View Contacts
                 </Button>
@@ -111,19 +111,19 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center">
               <Building2 className="w-5 h-5 mr-2 text-indigo-500" />
               Portfolio Companies
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col">
+          <CardContent className="flex flex-col flex-grow">
             <p className="text-gray-600 mb-4 flex-grow">
               Explore our portfolio of companies and connect with founders in our network.
             </p>
-            <div className="mt-2 pb-3">
-              <Link to="/portfolio">
+            <div className="mt-auto pb-3">
+              <Link to="/portfolio" className="block">
                 <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
                   View Portfolio
                 </Button>
@@ -132,19 +132,19 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden hover:shadow-md transition-shadow">
+        <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center">
               <MessageSquare className="w-5 h-5 mr-2 text-indigo-500" />
               Founder Forum
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col">
+          <CardContent className="flex flex-col flex-grow">
             <p className="text-gray-600 mb-4 flex-grow">
               Connect with other founders, share experiences, and ask questions in our community forum.
             </p>
-            <div className="mt-2 pb-3">
-              <Link to="/forum">
+            <div className="mt-auto pb-3">
+              <Link to="/forum" className="block">
                 <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
                   Join Discussion
                 </Button>
