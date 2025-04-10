@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useQuery } from '@tanstack/react-query';
+import { fetchPortfolioCompanies } from '../utils/adminApi';
+import { supabase } from '../integrations/supabase/client';
+import { useAuth } from '../contexts/AuthContext';
 
 const PortfolioPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,85 +20,52 @@ const PortfolioPage = () => {
   const [introDialogOpen, setIntroDialogOpen] = useState(false);
   const [introReason, setIntroReason] = useState('');
   const { toast } = useToast();
-  
-  const portfolioCompanies = [
-    {
-      id: 1,
-      name: 'Quantum AI',
-      category: 'Artificial Intelligence',
-      description: 'Pioneering quantum machine learning algorithms for real-world applications in finance, healthcare, and logistics.',
-      ceo: 'Elena Vasquez',
-      website: 'quantumai.example.com'
-    },
-    {
-      id: 2,
-      name: 'EcoSphere',
-      category: 'CleanTech',
-      description: 'Developing sustainable packaging solutions using biodegradable materials derived from agricultural waste.',
-      ceo: 'Michael Chen',
-      website: 'ecosphere.example.com'
-    },
-    {
-      id: 3,
-      name: 'HealthPulse',
-      category: 'HealthTech',
-      description: 'Creating wearable technology that continuously monitors vital signs and provides early warning for health issues.',
-      ceo: 'Sarah Johnson',
-      website: 'healthpulse.example.com'
-    },
-    {
-      id: 4,
-      name: 'DataFlow',
-      category: 'Enterprise Software',
-      description: 'Building next-generation data integration platform for modern enterprises with AI-powered insights.',
-      ceo: 'James Wilson',
-      website: 'dataflow.example.com'
-    },
-    {
-      id: 5,
-      name: 'UrbanMobility',
-      category: 'Transportation',
-      description: 'Reimagining urban transportation with electric, autonomous vehicles optimized for city infrastructure.',
-      ceo: 'Lisa Park',
-      website: 'urbanmobility.example.com'
-    },
-    {
-      id: 6,
-      name: 'CyberShield',
-      category: 'Cybersecurity',
-      description: 'Protecting critical infrastructure with AI-driven threat detection and automated response systems.',
-      ceo: 'David Kumar',
-      website: 'cybershield.example.com'
+  const { currentUser } = useAuth();
+
+  // Fetch portfolio companies from Supabase
+  const { data: portfolioCompanies = [], isLoading, error } = useQuery({
+    queryKey: ['portfolioCompanies'],
+    queryFn: fetchPortfolioCompanies
+  });
+
+  const handleRequestIntro = async (company) => {
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to request an introduction.",
+        variant: "destructive",
+      });
+      return;
     }
-  ];
 
-  const handleRequestIntro = (company) => {
-    // Create a new request object
-    const newRequest = {
-      id: Date.now().toString(),
-      type: 'intro',
-      company: company.name,
-      status: 'pending',
-      date: new Date().toISOString(),
-      details: `Introduction request to ${company.name}`
-    };
-    
-    // Get existing requests from localStorage or initialize empty array
-    const existingRequests = JSON.parse(localStorage.getItem('userRequests') || '[]');
-    
-    // Add new request to the array
-    const updatedRequests = [newRequest, ...existingRequests];
-    
-    // Save back to localStorage
-    localStorage.setItem('userRequests', JSON.stringify(updatedRequests));
-    
-    toast({
-      title: "Introduction Requested",
-      description: `Your introduction request to ${company.name} has been submitted.`,
-    });
-
-    setIntroDialogOpen(false);
-    setIntroReason('');
+    try {
+      // @ts-ignore - Ignoring type checking for database schema
+      const { error } = await supabase
+        .from('help_requests')
+        .insert({
+          user_id: currentUser.id,
+          request_type: 'intro',
+          message: `Introduction request to ${company.name}. Reason: ${introReason}`,
+          status: 'Pending'
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Introduction Requested",
+        description: `Your introduction request to ${company.name} has been submitted.`,
+      });
+  
+      setIntroDialogOpen(false);
+      setIntroReason('');
+    } catch (error) {
+      console.error('Error submitting introduction request:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem submitting your request. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewDetails = (company) => {
@@ -109,8 +80,26 @@ const PortfolioPage = () => {
 
   const filteredCompanies = portfolioCompanies.filter(company => 
     company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    company.category.toLowerCase().includes(searchQuery.toLowerCase())
+    (company.industry && company.industry.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="text-center p-6 text-red-500">
+        <p>Error loading portfolio companies. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -124,7 +113,7 @@ const PortfolioPage = () => {
         <div className="relative w-full max-w-md">
           <Input
             type="text"
-            placeholder="Search companies by name, sector..."
+            placeholder="Search companies by name, industry..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-4 pr-10 py-2 w-full"
@@ -141,60 +130,70 @@ const PortfolioPage = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCompanies.map((company) => (
-          <Card key={company.id} className="overflow-hidden border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <Building className="h-8 w-8 text-purple-600" />
+      {filteredCompanies.length === 0 ? (
+        <div className="text-center p-10 bg-gray-50 rounded-lg">
+          <p className="text-gray-500">No companies found matching your search criteria.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCompanies.map((company) => (
+            <Card key={company.id} className="overflow-hidden border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="bg-purple-100 p-3 rounded-lg">
+                    <Building className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-xl mb-1">{company.name}</h3>
+                    <span className="inline-block bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">
+                      {company.industry || 'Technology'}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-xl mb-1">{company.name}</h3>
-                  <span className="inline-block bg-purple-100 text-purple-800 text-xs font-medium px-3 py-1 rounded-full">
-                    {company.category}
-                  </span>
+                
+                <p className="text-gray-600 mb-4 line-clamp-3">
+                  {company.description || 'No description available.'}
+                </p>
+                
+                <div className="space-y-2 mb-4">
+                  {company.founded_year && (
+                    <div className="flex items-center text-sm text-gray-600">
+                      <User className="h-4 w-4 mr-2" />
+                      <span>Founded: {company.founded_year}</span>
+                    </div>
+                  )}
+                  {company.website && (
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Globe className="h-4 w-4 mr-2" />
+                      <span>{company.website}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-              
-              <p className="text-gray-600 mb-4 line-clamp-3">
-                {company.description}
-              </p>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <User className="h-4 w-4 mr-2" />
-                  <span>CEO: {company.ceo}</span>
+                
+                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                  <Button 
+                    variant="outline" 
+                    className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                    onClick={() => handleOpenIntroDialog(company)}
+                  >
+                    Request Intro
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center gap-1"
+                    onClick={() => handleViewDetails(company)}
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 15L12 9L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    View Details
+                  </Button>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Globe className="h-4 w-4 mr-2" />
-                  <span>{company.website}</span>
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                <Button 
-                  variant="outline" 
-                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
-                  onClick={() => handleOpenIntroDialog(company)}
-                >
-                  Request Intro
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="flex items-center gap-1"
-                  onClick={() => handleViewDetails(company)}
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 15L12 9L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  View Details
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Company Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
@@ -204,30 +203,45 @@ const PortfolioPage = () => {
               <DialogHeader>
                 <DialogTitle className="text-xl">{selectedCompany.name}</DialogTitle>
                 <DialogDescription className="text-sm text-purple-600">
-                  {selectedCompany.category}
+                  {selectedCompany.industry || 'Technology'}
                 </DialogDescription>
               </DialogHeader>
               <div className="mt-4">
                 <h3 className="text-sm font-medium mb-2">About</h3>
-                <p className="text-gray-700 mb-4">{selectedCompany.description}</p>
+                <p className="text-gray-700 mb-4">{selectedCompany.description || 'No description available.'}</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                  <div className="border p-3 rounded-md">
-                    <h4 className="text-xs text-gray-500 mb-1">CEO</h4>
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 mr-2 text-purple-600" />
-                      <span>{selectedCompany.ceo}</span>
+                  {selectedCompany.founded_year && (
+                    <div className="border p-3 rounded-md">
+                      <h4 className="text-xs text-gray-500 mb-1">Founded</h4>
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2 text-purple-600" />
+                        <span>{selectedCompany.founded_year}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="border p-3 rounded-md">
-                    <h4 className="text-xs text-gray-500 mb-1">Website</h4>
-                    <div className="flex items-center">
-                      <Globe className="h-4 w-4 mr-2 text-purple-600" />
-                      <a href={`https://${selectedCompany.website}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
-                        {selectedCompany.website}
-                      </a>
+                  )}
+                  {selectedCompany.investment_year && (
+                    <div className="border p-3 rounded-md">
+                      <h4 className="text-xs text-gray-500 mb-1">Invested</h4>
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2 text-purple-600" />
+                        <span>{selectedCompany.investment_year}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  {selectedCompany.website && (
+                    <div className="border p-3 rounded-md">
+                      <h4 className="text-xs text-gray-500 mb-1">Website</h4>
+                      <div className="flex items-center">
+                        <Globe className="h-4 w-4 mr-2 text-purple-600" />
+                        <a href={selectedCompany.website.startsWith('http') ? selectedCompany.website : `https://${selectedCompany.website}`} 
+                           target="_blank" rel="noopener noreferrer" 
+                           className="text-purple-600 hover:underline">
+                          {selectedCompany.website}
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <Button 
@@ -264,7 +278,10 @@ const PortfolioPage = () => {
                   </div>
                   <div>
                     <h4 className="font-medium">{selectedCompany.name}</h4>
-                    <p className="text-sm text-gray-500">{selectedCompany.category} • CEO: {selectedCompany.ceo}</p>
+                    <p className="text-sm text-gray-500">
+                      {selectedCompany.industry || 'Technology'} 
+                      {selectedCompany.founded_year ? ` • Founded: ${selectedCompany.founded_year}` : ''}
+                    </p>
                   </div>
                 </div>
                 
