@@ -39,20 +39,8 @@ const LoginPage = () => {
     }
   };
 
-  // Auto-login with demo credentials for easier testing
-  useEffect(() => {
-    const autoLogin = async () => {
-      // Only auto-login if using the demo credentials and not already submitted
-      if (email === 'jonathan@daydreamvc.com' && password === 'password' && !isSubmitting && !currentUser) {
-        console.log('Auto-logging in with demo credentials...');
-        handleSubmit(new Event('submit') as unknown as React.FormEvent);
-      }
-    };
-    
-    // Wait a short delay before auto-login to allow for any redirects/state changes
-    const timer = setTimeout(autoLogin, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  // Disabled auto-login to prevent continuous error loops
+  // Manual login is more reliable for troubleshooting
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -87,7 +75,7 @@ const LoginPage = () => {
               <Info className="h-4 w-4 text-blue-500" />
               <AlertDescription className="text-blue-800">
                 Demo credentials are pre-filled.<br />
-                Just click "Log in" to continue.
+                Click "Log in" to continue or try signing up with a new account.
               </AlertDescription>
             </Alert>
 

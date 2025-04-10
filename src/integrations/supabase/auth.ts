@@ -94,54 +94,17 @@ export const signIn = async (email: string, password: string) => {
       
       console.warn('Demo credentials login failed:', error.message);
       
-      // If the user doesn't exist yet, create them
+      // Don't try to create the user again if it's already a duplicate key error
+      // This is causing the "Database error saving new user" issue
       if (error.message.includes('Invalid login credentials')) {
-        console.log('Attempting to create demo user...');
-        
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: 'Jonathan Admin',
-              company: 'DayDream Ventures',
-              role: 'admin'
-            }
-          }
-        });
-        
-        if (signUpError) {
-          console.error('Failed to create demo user:', signUpError);
-          toast.error('Could not create demo user. Please try again.');
-          throw signUpError;
-        }
-        
-        console.log('Demo user created successfully:', signUpData);
-        toast.success('Demo user created! Now logging in...');
-        
-        // Wait a moment before trying to sign in again
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Try signing in again with the newly created user
-        const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (retryError) {
-          console.error('Login with newly created demo user failed:', retryError);
-          toast.error('Login failed after creating demo user. Please try again later.');
-          throw retryError;
-        }
-        
-        console.log('Successfully logged in with new demo user:', retryData);
-        toast.success('Successfully logged in with demo account!');
-        return retryData;
+        // The user might exist but with a different password
+        toast.error('The demo account exists but the password may be different. Please try a different account.');
+        throw new Error('Demo account exists but credentials may be incorrect');
+      } else {
+        // For other errors, show the specific error
+        toast.error(`Login error: ${error.message}`);
+        throw error;
       }
-      
-      // If error wasn't about invalid credentials, show a general error
-      toast.error(`Login error: ${error.message}`);
-      throw error;
     } catch (err) {
       console.error('Demo login process failed:', err);
       toast.error('Login failed. Please try again later.');
