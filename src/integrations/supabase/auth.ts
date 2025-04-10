@@ -64,16 +64,26 @@ export const signUp = async (
 };
 
 export const signIn = async (email: string, password: string) => {
+  console.log('Attempting to sign in with:', { email, password: '***' });
+  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
   
   if (error) {
-    toast.error(error.message);
+    console.error('Login error:', error);
+    
+    if (error.message.includes('invalid credentials')) {
+      toast.error('Invalid email or password. Please try again.');
+    } else {
+      toast.error(`Login failed: ${error.message}`);
+    }
+    
     throw error;
   }
   
+  console.log('Sign in successful:', data);
   toast.success('Successfully logged in!');
   return data;
 };

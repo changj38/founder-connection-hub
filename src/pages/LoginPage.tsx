@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Info } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -32,6 +32,7 @@ const LoginPage = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to login. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -66,6 +67,15 @@ const LoginPage = () => {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            
+            <Alert className="mb-6 bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-blue-800">
+                Demo credentials:<br />
+                Email: jonathan@daydreamvc.com<br />
+                Password: password
+              </AlertDescription>
+            </Alert>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
