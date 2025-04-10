@@ -32,17 +32,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Initializing auth system...');
+    
     // Initial session check
     const initAuth = async () => {
       setLoading(true);
       
       // Get initial session
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Initial session check:', session ? 'Session found' : 'No session');
       setSession(session);
       
       if (session) {
-        const user = await getCurrentUser();
-        setCurrentUser(user);
+        try {
+          const user = await getCurrentUser();
+          console.log('Current user loaded:', user);
+          setCurrentUser(user);
+        } catch (err) {
+          console.error('Error loading current user:', err);
+        }
       }
       
       setLoading(false);
@@ -50,11 +58,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
+          console.log('Auth state changed:', event, session ? 'Session exists' : 'No session');
           setSession(session);
           
           if (session) {
-            const user = await getCurrentUser();
-            setCurrentUser(user);
+            try {
+              const user = await getCurrentUser();
+              console.log('User data after auth change:', user);
+              setCurrentUser(user);
+            } catch (err) {
+              console.error('Error getting user after auth change:', err);
+              setCurrentUser(null);
+            }
           } else {
             setCurrentUser(null);
           }
@@ -65,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Cleanup subscription on unmount
       return () => {
+        console.log('Cleaning up auth subscription');
         subscription.unsubscribe();
       };
     };
@@ -73,9 +89,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
+    console.log('Login attempt for:', email);
     setLoading(true);
     try {
       await signIn(email, password);
+      console.log('Login successful');
     } finally {
       setLoading(false);
     }
