@@ -75,9 +75,11 @@ export const signUp = async (
 export const signIn = async (email: string, password: string) => {
   console.log('Attempting to sign in with:', { email, password: '***' });
   
-  // Try to sign in using a specific demo user fallback for development
+  // For demo user, use a special login flow
   if (email === 'jonathan@daydreamvc.com' && password === 'password') {
     try {
+      console.log('Using demo credentials, attempting login...');
+      
       // First try the normal sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -85,54 +87,64 @@ export const signIn = async (email: string, password: string) => {
       });
       
       if (!error) {
-        console.log('Sign in successful with normal credentials:', data);
+        console.log('Sign in successful with demo credentials:', data);
         toast.success('Successfully logged in!');
         return data;
       }
       
-      console.warn('Normal sign in failed due to error:', error);
+      console.warn('Demo credentials login failed:', error.message);
       
-      // If normal sign in fails, we'll create a fallback method
-      // Create the user if it doesn't exist (for demo purposes only)
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: 'Jonathan Admin',
-            company: 'DayDream Ventures',
-            role: 'admin'
-          }
-        }
-      });
-      
-      if (signUpError) {
-        console.error('Failed to create demo user:', signUpError);
-      } else {
-        console.log('Created demo user:', signUpData);
+      // If the user doesn't exist yet, create them
+      if (error.message.includes('Invalid login credentials')) {
+        console.log('Attempting to create demo user...');
         
-        // Try signing in again
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: 'Jonathan Admin',
+              company: 'DayDream Ventures',
+              role: 'admin'
+            }
+          }
+        });
+        
+        if (signUpError) {
+          console.error('Failed to create demo user:', signUpError);
+          toast.error('Could not create demo user. Please try again.');
+          throw signUpError;
+        }
+        
+        console.log('Demo user created successfully:', signUpData);
+        toast.success('Demo user created! Now logging in...');
+        
+        // Wait a moment before trying to sign in again
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Try signing in again with the newly created user
         const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         
         if (retryError) {
-          console.error('Retry login also failed:', retryError);
-          toast.error('Invalid email or password. Please try again.');
+          console.error('Login with newly created demo user failed:', retryError);
+          toast.error('Login failed after creating demo user. Please try again later.');
           throw retryError;
         }
         
-        console.log('Sign in successful after user creation:', retryData);
-        toast.success('Successfully logged in!');
+        console.log('Successfully logged in with new demo user:', retryData);
+        toast.success('Successfully logged in with demo account!');
         return retryData;
       }
       
-      toast.error('Login failed. Please check your credentials and try again.');
+      // If error wasn't about invalid credentials, show a general error
+      toast.error(`Login error: ${error.message}`);
       throw error;
     } catch (err) {
-      console.error('All login methods failed:', err);
-      toast.error('Login failed. Please check your credentials and try again.');
+      console.error('Demo login process failed:', err);
+      toast.error('Login failed. Please try again later.');
       throw err;
     }
   } else {

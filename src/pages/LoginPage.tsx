@@ -9,8 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, AlertCircle, Info } from 'lucide-react';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('jonathan@daydreamvc.com');
+  const [password, setPassword] = useState('password');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, currentUser } = useAuth();
@@ -30,7 +30,7 @@ const LoginPage = () => {
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      // Navigate to dashboard happens automatically via auth change in AuthContext
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to login. Please try again.');
@@ -38,6 +38,21 @@ const LoginPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Auto-login with demo credentials for easier testing
+  useEffect(() => {
+    const autoLogin = async () => {
+      // Only auto-login if using the demo credentials and not already submitted
+      if (email === 'jonathan@daydreamvc.com' && password === 'password' && !isSubmitting && !currentUser) {
+        console.log('Auto-logging in with demo credentials...');
+        handleSubmit(new Event('submit') as unknown as React.FormEvent);
+      }
+    };
+    
+    // Wait a short delay before auto-login to allow for any redirects/state changes
+    const timer = setTimeout(autoLogin, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -71,9 +86,8 @@ const LoginPage = () => {
             <Alert className="mb-6 bg-blue-50 border-blue-200">
               <Info className="h-4 w-4 text-blue-500" />
               <AlertDescription className="text-blue-800">
-                Demo credentials:<br />
-                Email: jonathan@daydreamvc.com<br />
-                Password: password
+                Demo credentials are pre-filled.<br />
+                Just click "Log in" to continue.
               </AlertDescription>
             </Alert>
 
