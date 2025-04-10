@@ -4,13 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '../integrations/supabase/client';
+import { useAuth } from '../contexts/AuthContext';
 
 const HelpPage = () => {
   const [helpRequest, setHelpRequest] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { currentUser } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!helpRequest.trim()) {
@@ -22,35 +25,46 @@ const HelpPage = () => {
       return;
     }
     
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to submit a help request.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Create a new request object
-    const newRequest = {
-      id: Date.now().toString(),
-      type: 'portfolio',
-      status: 'pending',
-      date: new Date().toISOString(),
-      details: helpRequest.substring(0, 100) + (helpRequest.length > 100 ? '...' : '')
-    };
-    
-    // Get existing requests from localStorage or initialize empty array
-    const existingRequests = JSON.parse(localStorage.getItem('userRequests') || '[]');
-    
-    // Add new request to the array
-    const updatedRequests = [newRequest, ...existingRequests];
-    
-    // Save back to localStorage
-    localStorage.setItem('userRequests', JSON.stringify(updatedRequests));
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Insert the help request into the Supabase database
+      const { error } = await supabase
+        .from('help_requests')
+        .insert({
+          user_id: currentUser.id,
+          request_type: 'portfolio',
+          message: helpRequest,
+          status: 'Pending'
+        });
+      
+      if (error) throw error;
+      
       toast({
         title: "Request Submitted",
         description: "Your help request has been sent to the DayDream team.",
       });
+      
       setHelpRequest('');
+    } catch (error) {
+      console.error('Error submitting help request:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem submitting your request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
