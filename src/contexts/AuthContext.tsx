@@ -1,53 +1,20 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'sonner';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'user' | 'admin';
-  company?: string;
-  lastLogin?: Date;
-}
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '../integrations/supabase/client';
+import { AuthUser, getCurrentUser, signIn, signOut, signUp } from '../integrations/supabase/auth';
 
 interface AuthContextType {
-  currentUser: User | null;
+  session: Session | null;
+  currentUser: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, company: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   isAdmin: () => boolean;
 }
-
-// Mock data for demo purposes - in a real app you'd use a backend service
-const MOCK_USERS: User[] = [
-  { 
-    id: '1', 
-    email: 'founder@example.com', 
-    name: 'John Founder', 
-    role: 'user', 
-    company: 'Startup Inc.',
-    lastLogin: new Date('2023-10-15T08:30:00')
-  },
-  { 
-    id: '2', 
-    email: 'jane@example.com', 
-    name: 'Jane Startup', 
-    role: 'user', 
-    company: 'Tech Disrupt',
-    lastLogin: new Date('2023-09-22T14:15:00')
-  },
-  { 
-    id: '3', 
-    email: 'admin@admin.com', 
-    name: 'Admin User', 
-    role: 'admin',
-    lastLogin: new Date('2023-10-30T11:45:00')
-  }
-];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -60,120 +27,104 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in from localStorage
-    const savedUser = localStorage.getItem('daydreamUser');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setCurrentUser(parsedUser);
-      } catch (error) {
-        console.error('Failed to parse saved user:', error);
-        localStorage.removeItem('daydreamUser');
+    // Initial session check
+    const initAuth = async () => {
+      setLoading(true);
+      
+      // Get initial session
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      
+      if (session) {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
       }
-    }
-    setLoading(false);
+      
+      setLoading(false);
+      
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          setSession(session);
+          
+          if (session) {
+            const user = await getCurrentUser();
+            setCurrentUser(user);
+          } else {
+            setCurrentUser(null);
+          }
+          
+          setLoading(false);
+        }
+      );
+      
+      // Cleanup subscription on unmount
+      return () => {
+        subscription.unsubscribe();
+      };
+    };
+    
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real app, you would validate with a backend API
-    const user = MOCK_USERS.find(u => u.email === email);
-    
-    if (!user) {
+    try {
+      await signIn(email, password);
+    } finally {
       setLoading(false);
-      throw new Error('Invalid email or password');
     }
-    
-    // In a real app, you would validate the password properly
-    if (password !== 'password') {
-      setLoading(false);
-      throw new Error('Invalid email or password');
-    }
-    
-    // Update last login time
-    const updatedUser = { 
-      ...user, 
-      lastLogin: new Date() 
-    };
-    
-    setCurrentUser(updatedUser);
-    localStorage.setItem('daydreamUser', JSON.stringify(updatedUser));
-    setLoading(false);
-    
-    toast.success(`Welcome back, ${user.name}!`);
   };
 
   const register = async (name: string, email: string, password: string, company: string) => {
     setLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if email is already in use
-    if (MOCK_USERS.some(user => user.email === email)) {
+    try {
+      await signUp(email, password, name, company);
+    } finally {
       setLoading(false);
-      throw new Error('Email is already in use');
     }
-    
-    // In a real app, you would send this data to a backend API
-    const newUser: User = {
-      id: String(MOCK_USERS.length + 1),
-      email,
-      name,
-      role: 'user',
-      company,
-      lastLogin: new Date()
-    };
-    
-    setCurrentUser(newUser);
-    localStorage.setItem('daydreamUser', JSON.stringify(newUser));
-    setLoading(false);
-    
-    toast.success('Registration successful!');
   };
 
-  const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('daydreamUser');
-    toast.success('Logged out successfully');
+  const logout = async () => {
+    setLoading(true);
+    try {
+      await signOut();
+      setCurrentUser(null);
+      setSession(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const forgotPassword = async (email: string) => {
     setLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real app, you would trigger a password reset email via backend
-    const user = MOCK_USERS.find(u => u.email === email);
-    
-    if (!user) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+    } finally {
       setLoading(false);
-      throw new Error('No account found with this email');
     }
-    
-    setLoading(false);
-    toast.success('Password reset instructions sent to your email');
   };
 
   const resetPassword = async (token: string, newPassword: string) => {
     setLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real app, you would validate the token and update the password via backend
-    
-    setLoading(false);
-    toast.success('Password has been reset successfully');
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isAdmin = () => {
@@ -182,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     currentUser,
+    session,
     loading,
     login,
     register,

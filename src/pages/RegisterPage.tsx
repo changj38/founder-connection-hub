@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,15 @@ const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register } = useAuth();
+  const { register, currentUser } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +44,7 @@ const RegisterPage = () => {
 
     try {
       await register(name, email, password, company);
-      navigate('/dashboard');
+      // Navigate to dashboard will happen automatically via auth state change
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
     } finally {
@@ -143,7 +150,7 @@ const RegisterPage = () => {
             <div className="mt-6 text-center text-sm">
               <p className="text-gray-600">
                 Already have an account?{' '}
-                <Link to="/login" className="text-daydream-blue hover:underline">
+                <Link to="/login" className="text-indigo-600 hover:underline">
                   Log in
                 </Link>
               </p>

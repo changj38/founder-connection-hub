@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,15 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+  const { login, currentUser } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +83,7 @@ const LoginPage = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link to="/forgot-password" className="text-xs text-daydream-blue hover:underline">
+                  <Link to="/forgot-password" className="text-xs text-indigo-600 hover:underline">
                     Forgot password?
                   </Link>
                 </div>
@@ -98,7 +105,7 @@ const LoginPage = () => {
             <div className="mt-6 text-center text-sm">
               <p className="text-gray-600">
                 Don't have an account yet?{' '}
-                <Link to="/register" className="text-daydream-blue hover:underline">
+                <Link to="/register" className="text-indigo-600 hover:underline">
                   Request access
                 </Link>
               </p>
