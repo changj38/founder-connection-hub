@@ -25,19 +25,44 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 
+// Define NetworkContact type to handle missing fields in the database
+type NetworkContact = {
+  id: string;
+  name: string;
+  company?: string;
+  position?: string;
+  email?: string;
+  linkedin_url?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  category?: string;
+  expertise?: string[];
+  avatar_url?: string;
+};
+
 const NetworkPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [selectedContact, setSelectedContact] = useState<NetworkContact | null>(null);
   const [introReason, setIntroReason] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const { currentUser } = useAuth();
 
   // Fetch network contacts from Supabase
-  const { data: networkContacts = [], isLoading, error } = useQuery({
+  const { data: networkContactsRaw = [], isLoading, error } = useQuery({
     queryKey: ['networkContacts'],
     queryFn: fetchNetworkContacts
   });
+
+  // Convert raw contacts to NetworkContact type with default values for missing fields
+  const networkContacts: NetworkContact[] = networkContactsRaw.map((contact: any) => ({
+    ...contact,
+    category: contact.category || 'Other',
+    expertise: contact.expertise || [],
+    avatar_url: contact.avatar_url || undefined
+  }));
   
   // Extract unique categories from the network contacts
   const uniqueCategories = networkContacts && networkContacts.length 
@@ -54,7 +79,7 @@ const NetworkPage = () => {
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (contact.company && contact.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (contact.position && contact.position.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (contact.expertise && contact.expertise.some((e: string) => e.toLowerCase().includes(searchTerm.toLowerCase())));
+      (contact.expertise && contact.expertise.some(e => e.toLowerCase().includes(searchTerm.toLowerCase())));
     
     const matchesCategory = activeCategory === 'all' || contact.category === activeCategory;
     
@@ -225,8 +250,8 @@ const NetworkPage = () => {
                     <div className="mb-4">
                       <p className="text-xs text-gray-500 mb-1">Expertise</p>
                       <div className="flex flex-wrap gap-1">
-                        {contact.expertise ? (
-                          contact.expertise.map((item: string, i: number) => (
+                        {contact.expertise && contact.expertise.length > 0 ? (
+                          contact.expertise.map((item, i) => (
                             <Badge key={i} variant="secondary" className="text-xs">
                               {item}
                             </Badge>
@@ -363,9 +388,9 @@ const NetworkPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1">
-                          {contact.expertise ? (
+                          {contact.expertise && contact.expertise.length > 0 ? (
                             <>
-                              {contact.expertise.slice(0, 2).map((item: string, i: number) => (
+                              {contact.expertise.slice(0, 2).map((item, i) => (
                                 <Badge key={i} variant="secondary" className="text-xs">
                                   {item}
                                 </Badge>
