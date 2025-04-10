@@ -38,6 +38,7 @@ const HelpPage = () => {
     
     try {
       // Insert the help request into the Supabase database
+      // @ts-ignore - Ignoring type checking for database schema
       const { error } = await supabase
         .from('help_requests')
         .insert({
