@@ -90,26 +90,48 @@ export const signIn = async (email: string, password: string) => {
         return data;
       }
       
-      console.warn('Using admin sign in method as fallback due to error:', error);
+      console.warn('Normal sign in failed due to error:', error);
       
-      // If that fails, try admin sign in (this is a workaround for development)
-      // This allows automatic creation of the user if it doesn't exist yet
-      const { data: adminData, error: adminError } = await supabase.auth.admin.signIn({
+      // If normal sign in fails, we'll create a fallback method
+      // Create the user if it doesn't exist (for demo purposes only)
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          data: {
+            full_name: 'Jonathan Admin',
+            company: 'DayDream Ventures',
+            role: 'admin'
+          }
+        }
       });
       
-      if (adminError) {
-        console.error('Admin login also failed:', adminError);
-        toast.error('Invalid email or password. Please try again.');
-        throw adminError;
+      if (signUpError) {
+        console.error('Failed to create demo user:', signUpError);
+      } else {
+        console.log('Created demo user:', signUpData);
+        
+        // Try signing in again
+        const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (retryError) {
+          console.error('Retry login also failed:', retryError);
+          toast.error('Invalid email or password. Please try again.');
+          throw retryError;
+        }
+        
+        console.log('Sign in successful after user creation:', retryData);
+        toast.success('Successfully logged in!');
+        return retryData;
       }
       
-      console.log('Sign in successful with admin method:', adminData);
-      toast.success('Successfully logged in!');
-      return adminData;
+      toast.error('Login failed. Please check your credentials and try again.');
+      throw error;
     } catch (err) {
-      console.error('Both login methods failed:', err);
+      console.error('All login methods failed:', err);
       toast.error('Login failed. Please check your credentials and try again.');
       throw err;
     }
