@@ -41,7 +41,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     fullName: profile?.full_name || '',
     name: profile?.full_name || '', // Map full_name to name for compatibility
     company: profile?.company || '',
-    role: profile?.role || '',
+    role: profile?.role || 'user', // Default to 'user' if no role is specified
     lastLogin: session.user.last_sign_in_at
   };
 };
@@ -170,4 +170,11 @@ export const updatePassword = async (newPassword: string) => {
   }
   
   toast.success('Password updated successfully');
+};
+
+// Function to check if user has admin role
+export const checkIsAdmin = async (): Promise<boolean> => {
+  const user = await getCurrentUser();
+  console.log('Checking admin status for user:', user);
+  return user?.role === 'admin';
 };

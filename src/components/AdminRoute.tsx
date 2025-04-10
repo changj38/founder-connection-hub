@@ -15,9 +15,12 @@ const AdminRoute = () => {
   }
 
   if (!currentUser || !isAdmin()) {
+    console.log('Access denied: User is not admin. Current user:', currentUser);
+    console.log('Admin check result:', isAdmin());
     return <Navigate to="/login" replace />;
   }
 
+  console.log('Admin access granted for user:', currentUser);
   return (
     <AdminLayout>
       <Outlet />
