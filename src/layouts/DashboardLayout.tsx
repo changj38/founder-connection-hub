@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,7 +40,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { path: '/forum', label: 'Founder Forum', icon: <MessagesSquare className="w-5 h-5" /> },
   ];
 
-  // Only show admin tab if user is admin
   const adminNavItem = { path: '/admin', label: 'Admin', icon: <Settings className="w-5 h-5" /> };
 
   const toggleMobileMenu = () => {
@@ -58,7 +56,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Top navigation bar */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -124,7 +121,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden bg-black bg-opacity-50">
           <div className="fixed inset-y-0 left-0 flex flex-col w-full max-w-xs bg-white shadow-lg">
@@ -147,11 +143,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <div className="flex items-center gap-3 mb-2">
                   <Avatar className="h-9 w-9">
                     <AvatarFallback className="bg-indigo-100 text-indigo-800">
-                      {getInitials(currentUser?.name || '')}
+                      {getInitials(currentUser?.fullName || '')}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium">{currentUser?.name}</div>
+                    <div className="font-medium">{currentUser?.fullName}</div>
                     <div className="text-sm text-gray-500">{currentUser?.company}</div>
                   </div>
                 </div>
@@ -206,7 +202,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </div>
       )}
 
-      {/* Main content */}
       <main className="flex-1 overflow-y-auto bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
         {children}
       </main>

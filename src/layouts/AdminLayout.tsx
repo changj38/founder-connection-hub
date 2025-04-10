@@ -96,11 +96,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             
             <div className="hidden md:flex items-center gap-4">
               <span className="text-sm text-gray-600">
-                {currentUser?.name}
+                {currentUser?.fullName || currentUser?.email}
               </span>
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-daydream-purple text-white">
-                  {getInitials(currentUser?.name || '')}
+                  {getInitials(currentUser?.fullName || '')}
                 </AvatarFallback>
               </Avatar>
               <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">

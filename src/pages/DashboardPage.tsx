@@ -62,7 +62,7 @@ const DashboardPage = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">Welcome back, <span className="text-daydream-blue">{currentUser?.name}</span></h1>
+        <h1 className="text-4xl font-bold tracking-tight">Welcome back, <span className="text-daydream-blue">{currentUser?.fullName}</span></h1>
         <p className="text-gray-500 mt-1 flex items-center">
           <span className="mr-1">Last login:</span> {formatDate(currentUser?.lastLogin)} GMT
         </p>

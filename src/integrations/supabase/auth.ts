@@ -6,8 +6,10 @@ export interface AuthUser {
   id: string;
   email: string;
   fullName?: string;
+  name?: string; // Added this property for compatibility
   company?: string;
   role?: string;
+  lastLogin?: Date | string; // Added this property for compatibility
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
@@ -27,9 +29,11 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   return {
     id: session.user.id,
     email: session.user.email || '',
-    fullName: profile?.full_name,
-    company: profile?.company,
-    role: profile?.role
+    fullName: profile?.full_name || '',
+    name: profile?.full_name || '', // Map full_name to name for compatibility
+    company: profile?.company || '',
+    role: profile?.role || '',
+    lastLogin: session.user.last_sign_in_at
   };
 };
 
