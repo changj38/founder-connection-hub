@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,9 +11,29 @@ import {
   Shield
 } from 'lucide-react';
 import AdminHelpRequestsTab from './AdminHelpRequestsTab';
+import AdminNetworkTab from './AdminNetworkTab';
+import AdminPortfolioTab from './AdminPortfolioTab';
+import { useQuery } from '@tanstack/react-query';
+import { fetchNetworkContacts, fetchPortfolioCompanies, fetchHelpRequests } from '../utils/adminApi';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Fetch data for overview counts
+  const { data: networkContacts = [] } = useQuery({
+    queryKey: ['networkContacts'],
+    queryFn: fetchNetworkContacts
+  });
+  
+  const { data: portfolioCompanies = [] } = useQuery({
+    queryKey: ['portfolioCompanies'],
+    queryFn: fetchPortfolioCompanies
+  });
+  
+  const { data: helpRequests = [] } = useQuery({
+    queryKey: ['helpRequests'],
+    queryFn: fetchHelpRequests
+  });
   
   // Listen for tab changes from AdminLayout
   useEffect(() => {
@@ -58,7 +79,7 @@ const AdminPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">24</p>
+                <p className="text-3xl font-bold">{networkContacts.length}</p>
                 <div className="flex justify-end">
                   <button 
                     className="bg-indigo-600 text-white px-3 py-1 rounded text-sm mt-4 hover:bg-indigo-700"
@@ -78,7 +99,7 @@ const AdminPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">18</p>
+                <p className="text-3xl font-bold">{portfolioCompanies.length}</p>
                 <div className="flex justify-end">
                   <button 
                     className="bg-indigo-600 text-white px-3 py-1 rounded text-sm mt-4 hover:bg-indigo-700"
@@ -98,7 +119,7 @@ const AdminPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">5</p>
+                <p className="text-3xl font-bold">{helpRequests.length}</p>
                 <div className="flex justify-end">
                   <button 
                     className="bg-indigo-600 text-white px-3 py-1 rounded text-sm mt-4 hover:bg-indigo-700"
@@ -113,17 +134,11 @@ const AdminPage = () => {
         </TabsContent>
         
         <TabsContent value="network">
-          <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Network Contacts</h2>
-            {/* Network management UI will be implemented in a future step */}
-          </div>
+          <AdminNetworkTab />
         </TabsContent>
         
         <TabsContent value="portfolio">
-          <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Portfolio Companies</h2>
-            {/* Portfolio management UI will be implemented in a future step */}
-          </div>
+          <AdminPortfolioTab />
         </TabsContent>
         
         <TabsContent value="requests">
