@@ -147,3 +147,46 @@ export const updateHelpRequestStatus = async (id: string, status: string, resolu
   
   return true;
 };
+
+// Function to get help request statistics
+export const getHelpRequestStats = async () => {
+  const { data, error } = await supabase
+    .from('help_requests')
+    .select('status, request_type');
+  
+  if (error) {
+    console.error('Error fetching help request stats:', error);
+    throw error;
+  }
+  
+  // Calculate statistics
+  const stats = {
+    total: data.length,
+    pending: data.filter(req => req.status === 'Pending').length,
+    inProgress: data.filter(req => req.status === 'In Progress').length,
+    completed: data.filter(req => req.status === 'Completed').length,
+    declined: data.filter(req => req.status === 'Declined').length,
+    byType: {
+      intro: data.filter(req => req.request_type === 'intro').length,
+      portfolio: data.filter(req => req.request_type === 'portfolio').length,
+      other: data.filter(req => !['intro', 'portfolio'].includes(req.request_type)).length
+    }
+  };
+  
+  return stats;
+};
+
+// Function to assign a request to an admin
+export const assignHelpRequest = async (requestId: string, adminId: string) => {
+  const { error } = await supabase
+    .from('help_requests')
+    .update({ assigned_to: adminId })
+    .eq('id', requestId);
+  
+  if (error) {
+    console.error('Error assigning help request:', error);
+    throw error;
+  }
+  
+  return true;
+};

@@ -1,204 +1,333 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { Check, MessageSquare } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { ClipboardList, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchHelpRequests, updateHelpRequestStatus } from '../utils/adminApi';
-import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 const AdminHelpRequestsTab = () => {
   const { toast } = useToast();
-  const [helpRequests, setHelpRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [resolutionNotes, setResolutionNotes] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  
-  useEffect(() => {
-    loadHelpRequests();
-  }, []);
-  
-  const loadHelpRequests = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchHelpRequests();
-      setHelpRequests(data);
-    } catch (error) {
-      console.error('Failed to load help requests:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load help requests. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  // Fetch help requests
+  const { data: helpRequests = [], isLoading, error } = useQuery({
+    queryKey: ['helpRequests'],
+    queryFn: fetchHelpRequests
+  });
+
+  const handleOpenDetail = (request) => {
+    setSelectedRequest(request);
+    setResolutionNotes(request.resolution_notes || '');
+    setIsDetailOpen(true);
   };
-  
-  const handleStatusUpdate = async (id, status) => {
+
+  const handleUpdateStatus = async (status) => {
     try {
-      await updateHelpRequestStatus(id, status);
+      await updateHelpRequestStatus(selectedRequest.id, status, resolutionNotes);
       
       toast({
         title: "Status Updated",
-        description: `Request has been marked as ${status}.`,
+        description: `Request status changed to ${status}`,
       });
       
-      // Refresh the help requests list
-      loadHelpRequests();
+      setIsDetailOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['helpRequests'] });
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error("Error updating help request status:", error);
       toast({
         title: "Error",
-        description: "Failed to update request status.",
+        description: "Failed to update request status",
         variant: "destructive",
       });
     }
   };
-  
-  const handleResolveDialog = (request) => {
-    setSelectedRequest(request);
-    setResolutionNotes('');
-    setDialogOpen(true);
-  };
-  
-  const submitResolution = async () => {
-    if (!selectedRequest) return;
-    
-    try {
-      await updateHelpRequestStatus(selectedRequest.id, 'Completed', resolutionNotes);
-      
-      toast({
-        title: "Request Resolved",
-        description: "The help request has been marked as completed.",
-      });
-      
-      setDialogOpen(false);
-      loadHelpRequests();
-    } catch (error) {
-      console.error('Error resolving request:', error);
-      toast({
-        title: "Error",
-        description: "Failed to resolve the request.",
-        variant: "destructive",
-      });
+
+  // Filter help requests based on status and type
+  const filteredRequests = helpRequests.filter(request => {
+    const statusMatch = statusFilter === 'all' || request.status === statusFilter;
+    const typeMatch = typeFilter === 'all' || request.request_type === typeFilter;
+    return statusMatch && typeMatch;
+  });
+
+  // Get the badge color based on status
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'Pending':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+          <Clock className="h-3 w-3 mr-1" /> Pending
+        </Badge>;
+      case 'In Progress':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          <Clock className="h-3 w-3 mr-1" /> In Progress
+        </Badge>;
+      case 'Completed':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <CheckCircle className="h-3 w-3 mr-1" /> Completed
+        </Badge>;
+      case 'Declined':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+          <XCircle className="h-3 w-3 mr-1" /> Declined
+        </Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
-  
+
+  // Format the request date
   const formatDate = (dateString) => {
     try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (error) {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (e) {
       return dateString;
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
+  // Get request type badge
+  const getTypeBadge = (type) => {
+    switch (type) {
+      case 'intro':
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">Introduction</Badge>;
+      case 'portfolio':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Portfolio Help</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{type}</Badge>;
+    }
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Help Requests</CardTitle>
-        <CardDescription>Manage incoming help requests from founders</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {helpRequests.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p>No help requests found.</p>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold">Help Requests</h2>
+      </div>
+
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label className="text-sm text-gray-500 mb-2 block">Filter by Status</label>
+              <Select
+                value={statusFilter}
+                onValueChange={setStatusFilter}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Declined">Declined</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <label className="text-sm text-gray-500 mb-2 block">Filter by Type</label>
+              <Select
+                value={typeFilter}
+                onValueChange={setTypeFilter}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="intro">Introduction</SelectItem>
+                  <SelectItem value="portfolio">Portfolio Help</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {helpRequests.map((request) => (
-              <div key={request.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
+        </CardContent>
+      </Card>
+
+      {isLoading ? (
+        <div className="flex justify-center my-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        </div>
+      ) : error ? (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-red-500">Error loading help requests. Please try again.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Requested by</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Message</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRequests.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        No help requests found matching your criteria.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRequests.map((request) => (
+                      <TableRow key={request.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-indigo-100 text-indigo-700">
+                                {request.profiles?.full_name ? request.profiles.full_name.charAt(0) : 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{request.profiles?.full_name || 'Unknown User'}</p>
+                              <p className="text-xs text-gray-500">{request.profiles?.company || ''}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getTypeBadge(request.request_type)}</TableCell>
+                        <TableCell>
+                          <p className="truncate max-w-[250px]">{request.message}</p>
+                        </TableCell>
+                        <TableCell>{formatDate(request.created_at)}</TableCell>
+                        <TableCell>{getStatusBadge(request.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleOpenDetail(request)}
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Request Detail Dialog */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          {selectedRequest && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {getTypeBadge(selectedRequest.request_type)}
+                  <span className="ml-2">Request Details</span>
+                </DialogTitle>
+                <DialogDescription>
+                  Submitted on {formatDate(selectedRequest.created_at)}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-indigo-100 text-indigo-700">
+                      {selectedRequest.profiles?.full_name ? selectedRequest.profiles.full_name.charAt(0) : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
-                    <h3 className="font-medium text-lg">{request.profiles?.full_name || 'Unknown User'}</h3>
+                    <h4 className="font-medium">{selectedRequest.profiles?.full_name || 'Unknown User'}</h4>
                     <p className="text-sm text-gray-500">
-                      {request.profiles?.company || 'No Company'} • {request.request_type}
+                      {selectedRequest.profiles?.company || ''}
+                      {selectedRequest.profiles?.role ? ` • ${selectedRequest.profiles.role}` : ''}
                     </p>
                   </div>
-                  <div className={`text-sm font-medium px-2 py-1 rounded-full ${
-                    request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    request.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {request.status}
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Request Message</h4>
+                  <div className="p-3 border rounded-md bg-white">
+                    <p className="text-sm whitespace-pre-wrap">{selectedRequest.message}</p>
                   </div>
                 </div>
-                <p className="text-gray-700 mb-4">"{request.message}"</p>
-                {request.resolution_notes && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                    <p className="text-sm font-medium text-gray-700">Resolution Notes:</p>
-                    <p className="text-sm text-gray-600">{request.resolution_notes}</p>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-medium">Resolution Notes</h4>
+                    <p className="text-xs text-gray-500">
+                      Current Status: {getStatusBadge(selectedRequest.status)}
+                    </p>
                   </div>
-                )}
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-gray-500">Received: {formatDate(request.created_at)}</div>
-                  <div className="flex space-x-2">
-                    {request.status !== 'In Progress' && request.status !== 'Completed' && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleStatusUpdate(request.id, 'In Progress')}
-                      >
-                        Mark In Progress
-                      </Button>
-                    )}
-                    {request.status !== 'Completed' && (
-                      <Button 
-                        size="sm" 
-                        variant="daydream"
-                        onClick={() => handleResolveDialog(request)}
-                      >
-                        <Check className="w-4 h-4 mr-1" />
-                        Complete
-                      </Button>
-                    )}
-                  </div>
+                  <Textarea
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.target.value)}
+                    placeholder="Add notes about how this request was handled..."
+                    rows={4}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-      
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Complete Help Request</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="resolution-notes">Resolution Notes (Optional)</Label>
-            <Textarea 
-              id="resolution-notes"
-              placeholder="Add notes about how this request was resolved..."
-              value={resolutionNotes}
-              onChange={(e) => setResolutionNotes(e.target.value)}
-              className="mt-2"
-              rows={5}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button variant="daydream" onClick={submitResolution}>
-              <Check className="w-4 h-4 mr-2" />
-              Mark Completed
-            </Button>
-          </DialogFooter>
+              
+              <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 flex flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="outline"
+                    className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                    onClick={() => handleUpdateStatus('In Progress')}
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Mark In Progress
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-red-300 text-red-700 hover:bg-red-50"
+                    onClick={() => handleUpdateStatus('Declined')}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Decline
+                  </Button>
+                </div>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => handleUpdateStatus('Completed')}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Mark Complete
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 };
 
