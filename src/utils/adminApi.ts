@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -209,7 +208,10 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
   
   // Now fetch user profiles separately to get user information
   if (helpRequests && helpRequests.length > 0) {
+    // Get all unique user IDs from help requests
     const userIds = [...new Set(helpRequests.map(request => request.user_id))];
+    
+    console.log('Fetching profiles for user IDs:', userIds);
     
     // Fetch profiles for these users
     const { data: profiles, error: profilesError } = await supabase
@@ -221,6 +223,8 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
       console.error('Error fetching user profiles:', profilesError);
       // Continue without profiles rather than failing completely
     }
+    
+    console.log('Fetched profiles:', profiles);
     
     // Create a map of user IDs to their profile data for easy lookup
     const profilesMap = (profiles || []).reduce((acc: Record<string, Profile>, profile) => {
