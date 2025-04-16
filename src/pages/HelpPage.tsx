@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +38,6 @@ const HelpPage = () => {
     
     try {
       // Insert the help request into the Supabase database
-      // @ts-ignore - Ignoring type checking for database schema
       const { error } = await supabase
         .from('help_requests')
         .insert({
@@ -45,7 +45,7 @@ const HelpPage = () => {
           request_type: 'portfolio',
           message: helpRequest,
           status: 'Pending',
-          requester_email: currentUser.email // Store the user's email in the new column
+          requester_email: currentUser.email // Store the user's email in the column
         });
       
       if (error) throw error;

@@ -142,12 +142,7 @@ export const updateContactAvatar = async (id: string, avatarUrl: string) => {
   return true;
 };
 
-// Note: LinkedIn doesn't provide a simple API to fetch profile pictures
-// This function is provided as a placeholder for a future implementation
-// that might use a third-party service or manual URL input
 export const fetchLinkedInProfilePicture = async (linkedinUrl: string) => {
-  // This would require LinkedIn API access with proper authentication
-  // which is beyond the scope of this implementation
   console.log('LinkedIn profile URL:', linkedinUrl);
   return null;
 };
