@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,13 +60,15 @@ const AdminHelpRequestsTab = () => {
   const { data: helpRequests = [], isLoading, error, isError } = useQuery({
     queryKey: ['helpRequests'],
     queryFn: fetchHelpRequests,
-    onError: (err) => {
-      console.error('Error in help requests query:', err);
-      toast({
-        title: "Error Loading Help Requests",
-        description: "There was a problem loading the help requests. Please try again.",
-        variant: "destructive",
-      });
+    meta: {
+      onError: (err: Error) => {
+        console.error('Error in help requests query:', err);
+        toast({
+          title: "Error Loading Help Requests",
+          description: "There was a problem loading the help requests. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
