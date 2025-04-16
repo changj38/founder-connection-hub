@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -315,7 +314,7 @@ const NetworkPage = () => {
                       </div>
                       
                       <div className="flex gap-2">
-                        {isAdmin && (
+                        {isAdmin() && (
                           <Button 
                             size="sm" 
                             variant="outline"
@@ -585,7 +584,7 @@ const NetworkPage = () => {
                 rows={3}
               />
             </div>
-            {isAdmin && (
+            {isAdmin() && (
               <div className="grid gap-2">
                 <Label htmlFor="is_lp">Limited Partner (LP)</Label>
                 <div className="flex items-center space-x-2">

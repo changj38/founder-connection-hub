@@ -52,6 +52,30 @@ export const updateNetworkContact = async (id: string, contactData: any) => {
   return true;
 };
 
+export const updateContactAvatar = async (id: string, avatarUrl: string) => {
+  const { error } = await supabase
+    .from('network_contacts')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error updating contact avatar:', error);
+    throw error;
+  }
+  
+  return true;
+};
+
+// Note: LinkedIn doesn't provide a simple API to fetch profile pictures
+// This function is provided as a placeholder for a future implementation
+// that might use a third-party service or manual URL input
+export const fetchLinkedInProfilePicture = async (linkedinUrl: string) => {
+  // This would require LinkedIn API access with proper authentication
+  // which is beyond the scope of this implementation
+  console.log('LinkedIn profile URL:', linkedinUrl);
+  return null;
+};
+
 // Portfolio companies functions
 export const fetchPortfolioCompanies = async () => {
   const { data, error } = await supabase

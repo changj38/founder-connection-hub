@@ -7,12 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { PlusCircle, User, Mail, Briefcase, Linkedin, MoreHorizontal, Building, Pencil } from 'lucide-react';
+import { PlusCircle, User, Mail, Briefcase, Linkedin, MoreHorizontal, Building, Pencil, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchNetworkContacts, addNetworkContact, updateNetworkContact } from '../utils/adminApi';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const AdminNetworkTab = () => {
   const { toast } = useToast();
@@ -27,7 +28,8 @@ const AdminNetworkTab = () => {
     email: '',
     linkedin_url: '',
     notes: '',
-    is_lp: false
+    is_lp: false,
+    avatar_url: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -55,7 +57,8 @@ const AdminNetworkTab = () => {
       email: '',
       linkedin_url: '',
       notes: '',
-      is_lp: false
+      is_lp: false,
+      avatar_url: ''
     });
     setIsEditMode(false);
     setCurrentContact(null);
@@ -70,7 +73,8 @@ const AdminNetworkTab = () => {
       email: contact.email || '',
       linkedin_url: contact.linkedin_url || '',
       notes: contact.notes || '',
-      is_lp: contact.is_lp || false
+      is_lp: contact.is_lp || false,
+      avatar_url: contact.avatar_url || ''
     });
     setIsEditMode(true);
     setIsDialogOpen(true);
@@ -117,6 +121,14 @@ const AdminNetworkTab = () => {
 
   const handleLPToggle = (checked) => {
     setFormData({ ...formData, is_lp: checked });
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
   };
 
   return (
@@ -188,7 +200,20 @@ const AdminNetworkTab = () => {
                   ) : (
                     filteredContacts.map((contact) => (
                       <TableRow key={contact.id}>
-                        <TableCell className="font-medium">{contact.name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              {contact.avatar_url ? (
+                                <AvatarImage src={contact.avatar_url} alt={contact.name} />
+                              ) : (
+                                <AvatarFallback className="bg-daydream-blue text-white text-xs">
+                                  {getInitials(contact.name)}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <span className="font-medium">{contact.name}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>{contact.company || "—"}</TableCell>
                         <TableCell>{contact.position || "—"}</TableCell>
                         <TableCell>
@@ -311,6 +336,29 @@ const AdminNetworkTab = () => {
                   onChange={handleInputChange}
                 />
               </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="avatar_url" className="flex items-center">
+                <Image className="h-4 w-4 mr-2 text-gray-500" />
+                Profile Picture URL
+              </Label>
+              <Input
+                id="avatar_url"
+                name="avatar_url"
+                value={formData.avatar_url}
+                onChange={handleInputChange}
+                placeholder="Enter direct URL to profile image"
+              />
+              {formData.avatar_url && (
+                <div className="mt-2 flex justify-center">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={formData.avatar_url} alt="Preview" />
+                    <AvatarFallback className="bg-daydream-blue text-white">
+                      {getInitials(formData.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="notes" className="flex items-center">
