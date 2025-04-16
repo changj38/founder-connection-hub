@@ -43,6 +43,7 @@ const AdminPortfolioTab = () => {
     mutationFn: (companyData: any) => addPortfolioCompany(companyData),
     onSuccess: (data) => {
       console.log('Company added successfully:', data);
+      setIsSubmitting(false);
       // Reset form
       resetForm();
       // Close dialog
