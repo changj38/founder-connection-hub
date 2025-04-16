@@ -102,7 +102,8 @@ const NetworkPage = () => {
           user_id: currentUser.id,
           request_type: 'intro',
           message: `Introduction request to ${selectedContact.name} at ${selectedContact.company || 'N/A'}. Reason: ${introReason}`,
-          status: 'Pending'
+          status: 'Pending',
+          requester_email: currentUser.email
         });
       
       if (error) throw error;
