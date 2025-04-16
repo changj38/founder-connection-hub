@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -223,7 +224,9 @@ export const addPortfolioCompany = async (companyData: {
 // Help requests functions
 export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => {
   try {
-    // Get help requests without using join - this avoids the foreign key error
+    console.log('Fetching help requests without join...');
+    
+    // Get all help requests without attempting to join with profiles
     const { data: helpRequests, error } = await supabase
       .from('help_requests')
       .select('*')
@@ -234,49 +237,55 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
       throw error;
     }
     
+    console.log('Fetched help requests:', helpRequests);
+    
     if (!helpRequests || helpRequests.length === 0) {
+      console.log('No help requests found');
       return [];
     }
     
-    // Now fetch user profiles separately to get user information
-    const userIds = [...new Set(helpRequests.map(request => request.user_id))];
+    // Now fetch user profiles separately for those user IDs that exist
+    const userIds = helpRequests
+      .map(request => request.user_id)
+      .filter(id => id) // Filter out any null/undefined IDs
+      .filter((id, index, self) => self.indexOf(id) === index); // Get unique IDs
     
     console.log('Fetching profiles for user IDs:', userIds);
     
-    // Fetch profiles for these users
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('*')
-      .in('id', userIds);
+    let profilesMap: Record<string, Profile> = {};
     
-    if (profilesError) {
-      console.error('Error fetching user profiles:', profilesError);
-      // Continue without profiles rather than failing completely
-    }
-    
-    console.log('Fetched profiles:', profiles);
-    
-    // Create a map of user IDs to their profile data for easy lookup
-    const profilesMap: Record<string, Profile> = {};
-    if (profiles && profiles.length > 0) {
-      profiles.forEach(profile => {
-        profilesMap[profile.id] = profile;
-      });
+    if (userIds.length > 0) {
+      // Fetch profiles for these users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error('Error fetching user profiles:', profilesError);
+        // Continue without profiles rather than failing completely
+      } else if (profiles) {
+        console.log('Fetched profiles:', profiles);
+        
+        // Create a map of user IDs to their profile data for easy lookup
+        profiles.forEach(profile => {
+          profilesMap[profile.id] = profile;
+        });
+      }
     }
     
     // Add profile data to each help request
     const helpRequestsWithProfiles = helpRequests.map((request: HelpRequest) => {
-      const profile = profilesMap[request.user_id];
-      
       return {
         ...request,
-        profiles: profile || null,
+        profiles: request.user_id && profilesMap[request.user_id] ? profilesMap[request.user_id] : null,
         // First try to use the requester_email field if available
-        // Then fall back to the user email or undefined if neither is available
+        // Then fall back to undefined if neither is available
         user_email: request.requester_email || undefined
       };
     });
     
+    console.log('Final help requests with profiles:', helpRequestsWithProfiles);
     return helpRequestsWithProfiles;
   } catch (error) {
     console.error('Failed to load help requests:', error);

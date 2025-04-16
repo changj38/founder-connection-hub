@@ -20,7 +20,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { ClipboardList, Calendar, CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
+import { ClipboardList, Calendar, CheckCircle, XCircle, Clock, Eye, AlertTriangle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchHelpRequests, updateHelpRequestStatus } from '../utils/adminApi';
@@ -58,9 +58,17 @@ const AdminHelpRequestsTab = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const { data: helpRequests = [], isLoading, error } = useQuery({
+  const { data: helpRequests = [], isLoading, error, isError } = useQuery({
     queryKey: ['helpRequests'],
-    queryFn: fetchHelpRequests
+    queryFn: fetchHelpRequests,
+    onError: (err) => {
+      console.error('Error in help requests query:', err);
+      toast({
+        title: "Error Loading Help Requests",
+        description: "There was a problem loading the help requests. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   const handleOpenDetail = (request: HelpRequest) => {
@@ -208,10 +216,22 @@ const AdminHelpRequestsTab = () => {
         <div className="flex justify-center my-8">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
         </div>
-      ) : error ? (
+      ) : isError ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-red-500">Error loading help requests. Please try again.</p>
+            <div className="flex flex-col items-center justify-center p-6 text-center">
+              <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Unable to Load Help Requests</h3>
+              <p className="text-gray-500 mb-4">
+                There was a problem connecting to the database. This may be due to a foreign key constraint issue.
+              </p>
+              <Button 
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['helpRequests'] })}
+                variant="outline"
+              >
+                Try Again
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
