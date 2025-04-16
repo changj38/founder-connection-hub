@@ -47,7 +47,7 @@ interface HelpRequest {
   message: string;
   request_type: string;
   status: string;
-  requester_email?: string; // Added to match the database schema
+  requester_email?: string; // Now present in database schema
   resolution_notes?: string;
   assigned_to?: string;
   created_at: string;

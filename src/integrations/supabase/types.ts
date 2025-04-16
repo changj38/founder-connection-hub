@@ -84,6 +84,7 @@ export type Database = {
           id: string
           message: string
           request_type: string
+          requester_email: string | null
           resolution_notes: string | null
           status: string
           updated_at: string
@@ -95,6 +96,7 @@ export type Database = {
           id?: string
           message: string
           request_type: string
+          requester_email?: string | null
           resolution_notes?: string | null
           status?: string
           updated_at?: string
@@ -106,6 +108,7 @@ export type Database = {
           id?: string
           message?: string
           request_type?: string
+          requester_email?: string | null
           resolution_notes?: string | null
           status?: string
           updated_at?: string

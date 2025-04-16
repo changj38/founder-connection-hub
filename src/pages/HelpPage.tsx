@@ -37,6 +37,8 @@ const HelpPage = () => {
     setIsSubmitting(true);
     
     try {
+      console.log('Submitting help request with user email:', currentUser.email);
+      
       // Insert the help request into the Supabase database
       const { error } = await supabase
         .from('help_requests')
@@ -48,7 +50,10 @@ const HelpPage = () => {
           requester_email: currentUser.email // Store the user's email in the requester_email column
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
+      }
       
       toast({
         title: "Request Submitted",
