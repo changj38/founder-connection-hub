@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -39,19 +40,21 @@ interface Profile {
   updated_at: string;
 }
 
+// The base HelpRequest interface that matches the database schema
 interface HelpRequest {
   id: string;
   user_id: string;
   message: string;
   request_type: string;
   status: string;
-  requester_email?: string;
+  requester_email?: string; // Added to match the database schema
   resolution_notes?: string;
   assigned_to?: string;
   created_at: string;
   updated_at: string;
 }
 
+// Extended interface that includes profile information
 interface HelpRequestWithProfile extends HelpRequest {
   profiles: Profile | null;
   user_email?: string;
@@ -234,7 +237,7 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
     }
     
     // Add profile data to each help request
-    const helpRequestsWithProfiles = helpRequests.map(request => {
+    const helpRequestsWithProfiles = helpRequests.map((request: HelpRequest) => {
       const profile = profilesMap[request.user_id];
       
       return {
