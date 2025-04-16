@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { PlusCircle, Building, Globe, Calendar, Tag } from 'lucide-react';
+import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchPortfolioCompanies, addPortfolioCompany } from '../utils/adminApi';
@@ -17,6 +17,7 @@ const AdminPortfolioTab = () => {
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -28,7 +29,7 @@ const AdminPortfolioTab = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch portfolio companies from Supabase
-  const { data: portfolioCompanies = [], isLoading, error } = useQuery({
+  const { data: portfolioCompanies = [], isLoading, error: fetchError } = useQuery({
     queryKey: ['portfolioCompanies'],
     queryFn: fetchPortfolioCompanies
   });
@@ -52,16 +53,20 @@ const AdminPortfolioTab = () => {
       investment_year: '',
       website: ''
     });
+    setError(null);
   };
 
   const handleAddCompany = async () => {
     try {
+      setError(null);
+      
       if (!formData.name.trim()) {
         toast({
           title: "Error",
           description: "Company name is required",
           variant: "destructive",
         });
+        setError("Company name is required");
         return;
       }
 
@@ -74,9 +79,10 @@ const AdminPortfolioTab = () => {
         investment_year: formData.investment_year ? parseInt(formData.investment_year) : null
       };
 
-      console.log('Submitting company data:', companyData);
+      console.log('AdminPortfolioTab: Submitting company data:', companyData);
       await addPortfolioCompany(companyData);
       
+      console.log('AdminPortfolioTab: Company added successfully');
       toast({
         title: "Success",
         description: "Portfolio company added successfully",
@@ -87,16 +93,25 @@ const AdminPortfolioTab = () => {
       setIsAddDialogOpen(false);
       
       // Refresh the companies list
+      console.log('AdminPortfolioTab: Invalidating portfolioCompanies query');
       queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
     } catch (error) {
-      console.error("Error adding portfolio company:", error);
+      console.error("AdminPortfolioTab: Error adding portfolio company:", error);
+      setError(error.message || "Failed to add portfolio company");
       toast({
         title: "Error",
-        description: `Failed to add portfolio company: ${error.message}`,
+        description: `Failed to add portfolio company: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const closeDialog = () => {
+    if (!isSubmitting) {
+      resetForm();
+      setIsAddDialogOpen(false);
     }
   };
 
@@ -134,7 +149,7 @@ const AdminPortfolioTab = () => {
         <div className="flex justify-center my-8">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
         </div>
-      ) : error ? (
+      ) : fetchError ? (
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-red-500">Error loading portfolio companies. Please try again.</p>
@@ -189,7 +204,7 @@ const AdminPortfolioTab = () => {
       )}
 
       {/* Add New Company Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={closeDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Add New Portfolio Company</DialogTitle>
@@ -197,6 +212,14 @@ const AdminPortfolioTab = () => {
               Fill out the details to add a new company to your portfolio.
             </DialogDescription>
           </DialogHeader>
+          
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center mb-4">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              <span>{error}</span>
+            </div>
+          )}
+          
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 gap-2">
               <Label htmlFor="name" className="flex items-center">
@@ -282,10 +305,7 @@ const AdminPortfolioTab = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              resetForm();
-              setIsAddDialogOpen(false);
-            }} disabled={isSubmitting}>
+            <Button variant="outline" onClick={closeDialog} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button onClick={handleAddCompany} disabled={isSubmitting}>

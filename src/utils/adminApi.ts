@@ -165,39 +165,51 @@ export const fetchPortfolioCompanies = async (): Promise<PortfolioCompany[]> => 
 };
 
 export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>) => {
-  const { data: userData } = await supabase.auth.getUser();
-  
-  if (!userData?.user?.id) {
-    console.error('User not authenticated when adding portfolio company');
-    throw new Error('User not authenticated');
-  }
-  
-  // Ensure name is provided as it's required in the database schema
-  if (!companyData.name) {
-    console.error('Company name is required');
-    throw new Error('Company name is required');
-  }
-  
-  console.log('Adding portfolio company with data:', {
-    ...companyData,
-    created_by: userData.user.id
-  });
-  
-  const { data, error } = await supabase
-    .from('portfolio_companies')
-    .insert({
+  try {
+    console.log('Starting addPortfolioCompany with data:', companyData);
+    
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting current user:', userError);
+      throw new Error('Authentication error: ' + userError.message);
+    }
+    
+    if (!userData?.user?.id) {
+      console.error('User not authenticated when adding portfolio company - no user ID found');
+      throw new Error('User not authenticated');
+    }
+    
+    // Ensure name is provided as it's required in the database schema
+    if (!companyData.name) {
+      console.error('Company name is required but was not provided');
+      throw new Error('Company name is required');
+    }
+    
+    console.log('Preparing to insert portfolio company with data:', {
       ...companyData,
-      name: companyData.name, // Explicitly include name to satisfy TypeScript
       created_by: userData.user.id
     });
-  
-  if (error) {
-    console.error('Error adding portfolio company:', error);
-    throw error;
+    
+    const { data, error } = await supabase
+      .from('portfolio_companies')
+      .insert({
+        ...companyData,
+        name: companyData.name, // Explicitly include name to satisfy TypeScript
+        created_by: userData.user.id
+      });
+    
+    if (error) {
+      console.error('Supabase error adding portfolio company:', error);
+      throw error;
+    }
+    
+    console.log('Successfully added company to database:', data);
+    return true;
+  } catch (error) {
+    console.error('Exception in addPortfolioCompany:', error);
+    throw error; // Re-throw to be handled by the caller
   }
-  
-  console.log('Successfully added company, response:', data);
-  return true;
 };
 
 // Help requests functions
