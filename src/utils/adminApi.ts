@@ -197,20 +197,23 @@ export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>
 
 // Help requests functions
 export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => {
-  // Get help requests without trying to join with profiles
-  const { data: helpRequests, error } = await supabase
-    .from('help_requests')
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching help requests:', error);
-    throw error;
-  }
-  
-  // Now fetch user profiles separately to get user information
-  if (helpRequests && helpRequests.length > 0) {
-    // Get all unique user IDs from help requests
+  try {
+    // Get help requests without using join - this avoids the foreign key error
+    const { data: helpRequests, error } = await supabase
+      .from('help_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching help requests:', error);
+      throw error;
+    }
+    
+    if (!helpRequests || helpRequests.length === 0) {
+      return [];
+    }
+    
+    // Now fetch user profiles separately to get user information
     const userIds = [...new Set(helpRequests.map(request => request.user_id))];
     
     console.log('Fetching profiles for user IDs:', userIds);
@@ -229,53 +232,42 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
     console.log('Fetched profiles:', profiles);
     
     // Create a map of user IDs to their profile data for easy lookup
-    const profilesMap = (profiles || []).reduce((acc: Record<string, Profile>, profile) => {
-      acc[profile.id] = profile;
-      return acc;
-    }, {});
-    
-    // For users without profiles, try to get at least their email
-    const missingProfileUserIds = userIds.filter(id => !profilesMap[id]);
-    
-    // If there are missing profiles, try to get user emails from auth.users
-    // This is a workaround since we can't query auth.users directly
-    if (missingProfileUserIds.length > 0) {
-      console.log('Attempting to retrieve emails for users without profiles:', missingProfileUserIds);
-      
-      // We'll use our cached session to get the current user's email if they match one of the missing profiles
-      const { data: currentUserData } = await supabase.auth.getUser();
-      
-      // Create a map of user IDs to their emails (for the current user only, as we can't query all users)
-      const userEmailMap: Record<string, string> = {};
-      if (currentUserData?.user && missingProfileUserIds.includes(currentUserData.user.id)) {
-        userEmailMap[currentUserData.user.id] = currentUserData.user.email || '';
-      }
-      
-      // Add profile data to each help request
-      const helpRequestsWithProfiles = helpRequests.map(request => {
-        const profile = profilesMap[request.user_id];
-        const email = userEmailMap[request.user_id];
-        
-        return {
-          ...request,
-          profiles: profile || null,
-          user_email: !profile && email ? email : undefined
-        };
+    const profilesMap: Record<string, Profile> = {};
+    if (profiles && profiles.length > 0) {
+      profiles.forEach(profile => {
+        profilesMap[profile.id] = profile;
       });
-      
-      return helpRequestsWithProfiles;
+    }
+    
+    // Try to get user emails for users without profiles
+    // Since we can't query auth.users directly, we'll use the auth.getUser() to get the current user
+    const { data: currentUserData } = await supabase.auth.getUser();
+    
+    // Create a map to store emails
+    const userEmailMap: Record<string, string> = {};
+    
+    // Add the current user's email if we have it
+    if (currentUserData?.user) {
+      userEmailMap[currentUserData.user.id] = currentUserData.user.email || '';
     }
     
     // Add profile data to each help request
-    const helpRequestsWithProfiles = helpRequests.map(request => ({
-      ...request,
-      profiles: profilesMap[request.user_id] || null
-    }));
+    const helpRequestsWithProfiles = helpRequests.map(request => {
+      const profile = profilesMap[request.user_id];
+      const email = userEmailMap[request.user_id];
+      
+      return {
+        ...request,
+        profiles: profile || null,
+        user_email: !profile && email ? email : undefined
+      };
+    });
     
     return helpRequestsWithProfiles;
+  } catch (error) {
+    console.error('Failed to load help requests:', error);
+    throw error;
   }
-  
-  return helpRequests.map(request => ({ ...request, profiles: null }));
 };
 
 export const updateHelpRequestStatus = async (id: string, status: string, resolutionNotes?: string) => {
@@ -300,30 +292,61 @@ export const updateHelpRequestStatus = async (id: string, status: string, resolu
 
 // Function to get help request statistics
 export const getHelpRequestStats = async (): Promise<HelpRequestStats> => {
-  const { data, error } = await supabase
-    .from('help_requests')
-    .select('status, request_type');
-  
-  if (error) {
-    console.error('Error fetching help request stats:', error);
-    throw error;
-  }
-  
-  // Calculate statistics
-  const stats = {
-    total: data.length,
-    pending: data.filter(req => req.status === 'Pending').length,
-    inProgress: data.filter(req => req.status === 'In Progress').length,
-    completed: data.filter(req => req.status === 'Completed').length,
-    declined: data.filter(req => req.status === 'Declined').length,
-    byType: {
-      intro: data.filter(req => req.request_type === 'intro').length,
-      portfolio: data.filter(req => req.request_type === 'portfolio').length,
-      other: data.filter(req => !['intro', 'portfolio'].includes(req.request_type)).length
+  try {
+    const { data, error } = await supabase
+      .from('help_requests')
+      .select('status, request_type');
+    
+    if (error) {
+      console.error('Error fetching help request stats:', error);
+      throw error;
     }
-  };
-  
-  return stats;
+    
+    if (!data) {
+      return {
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        declined: 0,
+        byType: {
+          intro: 0,
+          portfolio: 0,
+          other: 0
+        }
+      };
+    }
+    
+    // Calculate statistics
+    const stats = {
+      total: data.length,
+      pending: data.filter(req => req.status === 'Pending').length,
+      inProgress: data.filter(req => req.status === 'In Progress').length,
+      completed: data.filter(req => req.status === 'Completed').length,
+      declined: data.filter(req => req.status === 'Declined').length,
+      byType: {
+        intro: data.filter(req => req.request_type === 'intro').length,
+        portfolio: data.filter(req => req.request_type === 'portfolio').length,
+        other: data.filter(req => !['intro', 'portfolio'].includes(req.request_type)).length
+      }
+    };
+    
+    return stats;
+  } catch (error) {
+    console.error('Error calculating help request stats:', error);
+    return {
+      total: 0,
+      pending: 0,
+      inProgress: 0,
+      completed: 0,
+      declined: 0,
+      byType: {
+        intro: 0,
+        portfolio: 0,
+        other: 0
+      }
+    };
+  }
 };
 
 // Function to assign a request to an admin
