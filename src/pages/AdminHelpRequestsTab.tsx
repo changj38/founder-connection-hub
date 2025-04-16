@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,8 +26,6 @@ import { fetchHelpRequests, updateHelpRequestStatus } from '../utils/adminApi';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
-// Import the HelpRequestWithProfile type from ../utils/adminApi
-// Note: We're recreating it here for simplicity, but ideally you'd export it from adminApi
 interface Profile {
   id: string;
   full_name?: string;
@@ -42,12 +39,13 @@ interface HelpRequest {
   message: string;
   request_type: string;
   status: string;
+  requester_email?: string;
   resolution_notes?: string;
   assigned_to?: string;
   created_at: string;
   updated_at: string;
   profiles: Profile | null;
-  user_email?: string; // Added to use email when profile is missing
+  user_email?: string;
 }
 
 const AdminHelpRequestsTab = () => {
@@ -59,7 +57,6 @@ const AdminHelpRequestsTab = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  // Fetch help requests
   const { data: helpRequests = [], isLoading, error } = useQuery({
     queryKey: ['helpRequests'],
     queryFn: fetchHelpRequests
@@ -94,14 +91,12 @@ const AdminHelpRequestsTab = () => {
     }
   };
 
-  // Filter help requests based on status and type
   const filteredRequests = helpRequests.filter(request => {
     const statusMatch = statusFilter === 'all' || request.status === statusFilter;
     const typeMatch = typeFilter === 'all' || request.request_type === typeFilter;
     return statusMatch && typeMatch;
   });
 
-  // Get the badge color based on status
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Pending':
@@ -125,7 +120,6 @@ const AdminHelpRequestsTab = () => {
     }
   };
 
-  // Format the request date
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM d, yyyy');
@@ -134,7 +128,6 @@ const AdminHelpRequestsTab = () => {
     }
   };
 
-  // Get request type badge
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'intro':
@@ -146,15 +139,16 @@ const AdminHelpRequestsTab = () => {
     }
   };
 
-  // Function to get user name initials for avatar
   const getInitials = (name?: string) => {
     return name ? name.charAt(0).toUpperCase() : 'U';
   };
-  
-  // Function to get user display name - using profile name, email, or Unknown User
+
   const getUserDisplayName = (request: HelpRequest) => {
     if (request.profiles?.full_name) {
       return request.profiles.full_name;
+    }
+    if (request.requester_email) {
+      return request.requester_email;
     }
     if (request.user_email) {
       return request.user_email;
@@ -283,7 +277,6 @@ const AdminHelpRequestsTab = () => {
         </Card>
       )}
 
-      {/* Request Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="sm:max-w-[600px]">
           {selectedRequest && (

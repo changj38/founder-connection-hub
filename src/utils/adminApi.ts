@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -46,6 +45,7 @@ interface HelpRequest {
   message: string;
   request_type: string;
   status: string;
+  requester_email?: string;
   resolution_notes?: string;
   assigned_to?: string;
   created_at: string;
@@ -239,27 +239,16 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
       });
     }
     
-    // Try to get user emails for users without profiles
-    // Since we can't query auth.users directly, we'll use the auth.getUser() to get the current user
-    const { data: currentUserData } = await supabase.auth.getUser();
-    
-    // Create a map to store emails
-    const userEmailMap: Record<string, string> = {};
-    
-    // Add the current user's email if we have it
-    if (currentUserData?.user) {
-      userEmailMap[currentUserData.user.id] = currentUserData.user.email || '';
-    }
-    
     // Add profile data to each help request
     const helpRequestsWithProfiles = helpRequests.map(request => {
       const profile = profilesMap[request.user_id];
-      const email = userEmailMap[request.user_id];
       
       return {
         ...request,
         profiles: profile || null,
-        user_email: !profile && email ? email : undefined
+        // First try to use the requester_email field if available
+        // Then fall back to the user email or undefined if neither is available
+        user_email: request.requester_email || undefined
       };
     });
     

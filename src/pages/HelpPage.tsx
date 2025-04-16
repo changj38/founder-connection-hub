@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +44,8 @@ const HelpPage = () => {
           user_id: currentUser.id,
           request_type: 'portfolio',
           message: helpRequest,
-          status: 'Pending'
+          status: 'Pending',
+          requester_email: currentUser.email // Store the user's email in the new column
         });
       
       if (error) throw error;
