@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,11 +14,26 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+type NetworkContact = {
+  id: string;
+  name: string;
+  company?: string;
+  position?: string;
+  email?: string;
+  linkedin_url?: string;
+  notes?: string;
+  is_lp?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  avatar_url?: string;
+};
+
 const AdminNetworkTab = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentContact, setCurrentContact] = useState<any>(null);
+  const [currentContact, setCurrentContact] = useState<NetworkContact | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -64,7 +78,7 @@ const AdminNetworkTab = () => {
     setCurrentContact(null);
   };
 
-  const handleEditContact = (contact) => {
+  const handleEditContact = (contact: NetworkContact) => {
     setCurrentContact(contact);
     setFormData({
       name: contact.name || '',
