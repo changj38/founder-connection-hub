@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { fetchPortfolioCompanies, addPortfolioCompany } from '../utils/adminApi';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const AdminPortfolioTab = () => {
   const { toast } = useToast();
@@ -18,6 +20,7 @@ const AdminPortfolioTab = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -26,12 +29,40 @@ const AdminPortfolioTab = () => {
     investment_year: '',
     website: ''
   });
-  const [searchQuery, setSearchQuery] = useState('');
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
 
   // Fetch portfolio companies from Supabase
   const { data: portfolioCompanies = [], isLoading, error: fetchError } = useQuery({
     queryKey: ['portfolioCompanies'],
     queryFn: fetchPortfolioCompanies
+  });
+
+  // Setup mutation for adding a company
+  const addCompanyMutation = useMutation({
+    mutationFn: (companyData: any) => addPortfolioCompany(companyData),
+    onSuccess: (data) => {
+      console.log('Company added successfully:', data);
+      // Reset form
+      resetForm();
+      // Close dialog
+      setIsAddDialogOpen(false);
+      // Show success toast and dialog
+      setNewCompanyName(formData.name);
+      setSuccessDialogOpen(true);
+      // Refresh companies list
+      queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
+    },
+    onError: (error: any) => {
+      console.error('Error in mutation:', error);
+      setError(error.message || "Failed to add portfolio company");
+      toast({
+        title: "Error",
+        description: `Failed to add portfolio company: ${error.message || "Unknown error"}`,
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
   });
 
   const filteredCompanies = portfolioCompanies.filter(company => 
@@ -54,10 +85,12 @@ const AdminPortfolioTab = () => {
       website: ''
     });
     setError(null);
+    setIsSubmitting(false);
   };
 
   const handleAddCompany = async () => {
     try {
+      console.log('AdminPortfolioTab: handleAddCompany called');
       setError(null);
       
       if (!formData.name.trim()) {
@@ -80,30 +113,16 @@ const AdminPortfolioTab = () => {
       };
 
       console.log('AdminPortfolioTab: Submitting company data:', companyData);
-      await addPortfolioCompany(companyData);
-      
-      console.log('AdminPortfolioTab: Company added successfully');
-      toast({
-        title: "Success",
-        description: "Portfolio company added successfully",
-      });
-      
-      // Reset form and close dialog
-      resetForm();
-      setIsAddDialogOpen(false);
-      
-      // Refresh the companies list
-      console.log('AdminPortfolioTab: Invalidating portfolioCompanies query');
-      queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
+      // Use the mutation to add the company
+      addCompanyMutation.mutate(companyData);
     } catch (error) {
-      console.error("AdminPortfolioTab: Error adding portfolio company:", error);
+      console.error("AdminPortfolioTab: Error in handleAddCompany:", error);
       setError(error.message || "Failed to add portfolio company");
       toast({
         title: "Error",
         description: `Failed to add portfolio company: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -152,7 +171,13 @@ const AdminPortfolioTab = () => {
       ) : fetchError ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-red-500">Error loading portfolio companies. Please try again.</p>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                Error loading portfolio companies. Please try again.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       ) : (
@@ -309,11 +334,31 @@ const AdminPortfolioTab = () => {
               Cancel
             </Button>
             <Button onClick={handleAddCompany} disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Company'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : 'Add Company'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Success Dialog */}
+      <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Company Added Successfully</AlertDialogTitle>
+            <AlertDialogDescription>
+              {newCompanyName} has been added to your portfolio companies.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -195,9 +195,9 @@ export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>
       .from('portfolio_companies')
       .insert({
         ...companyData,
-        name: companyData.name, // Explicitly include name to satisfy TypeScript
         created_by: userData.user.id
-      });
+      })
+      .select();
     
     if (error) {
       console.error('Supabase error adding portfolio company:', error);
@@ -205,7 +205,7 @@ export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>
     }
     
     console.log('Successfully added company to database:', data);
-    return true;
+    return data;
   } catch (error) {
     console.error('Exception in addPortfolioCompany:', error);
     throw error; // Re-throw to be handled by the caller
