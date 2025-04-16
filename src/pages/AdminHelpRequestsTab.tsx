@@ -47,6 +47,7 @@ interface HelpRequest {
   created_at: string;
   updated_at: string;
   profiles: Profile | null;
+  user_email?: string; // Added to use email when profile is missing
 }
 
 const AdminHelpRequestsTab = () => {
@@ -149,6 +150,17 @@ const AdminHelpRequestsTab = () => {
   const getInitials = (name?: string) => {
     return name ? name.charAt(0).toUpperCase() : 'U';
   };
+  
+  // Function to get user display name - using profile name, email, or Unknown User
+  const getUserDisplayName = (request: HelpRequest) => {
+    if (request.profiles?.full_name) {
+      return request.profiles.full_name;
+    }
+    if (request.user_email) {
+      return request.user_email;
+    }
+    return 'Unknown User';
+  };
 
   return (
     <div>
@@ -236,11 +248,11 @@ const AdminHelpRequestsTab = () => {
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
                               <AvatarFallback className="bg-indigo-100 text-indigo-700">
-                                {getInitials(request.profiles?.full_name)}
+                                {getInitials(getUserDisplayName(request))}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{request.profiles?.full_name || 'Unknown User'}</p>
+                              <p className="font-medium">{getUserDisplayName(request)}</p>
                               <p className="text-xs text-gray-500">{request.profiles?.company || ''}</p>
                             </div>
                           </div>
@@ -290,12 +302,12 @@ const AdminHelpRequestsTab = () => {
                 <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-indigo-100 text-indigo-700">
-                      {getInitials(selectedRequest.profiles?.full_name)}
+                      {getInitials(getUserDisplayName(selectedRequest))}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <h4 className="font-medium">
-                      {selectedRequest.profiles?.full_name || 'Unknown User'}
+                      {getUserDisplayName(selectedRequest)}
                     </h4>
                     <p className="text-sm text-gray-500">
                       {selectedRequest.profiles?.company ? selectedRequest.profiles.company : ''}

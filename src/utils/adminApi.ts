@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -54,6 +55,7 @@ interface HelpRequest {
 // Extended interface with profiles
 interface HelpRequestWithProfile extends HelpRequest {
   profiles: Profile | null;
+  user_email?: string; // Added to store user email when profile is missing
 }
 
 interface HelpRequestStats {
@@ -231,6 +233,38 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
       acc[profile.id] = profile;
       return acc;
     }, {});
+    
+    // For users without profiles, try to get at least their email
+    const missingProfileUserIds = userIds.filter(id => !profilesMap[id]);
+    
+    // If there are missing profiles, try to get user emails from auth.users
+    // This is a workaround since we can't query auth.users directly
+    if (missingProfileUserIds.length > 0) {
+      console.log('Attempting to retrieve emails for users without profiles:', missingProfileUserIds);
+      
+      // We'll use our cached session to get the current user's email if they match one of the missing profiles
+      const { data: currentUserData } = await supabase.auth.getUser();
+      
+      // Create a map of user IDs to their emails (for the current user only, as we can't query all users)
+      const userEmailMap: Record<string, string> = {};
+      if (currentUserData?.user && missingProfileUserIds.includes(currentUserData.user.id)) {
+        userEmailMap[currentUserData.user.id] = currentUserData.user.email || '';
+      }
+      
+      // Add profile data to each help request
+      const helpRequestsWithProfiles = helpRequests.map(request => {
+        const profile = profilesMap[request.user_id];
+        const email = userEmailMap[request.user_id];
+        
+        return {
+          ...request,
+          profiles: profile || null,
+          user_email: !profile && email ? email : undefined
+        };
+      });
+      
+      return helpRequestsWithProfiles;
+    }
     
     // Add profile data to each help request
     const helpRequestsWithProfiles = helpRequests.map(request => ({
