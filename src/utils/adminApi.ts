@@ -1,8 +1,77 @@
 
 import { supabase } from '../integrations/supabase/client';
 
+// Define types
+interface NetworkContact {
+  id: string;
+  name: string;
+  company?: string;
+  position?: string;
+  email?: string;
+  linkedin_url?: string;
+  notes?: string;
+  avatar_url?: string;
+  is_lp?: boolean;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+}
+
+interface PortfolioCompany {
+  id: string;
+  name: string;
+  description?: string;
+  industry?: string;
+  founded_year?: number;
+  investment_year?: number;
+  website?: string;
+  logo_url?: string;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+}
+
+interface Profile {
+  id: string;
+  full_name?: string;
+  company?: string;
+  role?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface HelpRequest {
+  id: string;
+  user_id: string;
+  message: string;
+  request_type: string;
+  status: string;
+  resolution_notes?: string;
+  assigned_to?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Extended interface with profiles
+interface HelpRequestWithProfile extends HelpRequest {
+  profiles: Profile | null;
+}
+
+interface HelpRequestStats {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+  declined: number;
+  byType: {
+    intro: number;
+    portfolio: number;
+    other: number;
+  };
+}
+
 // Network contacts functions
-export const fetchNetworkContacts = async () => {
+export const fetchNetworkContacts = async (): Promise<NetworkContact[]> => {
   const { data, error } = await supabase
     .from('network_contacts')
     .select('*')
@@ -16,7 +85,7 @@ export const fetchNetworkContacts = async () => {
   return data || [];
 };
 
-export const addNetworkContact = async (contactData: any) => {
+export const addNetworkContact = async (contactData: Partial<NetworkContact>) => {
   const { data: userData } = await supabase.auth.getUser();
   
   if (!userData?.user?.id) {
@@ -38,7 +107,7 @@ export const addNetworkContact = async (contactData: any) => {
   return true;
 };
 
-export const updateNetworkContact = async (id: string, contactData: any) => {
+export const updateNetworkContact = async (id: string, contactData: Partial<NetworkContact>) => {
   const { error } = await supabase
     .from('network_contacts')
     .update(contactData)
@@ -77,7 +146,7 @@ export const fetchLinkedInProfilePicture = async (linkedinUrl: string) => {
 };
 
 // Portfolio companies functions
-export const fetchPortfolioCompanies = async () => {
+export const fetchPortfolioCompanies = async (): Promise<PortfolioCompany[]> => {
   const { data, error } = await supabase
     .from('portfolio_companies')
     .select('*')
@@ -91,7 +160,7 @@ export const fetchPortfolioCompanies = async () => {
   return data || [];
 };
 
-export const addPortfolioCompany = async (companyData: any) => {
+export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>) => {
   const { data: userData } = await supabase.auth.getUser();
   
   if (!userData?.user?.id) {
@@ -114,7 +183,7 @@ export const addPortfolioCompany = async (companyData: any) => {
 };
 
 // Help requests functions
-export const fetchHelpRequests = async () => {
+export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => {
   // Get help requests without trying to join with profiles
   const { data: helpRequests, error } = await supabase
     .from('help_requests')
@@ -142,7 +211,7 @@ export const fetchHelpRequests = async () => {
     }
     
     // Create a map of user IDs to their profile data for easy lookup
-    const profilesMap = (profiles || []).reduce((acc, profile) => {
+    const profilesMap = (profiles || []).reduce((acc: Record<string, Profile>, profile) => {
       acc[profile.id] = profile;
       return acc;
     }, {});
@@ -156,7 +225,7 @@ export const fetchHelpRequests = async () => {
     return helpRequestsWithProfiles;
   }
   
-  return helpRequests || [];
+  return helpRequests.map(request => ({ ...request, profiles: null }));
 };
 
 export const updateHelpRequestStatus = async (id: string, status: string, resolutionNotes?: string) => {
@@ -180,7 +249,7 @@ export const updateHelpRequestStatus = async (id: string, status: string, resolu
 };
 
 // Function to get help request statistics
-export const getHelpRequestStats = async () => {
+export const getHelpRequestStats = async (): Promise<HelpRequestStats> => {
   const { data, error } = await supabase
     .from('help_requests')
     .select('status, request_type');

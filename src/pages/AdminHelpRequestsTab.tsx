@@ -27,10 +27,32 @@ import { fetchHelpRequests, updateHelpRequestStatus } from '../utils/adminApi';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
+// Import the HelpRequestWithProfile type from ../utils/adminApi
+// Note: We're recreating it here for simplicity, but ideally you'd export it from adminApi
+interface Profile {
+  id: string;
+  full_name?: string;
+  company?: string;
+  role?: string;
+}
+
+interface HelpRequest {
+  id: string;
+  user_id: string;
+  message: string;
+  request_type: string;
+  status: string;
+  resolution_notes?: string;
+  assigned_to?: string;
+  created_at: string;
+  updated_at: string;
+  profiles: Profile | null;
+}
+
 const AdminHelpRequestsTab = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -42,13 +64,15 @@ const AdminHelpRequestsTab = () => {
     queryFn: fetchHelpRequests
   });
 
-  const handleOpenDetail = (request) => {
+  const handleOpenDetail = (request: HelpRequest) => {
     setSelectedRequest(request);
     setResolutionNotes(request.resolution_notes || '');
     setIsDetailOpen(true);
   };
 
-  const handleUpdateStatus = async (status) => {
+  const handleUpdateStatus = async (status: string) => {
+    if (!selectedRequest) return;
+    
     try {
       await updateHelpRequestStatus(selectedRequest.id, status, resolutionNotes);
       
@@ -77,7 +101,7 @@ const AdminHelpRequestsTab = () => {
   });
 
   // Get the badge color based on status
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Pending':
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
@@ -101,7 +125,7 @@ const AdminHelpRequestsTab = () => {
   };
 
   // Format the request date
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM d, yyyy');
     } catch (e) {
@@ -110,7 +134,7 @@ const AdminHelpRequestsTab = () => {
   };
 
   // Get request type badge
-  const getTypeBadge = (type) => {
+  const getTypeBadge = (type: string) => {
     switch (type) {
       case 'intro':
         return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">Introduction</Badge>;
@@ -122,7 +146,7 @@ const AdminHelpRequestsTab = () => {
   };
 
   // Function to get user name initials for avatar
-  const getInitials = (name) => {
+  const getInitials = (name?: string) => {
     return name ? name.charAt(0).toUpperCase() : 'U';
   };
 
@@ -212,12 +236,12 @@ const AdminHelpRequestsTab = () => {
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
                               <AvatarFallback className="bg-indigo-100 text-indigo-700">
-                                {request.profiles ? getInitials(request.profiles.full_name) : 'U'}
+                                {getInitials(request.profiles?.full_name)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{request.profiles ? request.profiles.full_name : 'Unknown User'}</p>
-                              <p className="text-xs text-gray-500">{request.profiles ? request.profiles.company || '' : ''}</p>
+                              <p className="font-medium">{request.profiles?.full_name || 'Unknown User'}</p>
+                              <p className="text-xs text-gray-500">{request.profiles?.company || ''}</p>
                             </div>
                           </div>
                         </TableCell>
@@ -266,16 +290,16 @@ const AdminHelpRequestsTab = () => {
                 <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-indigo-100 text-indigo-700">
-                      {selectedRequest.profiles ? getInitials(selectedRequest.profiles.full_name) : 'U'}
+                      {getInitials(selectedRequest.profiles?.full_name)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <h4 className="font-medium">
-                      {selectedRequest.profiles ? selectedRequest.profiles.full_name : 'Unknown User'}
+                      {selectedRequest.profiles?.full_name || 'Unknown User'}
                     </h4>
                     <p className="text-sm text-gray-500">
-                      {selectedRequest.profiles && selectedRequest.profiles.company ? selectedRequest.profiles.company : ''}
-                      {selectedRequest.profiles && selectedRequest.profiles.role ? ` • ${selectedRequest.profiles.role}` : ''}
+                      {selectedRequest.profiles?.company ? selectedRequest.profiles.company : ''}
+                      {selectedRequest.profiles?.role ? ` • ${selectedRequest.profiles.role}` : ''}
                     </p>
                   </div>
                 </div>
