@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,7 +24,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 
-// Define NetworkContact type to handle missing fields in the database
 type NetworkContact = {
   id: string;
   name: string;
@@ -40,6 +38,7 @@ type NetworkContact = {
   category?: string;
   expertise?: string[];
   avatar_url?: string;
+  is_lp?: boolean;
 };
 
 const NetworkPage = () => {
@@ -50,13 +49,11 @@ const NetworkPage = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const { currentUser } = useAuth();
 
-  // Fetch network contacts from Supabase
   const { data: networkContactsRaw = [], isLoading, error } = useQuery({
     queryKey: ['networkContacts'],
     queryFn: fetchNetworkContacts
   });
 
-  // Convert raw contacts to NetworkContact type with default values for missing fields
   const networkContacts: NetworkContact[] = networkContactsRaw.map((contact: any) => ({
     ...contact,
     category: contact.category || 'Other',
@@ -64,7 +61,6 @@ const NetworkPage = () => {
     avatar_url: contact.avatar_url || undefined
   }));
   
-  // Extract unique categories from the network contacts
   const uniqueCategories = networkContacts && networkContacts.length 
     ? ['all', ...new Set(networkContacts.map(contact => contact.category || 'Other'))] 
     : ['all'];
@@ -90,7 +86,6 @@ const NetworkPage = () => {
     if (!selectedContact || !currentUser) return;
     
     try {
-      // @ts-ignore - Ignoring type checking for database schema
       const { error } = await supabase
         .from('help_requests')
         .insert({
@@ -119,7 +114,6 @@ const NetworkPage = () => {
       .toUpperCase();
   };
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -128,7 +122,6 @@ const NetworkPage = () => {
     );
   }
 
-  // Handle error state
   if (error) {
     return (
       <div className="text-center p-6 text-red-500">
@@ -239,6 +232,14 @@ const NetworkPage = () => {
                         <CardTitle className="text-base">{contact.name}</CardTitle>
                         <p className="text-sm text-gray-500">{contact.position || 'N/A'}</p>
                       </div>
+                      {contact.is_lp && (
+                        <Badge 
+                          variant="secondary" 
+                          className="bg-yellow-100 text-yellow-800 ml-2"
+                        >
+                          LP
+                        </Badge>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="pb-4">

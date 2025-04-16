@@ -120,6 +120,7 @@ export type Database = {
           created_by: string
           email: string | null
           id: string
+          is_lp: boolean | null
           linkedin_url: string | null
           name: string
           notes: string | null
@@ -132,6 +133,7 @@ export type Database = {
           created_by: string
           email?: string | null
           id?: string
+          is_lp?: boolean | null
           linkedin_url?: string | null
           name: string
           notes?: string | null
@@ -144,6 +146,7 @@ export type Database = {
           created_by?: string
           email?: string | null
           id?: string
+          is_lp?: boolean | null
           linkedin_url?: string | null
           name?: string
           notes?: string | null

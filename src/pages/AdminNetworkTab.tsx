@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,6 +10,8 @@ import { PlusCircle, User, Mail, Briefcase, Linkedin, MoreHorizontal, Building }
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchNetworkContacts, addNetworkContact } from '../utils/adminApi';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 
 const AdminNetworkTab = () => {
   const { toast } = useToast();
@@ -22,11 +23,11 @@ const AdminNetworkTab = () => {
     position: '',
     email: '',
     linkedin_url: '',
-    notes: ''
+    notes: '',
+    is_lp: false
   });
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch network contacts from Supabase
   const { data: networkContacts = [], isLoading, error } = useQuery({
     queryKey: ['networkContacts'],
     queryFn: fetchNetworkContacts
@@ -50,7 +51,8 @@ const AdminNetworkTab = () => {
       position: '',
       email: '',
       linkedin_url: '',
-      notes: ''
+      notes: '',
+      is_lp: false
     });
   };
 
@@ -72,11 +74,9 @@ const AdminNetworkTab = () => {
         description: "Network contact added successfully",
       });
       
-      // Reset form and close dialog
       resetForm();
       setIsAddDialogOpen(false);
       
-      // Refresh the contacts list
       queryClient.invalidateQueries({ queryKey: ['networkContacts'] });
     } catch (error) {
       console.error("Error adding network contact:", error);
@@ -86,6 +86,10 @@ const AdminNetworkTab = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleLPToggle = (checked) => {
+    setFormData({ ...formData, is_lp: checked });
   };
 
   return (
@@ -140,6 +144,7 @@ const AdminNetworkTab = () => {
                     <TableHead>Position</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>LinkedIn</TableHead>
+                    <TableHead>LP</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -173,6 +178,13 @@ const AdminNetworkTab = () => {
                             "—"
                           )}
                         </TableCell>
+                        <TableCell>
+                          {contact.is_lp && (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              LP
+                            </Badge>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -183,7 +195,6 @@ const AdminNetworkTab = () => {
         </Card>
       )}
 
-      {/* Add New Contact Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -271,6 +282,21 @@ const AdminNetworkTab = () => {
                 onChange={handleInputChange}
                 rows={3}
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="is_lp" className="flex items-center">
+                Limited Partner (LP)
+              </Label>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_lp"
+                  checked={formData.is_lp}
+                  onCheckedChange={handleLPToggle}
+                />
+                <Label htmlFor="is_lp">
+                  {formData.is_lp ? 'Yes' : 'No'}
+                </Label>
+              </div>
             </div>
           </div>
           <DialogFooter>
