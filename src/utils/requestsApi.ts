@@ -20,6 +20,8 @@ export const fetchUserRequests = async (): Promise<Request[]> => {
     return [];
   }
   
+  console.log('Fetching help requests for user:', userData.user.id);
+  
   const { data, error } = await supabase
     .from('help_requests')
     .select('*')
@@ -30,6 +32,8 @@ export const fetchUserRequests = async (): Promise<Request[]> => {
     console.error('Error fetching user requests:', error);
     return [];
   }
+  
+  console.log('Raw help requests data:', data);
   
   // Transform the data to match the Request interface
   return data.map(item => ({

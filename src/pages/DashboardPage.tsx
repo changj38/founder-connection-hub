@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,10 +19,15 @@ const DashboardPage = () => {
   const { currentUser } = useAuth();
   
   // Use React Query to fetch user requests
-  const { data: requestData = [], isLoading, error } = useQuery({
+  const { data: requestData = [], isLoading, error, refetch } = useQuery({
     queryKey: ['userRequests'],
     queryFn: fetchUserRequests
   });
+  
+  // Effect to log request data for debugging
+  useEffect(() => {
+    console.log('Request data received in component:', requestData);
+  }, [requestData]);
   
   const formatDate = (date?: Date | string) => {
     if (!date) return 'N/A';
@@ -194,6 +198,11 @@ const DashboardPage = () => {
           </p>
         </CardHeader>
         <CardContent>
+          <div className="flex justify-end mb-4">
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              Refresh Requests
+            </Button>
+          </div>
           <Tabs defaultValue="all">
             <TabsList className="w-full justify-start mb-4">
               <TabsTrigger value="all">All Requests</TabsTrigger>
@@ -317,16 +326,18 @@ const DashboardPage = () => {
                             {formatDate(request.date)}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
-                            {request.company}
-                            {request.resolution_notes && (
-                              <div className="mt-2 pt-2 border-t border-gray-100">
-                                <div className="flex items-center text-sm text-gray-600 mb-1">
-                                  <MessageCircle className="h-4 w-4 mr-1 text-indigo-500" />
-                                  <span className="font-medium">Admin response:</span>
+                            <div>
+                              <div className="text-sm text-gray-600">{request.company}</div>
+                              {request.resolution_notes && (
+                                <div className="mt-2 pt-2 border-t border-gray-100">
+                                  <div className="flex items-center text-sm text-gray-600 mb-1">
+                                    <MessageCircle className="h-4 w-4 mr-1 text-indigo-500" />
+                                    <span className="font-medium">Admin response:</span>
+                                  </div>
+                                  <div className="text-sm text-gray-700 pl-5">{request.resolution_notes}</div>
                                 </div>
-                                <div className="text-sm text-gray-700 pl-5">{request.resolution_notes}</div>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {getStatusDisplay(request.status)}
