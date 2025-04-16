@@ -107,9 +107,12 @@ const AdminPortfolioTab = () => {
 
       // Process year fields to be numbers or null
       const companyData = {
-        ...formData,
-        founded_year: formData.founded_year ? parseInt(formData.founded_year) : null,
-        investment_year: formData.investment_year ? parseInt(formData.investment_year) : null
+        name: formData.name.trim(), // Ensure name is included and not empty
+        description: formData.description,
+        industry: formData.industry,
+        founded_year: formData.founded_year ? parseInt(formData.founded_year) : undefined,
+        investment_year: formData.investment_year ? parseInt(formData.investment_year) : undefined,
+        website: formData.website
       };
 
       console.log('AdminPortfolioTab: Submitting company data:', companyData);

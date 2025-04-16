@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -164,7 +163,15 @@ export const fetchPortfolioCompanies = async (): Promise<PortfolioCompany[]> => 
   return data || [];
 };
 
-export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>) => {
+export const addPortfolioCompany = async (companyData: { 
+  name: string;  // Ensuring name is required
+  description?: string;
+  industry?: string;
+  founded_year?: number;
+  investment_year?: number;
+  website?: string;
+  logo_url?: string;
+}) => {
   try {
     console.log('Starting addPortfolioCompany with data:', companyData);
     
@@ -195,6 +202,7 @@ export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>
       .from('portfolio_companies')
       .insert({
         ...companyData,
+        name: companyData.name,  // Explicitly include name to satisfy TypeScript
         created_by: userData.user.id
       })
       .select();
