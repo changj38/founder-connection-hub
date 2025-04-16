@@ -45,7 +45,7 @@ const HelpPage = () => {
           request_type: 'portfolio',
           message: helpRequest,
           status: 'Pending',
-          requester_email: currentUser.email // Store the user's email in the column
+          requester_email: currentUser.email // Store the user's email in the requester_email column
         });
       
       if (error) throw error;
