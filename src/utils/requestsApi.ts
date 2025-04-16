@@ -8,6 +8,7 @@ export interface Request {
   status: 'pending' | 'completed' | 'rejected';
   date: string;
   details: string;
+  resolution_notes?: string; // Added resolution notes
 }
 
 // Function to fetch all requests for the current user
@@ -37,7 +38,8 @@ export const fetchUserRequests = async (): Promise<Request[]> => {
     company: item.request_type === 'intro' ? item.message.split(' ').slice(0, 2).join(' ') : undefined,
     status: mapStatus(item.status),
     date: item.created_at,
-    details: item.message
+    details: item.message,
+    resolution_notes: item.resolution_notes // Include resolution notes in the transformed data
   }));
 };
 

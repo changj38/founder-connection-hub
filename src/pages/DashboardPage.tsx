@@ -11,7 +11,8 @@ import {
   Users, 
   Building2, 
   MessageSquare, 
-  ClipboardList 
+  ClipboardList,
+  MessageCircle
 } from 'lucide-react';
 import { fetchUserRequests, Request } from '../utils/requestsApi';
 
@@ -67,6 +68,24 @@ const DashboardPage = () => {
           </span>
         );
     }
+  };
+
+  // Format request details display
+  const formatRequestDetails = (request: Request) => {
+    return (
+      <div>
+        <div className="text-sm text-gray-600">{request.details}</div>
+        {request.resolution_notes && (
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center text-sm text-gray-600 mb-1">
+              <MessageCircle className="h-4 w-4 mr-1 text-indigo-500" />
+              <span className="font-medium">Admin response:</span>
+            </div>
+            <div className="text-sm text-gray-700 pl-5">{request.resolution_notes}</div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -212,7 +231,7 @@ const DashboardPage = () => {
                             {getRequestTypeLabel(request.type)}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
-                            {request.details}
+                            {formatRequestDetails(request)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {getStatusDisplay(request.status)}
@@ -255,7 +274,7 @@ const DashboardPage = () => {
                             {formatDate(request.date)}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
-                            {request.details}
+                            {formatRequestDetails(request)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {getStatusDisplay(request.status)}
@@ -299,6 +318,15 @@ const DashboardPage = () => {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {request.company}
+                            {request.resolution_notes && (
+                              <div className="mt-2 pt-2 border-t border-gray-100">
+                                <div className="flex items-center text-sm text-gray-600 mb-1">
+                                  <MessageCircle className="h-4 w-4 mr-1 text-indigo-500" />
+                                  <span className="font-medium">Admin response:</span>
+                                </div>
+                                <div className="text-sm text-gray-700 pl-5">{request.resolution_notes}</div>
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {getStatusDisplay(request.status)}
