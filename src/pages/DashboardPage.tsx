@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
 import { 
   HelpCircle, 
   Users, 
@@ -12,32 +13,16 @@ import {
   MessageSquare, 
   ClipboardList 
 } from 'lucide-react';
-
-interface Request {
-  id: string;
-  type: 'intro' | 'portfolio';
-  company?: string;
-  status: 'pending' | 'completed' | 'rejected';
-  date: string;
-  details: string;
-}
+import { fetchUserRequests, Request } from '../utils/requestsApi';
 
 const DashboardPage = () => {
   const { currentUser } = useAuth();
-  const [requestData, setRequestData] = useState<Request[]>([]);
   
-  useEffect(() => {
-    // Load requests from localStorage on component mount
-    const savedRequests = localStorage.getItem('userRequests');
-    if (savedRequests) {
-      try {
-        const parsedRequests = JSON.parse(savedRequests);
-        setRequestData(parsedRequests);
-      } catch (error) {
-        console.error('Failed to parse saved requests:', error);
-      }
-    }
-  }, []);
+  // Use React Query to fetch user requests
+  const { data: requestData = [], isLoading, error } = useQuery({
+    queryKey: ['userRequests'],
+    queryFn: fetchUserRequests
+  });
   
   const formatDate = (date?: Date | string) => {
     if (!date) return 'N/A';
@@ -58,6 +43,31 @@ const DashboardPage = () => {
 
   const filteredPortfolioRequests = requestData.filter(request => request.type === 'portfolio');
   const filteredIntroRequests = requestData.filter(request => request.type === 'intro');
+
+  // Show appropriate status label with color
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            Completed
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+            Declined
+          </span>
+        );
+      case 'pending':
+      default:
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+            Pending
+          </span>
+        );
+    }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -173,7 +183,15 @@ const DashboardPage = () => {
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
-              {requestData.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-gray-500">Loading requests...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-red-500">Failed to load requests</p>
+                </div>
+              ) : requestData.length > 0 ? (
                 <div className="border rounded-md overflow-hidden">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -197,9 +215,7 @@ const DashboardPage = () => {
                             {request.details}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                              {request.status === 'pending' ? 'Pending' : request.status}
-                            </span>
+                            {getStatusDisplay(request.status)}
                           </td>
                         </tr>
                       ))}
@@ -214,7 +230,15 @@ const DashboardPage = () => {
             </TabsContent>
             
             <TabsContent value="portfolio" className="mt-0">
-              {filteredPortfolioRequests.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-gray-500">Loading requests...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-red-500">Failed to load requests</p>
+                </div>
+              ) : filteredPortfolioRequests.length > 0 ? (
                 <div className="border rounded-md overflow-hidden">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -234,9 +258,7 @@ const DashboardPage = () => {
                             {request.details}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                              {request.status === 'pending' ? 'Pending' : request.status}
-                            </span>
+                            {getStatusDisplay(request.status)}
                           </td>
                         </tr>
                       ))}
@@ -251,7 +273,15 @@ const DashboardPage = () => {
             </TabsContent>
             
             <TabsContent value="intro" className="mt-0">
-              {filteredIntroRequests.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-gray-500">Loading requests...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-red-500">Failed to load requests</p>
+                </div>
+              ) : filteredIntroRequests.length > 0 ? (
                 <div className="border rounded-md overflow-hidden">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -271,9 +301,7 @@ const DashboardPage = () => {
                             {request.company}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                              {request.status === 'pending' ? 'Pending' : request.status}
-                            </span>
+                            {getStatusDisplay(request.status)}
                           </td>
                         </tr>
                       ))}
