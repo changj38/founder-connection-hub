@@ -92,10 +92,16 @@ export const addNetworkContact = async (contactData: Partial<NetworkContact>) =>
     throw new Error('User not authenticated');
   }
   
+  // Ensure name is provided as it's required in the database schema
+  if (!contactData.name) {
+    throw new Error('Name is required');
+  }
+  
   const { error } = await supabase
     .from('network_contacts')
     .insert({
       ...contactData,
+      name: contactData.name, // Explicitly include name to satisfy TypeScript
       created_by: userData.user.id
     });
   
@@ -167,10 +173,16 @@ export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>
     throw new Error('User not authenticated');
   }
   
+  // Ensure name is provided as it's required in the database schema
+  if (!companyData.name) {
+    throw new Error('Company name is required');
+  }
+  
   const { error } = await supabase
     .from('portfolio_companies')
     .insert({
       ...companyData,
+      name: companyData.name, // Explicitly include name to satisfy TypeScript
       created_by: userData.user.id
     });
   
