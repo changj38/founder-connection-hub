@@ -16,6 +16,7 @@ const AdminPortfolioTab = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -64,6 +65,8 @@ const AdminPortfolioTab = () => {
         return;
       }
 
+      setIsSubmitting(true);
+
       // Process year fields to be numbers or null
       const companyData = {
         ...formData,
@@ -71,6 +74,7 @@ const AdminPortfolioTab = () => {
         investment_year: formData.investment_year ? parseInt(formData.investment_year) : null
       };
 
+      console.log('Submitting company data:', companyData);
       await addPortfolioCompany(companyData);
       
       toast({
@@ -88,9 +92,11 @@ const AdminPortfolioTab = () => {
       console.error("Error adding portfolio company:", error);
       toast({
         title: "Error",
-        description: "Failed to add portfolio company",
+        description: `Failed to add portfolio company: ${error.message}`,
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -279,10 +285,12 @@ const AdminPortfolioTab = () => {
             <Button variant="outline" onClick={() => {
               resetForm();
               setIsAddDialogOpen(false);
-            }}>
+            }} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleAddCompany}>Add Company</Button>
+            <Button onClick={handleAddCompany} disabled={isSubmitting}>
+              {isSubmitting ? 'Adding...' : 'Add Company'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

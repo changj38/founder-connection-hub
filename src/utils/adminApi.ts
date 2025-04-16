@@ -168,15 +168,22 @@ export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>
   const { data: userData } = await supabase.auth.getUser();
   
   if (!userData?.user?.id) {
+    console.error('User not authenticated when adding portfolio company');
     throw new Error('User not authenticated');
   }
   
   // Ensure name is provided as it's required in the database schema
   if (!companyData.name) {
+    console.error('Company name is required');
     throw new Error('Company name is required');
   }
   
-  const { error } = await supabase
+  console.log('Adding portfolio company with data:', {
+    ...companyData,
+    created_by: userData.user.id
+  });
+  
+  const { data, error } = await supabase
     .from('portfolio_companies')
     .insert({
       ...companyData,
@@ -189,6 +196,7 @@ export const addPortfolioCompany = async (companyData: Partial<PortfolioCompany>
     throw error;
   }
   
+  console.log('Successfully added company, response:', data);
   return true;
 };
 
