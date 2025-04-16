@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,17 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { PlusCircle, User, Mail, Briefcase, Linkedin, MoreHorizontal, Building } from 'lucide-react';
+import { PlusCircle, User, Mail, Briefcase, Linkedin, MoreHorizontal, Building, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchNetworkContacts, addNetworkContact } from '../utils/adminApi';
+import { fetchNetworkContacts, addNetworkContact, updateNetworkContact } from '../utils/adminApi';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 
 const AdminNetworkTab = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentContact, setCurrentContact] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     company: '',
@@ -54,9 +57,26 @@ const AdminNetworkTab = () => {
       notes: '',
       is_lp: false
     });
+    setIsEditMode(false);
+    setCurrentContact(null);
   };
 
-  const handleAddContact = async () => {
+  const handleEditContact = (contact) => {
+    setCurrentContact(contact);
+    setFormData({
+      name: contact.name || '',
+      company: contact.company || '',
+      position: contact.position || '',
+      email: contact.email || '',
+      linkedin_url: contact.linkedin_url || '',
+      notes: contact.notes || '',
+      is_lp: contact.is_lp || false
+    });
+    setIsEditMode(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveContact = async () => {
     try {
       if (!formData.name.trim()) {
         toast({
@@ -67,22 +87,29 @@ const AdminNetworkTab = () => {
         return;
       }
 
-      await addNetworkContact(formData);
-      
-      toast({
-        title: "Success",
-        description: "Network contact added successfully",
-      });
+      if (isEditMode && currentContact) {
+        await updateNetworkContact(currentContact.id, formData);
+        toast({
+          title: "Success",
+          description: "Network contact updated successfully",
+        });
+      } else {
+        await addNetworkContact(formData);
+        toast({
+          title: "Success",
+          description: "Network contact added successfully",
+        });
+      }
       
       resetForm();
-      setIsAddDialogOpen(false);
+      setIsDialogOpen(false);
       
       queryClient.invalidateQueries({ queryKey: ['networkContacts'] });
     } catch (error) {
-      console.error("Error adding network contact:", error);
+      console.error("Error saving network contact:", error);
       toast({
         title: "Error",
-        description: "Failed to add network contact",
+        description: `Failed to ${isEditMode ? 'update' : 'add'} network contact`,
         variant: "destructive",
       });
     }
@@ -96,7 +123,10 @@ const AdminNetworkTab = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">Network Contacts</h2>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
+        <Button onClick={() => {
+          resetForm();
+          setIsDialogOpen(true);
+        }}>
           <PlusCircle className="h-4 w-4 mr-2" />
           Add Contact
         </Button>
@@ -145,12 +175,13 @@ const AdminNetworkTab = () => {
                     <TableHead>Email</TableHead>
                     <TableHead>LinkedIn</TableHead>
                     <TableHead>LP</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredContacts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                         No contacts found matching your search criteria.
                       </TableCell>
                     </TableRow>
@@ -185,6 +216,17 @@ const AdminNetworkTab = () => {
                             </Badge>
                           )}
                         </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleEditContact(contact)}
+                            className="h-8 w-8"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit contact</span>
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -195,12 +237,12 @@ const AdminNetworkTab = () => {
         </Card>
       )}
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Add New Network Contact</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Network Contact' : 'Add New Network Contact'}</DialogTitle>
             <DialogDescription>
-              Fill out the details to add a new contact to your network.
+              {isEditMode ? 'Update the details of this contact.' : 'Fill out the details to add a new contact to your network.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -302,11 +344,11 @@ const AdminNetworkTab = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               resetForm();
-              setIsAddDialogOpen(false);
+              setIsDialogOpen(false);
             }}>
               Cancel
             </Button>
-            <Button onClick={handleAddContact}>Add Contact</Button>
+            <Button onClick={handleSaveContact}>{isEditMode ? 'Update' : 'Add'} Contact</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

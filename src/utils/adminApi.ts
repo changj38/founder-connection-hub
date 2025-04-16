@@ -38,6 +38,20 @@ export const addNetworkContact = async (contactData: any) => {
   return true;
 };
 
+export const updateNetworkContact = async (id: string, contactData: any) => {
+  const { error } = await supabase
+    .from('network_contacts')
+    .update(contactData)
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error updating network contact:', error);
+    throw error;
+  }
+  
+  return true;
+};
+
 // Portfolio companies functions
 export const fetchPortfolioCompanies = async () => {
   const { data, error } = await supabase

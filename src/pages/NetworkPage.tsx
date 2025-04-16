@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Search, Linkedin, Mail, Building, Filter } from 'lucide-react';
+import { Search, Linkedin, Mail, Building, Filter, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
   Dialog,
@@ -19,8 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { fetchNetworkContacts } from '../utils/adminApi';
-import { useQuery } from '@tanstack/react-query';
+import { fetchNetworkContacts, updateNetworkContact } from '../utils/adminApi';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -36,7 +36,6 @@ type NetworkContact = {
   updated_at: string;
   created_by: string;
   category?: string;
-  expertise?: string[];
   avatar_url?: string;
   is_lp?: boolean;
 };
@@ -45,9 +44,21 @@ const NetworkPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedContact, setSelectedContact] = useState<NetworkContact | null>(null);
   const [introReason, setIntroReason] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isIntroDialogOpen, setIsIntroDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    company: '',
+    position: '',
+    email: '',
+    linkedin_url: '',
+    notes: '',
+    is_lp: false
+  });
 
   const { data: networkContactsRaw = [], isLoading, error } = useQuery({
     queryKey: ['networkContacts'],
@@ -57,7 +68,6 @@ const NetworkPage = () => {
   const networkContacts: NetworkContact[] = networkContactsRaw.map((contact: any) => ({
     ...contact,
     category: contact.category || 'Other',
-    expertise: contact.expertise || [],
     avatar_url: contact.avatar_url || undefined
   }));
   
@@ -74,8 +84,7 @@ const NetworkPage = () => {
     const matchesSearch = 
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (contact.company && contact.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (contact.position && contact.position.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (contact.expertise && contact.expertise.some(e => e.toLowerCase().includes(searchTerm.toLowerCase())));
+      (contact.position && contact.position.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesCategory = activeCategory === 'all' || contact.category === activeCategory;
     
@@ -98,12 +107,45 @@ const NetworkPage = () => {
       if (error) throw error;
       
       toast.success(`Introduction request to ${selectedContact.name} has been sent`);
-      setIsDialogOpen(false);
+      setIsIntroDialogOpen(false);
       setIntroReason('');
     } catch (error) {
       console.error('Error submitting introduction request:', error);
       toast.error('Failed to send introduction request. Please try again.');
     }
+  };
+
+  const handleEditContact = (contact: NetworkContact) => {
+    setSelectedContact(contact);
+    setEditFormData({
+      name: contact.name || '',
+      company: contact.company || '',
+      position: contact.position || '',
+      email: contact.email || '',
+      linkedin_url: contact.linkedin_url || '',
+      notes: contact.notes || '',
+      is_lp: contact.is_lp || false
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateContact = async () => {
+    if (!selectedContact) return;
+    
+    try {
+      await updateNetworkContact(selectedContact.id, editFormData);
+      toast.success('Contact updated successfully');
+      setIsEditDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['networkContacts'] });
+    } catch (error) {
+      console.error('Error updating contact:', error);
+      toast.error('Failed to update contact. Please try again.');
+    }
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({ ...editFormData, [name]: value });
   };
 
   const getInitials = (name: string) => {
@@ -143,7 +185,7 @@ const NetworkPage = () => {
         <div className="relative flex-grow">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search by name, company, expertise..."
+            placeholder="Search by name, company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -160,7 +202,7 @@ const NetworkPage = () => {
             <DialogHeader>
               <DialogTitle>Filter Contacts</DialogTitle>
               <DialogDescription>
-                Filter the network by expertise and categories
+                Filter the network by categories
               </DialogDescription>
             </DialogHeader>
             
@@ -248,22 +290,7 @@ const NetworkPage = () => {
                       {contact.company || 'Independent'}
                     </div>
                     
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500 mb-1">Expertise</p>
-                      <div className="flex flex-wrap gap-1">
-                        {contact.expertise && contact.expertise.length > 0 ? (
-                          contact.expertise.map((item, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              {item}
-                            </Badge>
-                          ))
-                        ) : (
-                          <Badge variant="secondary" className="text-xs">General</Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mt-4">
                       <div className="flex gap-2">
                         {contact.linkedin_url && (
                           <a 
@@ -285,62 +312,77 @@ const NetworkPage = () => {
                         )}
                       </div>
                       
-                      <Dialog open={isDialogOpen && selectedContact?.id === contact.id} onOpenChange={(open) => {
-                        setIsDialogOpen(open);
-                        if (!open) setSelectedContact(null);
-                      }}>
-                        <DialogTrigger asChild>
+                      <div className="flex gap-2">
+                        {isAdmin && (
                           <Button 
-                            size="sm"
-                            onClick={() => setSelectedContact(contact)}
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditContact(contact)}
                           >
-                            Request Intro
+                            <Pencil className="h-4 w-4 mr-1" /> 
+                            Edit
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Request Introduction</DialogTitle>
-                            <DialogDescription>
-                              Tell us why you'd like to be introduced to {selectedContact?.name}.
-                            </DialogDescription>
-                          </DialogHeader>
-                          
-                          <div className="space-y-4 py-4">
-                            <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
-                              <Avatar>
-                                <AvatarFallback className="bg-daydream-blue text-white">
-                                  {selectedContact ? getInitials(selectedContact.name) : ''}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <h4 className="font-medium">{selectedContact?.name}</h4>
-                                <p className="text-sm text-gray-500">{selectedContact?.position || 'N/A'} at {selectedContact?.company || 'N/A'}</p>
+                        )}
+                        <Dialog open={isIntroDialogOpen && selectedContact?.id === contact.id} onOpenChange={(open) => {
+                          setIsIntroDialogOpen(open);
+                          if (!open) setSelectedContact(null);
+                        }}>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedContact(contact);
+                                setIsIntroDialogOpen(true);
+                              }}
+                            >
+                              Request Intro
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Request Introduction</DialogTitle>
+                              <DialogDescription>
+                                Tell us why you'd like to be introduced to {selectedContact?.name}.
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="space-y-4 py-4">
+                              <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
+                                <Avatar>
+                                  <AvatarFallback className="bg-daydream-blue text-white">
+                                    {selectedContact ? getInitials(selectedContact.name) : ''}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <h4 className="font-medium">{selectedContact?.name}</h4>
+                                  <p className="text-sm text-gray-500">{selectedContact?.position || 'N/A'} at {selectedContact?.company || 'N/A'}</p>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <Label htmlFor="reason">Why would you like an introduction?</Label>
+                                <Textarea
+                                  id="reason"
+                                  placeholder="Briefly explain the purpose of the introduction and how it might be valuable to both parties."
+                                  value={introReason}
+                                  onChange={(e) => setIntroReason(e.target.value)}
+                                  rows={5}
+                                />
                               </div>
                             </div>
                             
-                            <div className="space-y-2">
-                              <Label htmlFor="reason">Why would you like an introduction?</Label>
-                              <Textarea
-                                id="reason"
-                                placeholder="Briefly explain the purpose of the introduction and how it might be valuable to both parties."
-                                value={introReason}
-                                onChange={(e) => setIntroReason(e.target.value)}
-                                rows={5}
-                              />
-                            </div>
-                          </div>
-                          
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                            <Button 
-                              onClick={handleIntroRequest}
-                              disabled={!introReason.trim()}
-                            >
-                              Send Request
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setIsIntroDialogOpen(false)}>Cancel</Button>
+                              <Button 
+                                onClick={handleIntroRequest}
+                                disabled={!introReason.trim()}
+                              >
+                                Send Request
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -350,19 +392,13 @@ const NetworkPage = () => {
         </TabsContent>
         
         <TabsContent value="list" className="mt-0">
-          {filteredContacts.length === 0 ? (
-            <div className="text-center p-6 text-gray-500">
-              <p>No contacts found matching your criteria.</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expertise</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -387,26 +423,6 @@ const NetworkPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {contact.company || 'Independent'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-1">
-                          {contact.expertise && contact.expertise.length > 0 ? (
-                            <>
-                              {contact.expertise.slice(0, 2).map((item, i) => (
-                                <Badge key={i} variant="secondary" className="text-xs">
-                                  {item}
-                                </Badge>
-                              ))}
-                              {contact.expertise.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{contact.expertise.length - 2}
-                                </Badge>
-                              )}
-                            </>
-                          ) : (
-                            <Badge variant="secondary" className="text-xs">General</Badge>
-                          )}
-                        </div>
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
                           {contact.linkedin_url && (
@@ -427,8 +443,8 @@ const NetworkPage = () => {
                               <Mail className="h-4 w-4" />
                             </a>
                           )}
-                          <Dialog open={isDialogOpen && selectedContact?.id === contact.id} onOpenChange={(open) => {
-                            setIsDialogOpen(open);
+                          <Dialog open={isIntroDialogOpen && selectedContact?.id === contact.id} onOpenChange={(open) => {
+                            setIsIntroDialogOpen(open);
                             if (!open) setSelectedContact(null);
                           }}>
                             <DialogTrigger asChild>
@@ -475,7 +491,7 @@ const NetworkPage = () => {
                               </div>
                               
                               <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsIntroDialogOpen(false)}>Cancel</Button>
                                 <Button 
                                   onClick={handleIntroRequest}
                                   disabled={!introReason.trim()}
@@ -492,9 +508,104 @@ const NetworkPage = () => {
                 </tbody>
               </table>
             </div>
-          )}
         </TabsContent>
       </Tabs>
+
+      {/* Edit Contact Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Contact</DialogTitle>
+            <DialogDescription>
+              Update the contact information.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                name="name"
+                value={editFormData.name}
+                onChange={handleEditInputChange}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="company">Company</Label>
+                <Input
+                  id="company"
+                  name="company"
+                  value={editFormData.company}
+                  onChange={handleEditInputChange}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="position">Position</Label>
+                <Input
+                  id="position"
+                  name="position"
+                  value={editFormData.position}
+                  onChange={handleEditInputChange}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={editFormData.email}
+                  onChange={handleEditInputChange}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="linkedin_url">LinkedIn URL</Label>
+                <Input
+                  id="linkedin_url"
+                  name="linkedin_url"
+                  value={editFormData.linkedin_url}
+                  onChange={handleEditInputChange}
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                name="notes"
+                value={editFormData.notes}
+                onChange={handleEditInputChange}
+                rows={3}
+              />
+            </div>
+            {isAdmin && (
+              <div className="grid gap-2">
+                <Label htmlFor="is_lp">Limited Partner (LP)</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_lp"
+                    checked={editFormData.is_lp}
+                    onCheckedChange={(checked) => setEditFormData({ ...editFormData, is_lp: checked })}
+                  />
+                  <Label htmlFor="is_lp">
+                    {editFormData.is_lp ? 'Yes' : 'No'}
+                  </Label>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateContact}>Update Contact</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
