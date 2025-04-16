@@ -52,10 +52,9 @@ interface HelpRequest {
   updated_at: string;
 }
 
-// Extended interface with profiles
 interface HelpRequestWithProfile extends HelpRequest {
   profiles: Profile | null;
-  user_email?: string; // Added to store user email when profile is missing
+  user_email?: string;
 }
 
 interface HelpRequestStats {
