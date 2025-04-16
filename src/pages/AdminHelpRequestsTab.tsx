@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { ClipboardList, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ClipboardList, Calendar, CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchHelpRequests, updateHelpRequestStatus } from '../utils/adminApi';
@@ -237,7 +238,7 @@ const AdminHelpRequestsTab = () => {
                     </TableRow>
                   ) : (
                     filteredRequests.map((request) => (
-                      <TableRow key={request.id}>
+                      <TableRow key={request.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleOpenDetail(request)}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
@@ -261,9 +262,8 @@ const AdminHelpRequestsTab = () => {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => handleOpenDetail(request)}
                           >
-                            <ClipboardList className="h-4 w-4 mr-2" />
+                            <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </Button>
                         </TableCell>
