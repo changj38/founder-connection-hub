@@ -121,6 +121,11 @@ const AdminHelpRequestsTab = () => {
     }
   };
 
+  // Function to get user name initials for avatar
+  const getInitials = (name) => {
+    return name ? name.charAt(0).toUpperCase() : 'U';
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -207,12 +212,12 @@ const AdminHelpRequestsTab = () => {
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
                               <AvatarFallback className="bg-indigo-100 text-indigo-700">
-                                {request.profiles?.full_name ? request.profiles.full_name.charAt(0) : 'U'}
+                                {request.profiles ? getInitials(request.profiles.full_name) : 'U'}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{request.profiles?.full_name || 'Unknown User'}</p>
-                              <p className="text-xs text-gray-500">{request.profiles?.company || ''}</p>
+                              <p className="font-medium">{request.profiles ? request.profiles.full_name : 'Unknown User'}</p>
+                              <p className="text-xs text-gray-500">{request.profiles ? request.profiles.company || '' : ''}</p>
                             </div>
                           </div>
                         </TableCell>
@@ -261,14 +266,16 @@ const AdminHelpRequestsTab = () => {
                 <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-indigo-100 text-indigo-700">
-                      {selectedRequest.profiles?.full_name ? selectedRequest.profiles.full_name.charAt(0) : 'U'}
+                      {selectedRequest.profiles ? getInitials(selectedRequest.profiles.full_name) : 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-medium">{selectedRequest.profiles?.full_name || 'Unknown User'}</h4>
+                    <h4 className="font-medium">
+                      {selectedRequest.profiles ? selectedRequest.profiles.full_name : 'Unknown User'}
+                    </h4>
                     <p className="text-sm text-gray-500">
-                      {selectedRequest.profiles?.company || ''}
-                      {selectedRequest.profiles?.role ? ` • ${selectedRequest.profiles.role}` : ''}
+                      {selectedRequest.profiles && selectedRequest.profiles.company ? selectedRequest.profiles.company : ''}
+                      {selectedRequest.profiles && selectedRequest.profiles.role ? ` • ${selectedRequest.profiles.role}` : ''}
                     </p>
                   </div>
                 </div>

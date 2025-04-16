@@ -115,9 +115,10 @@ export const addPortfolioCompany = async (companyData: any) => {
 
 // Help requests functions
 export const fetchHelpRequests = async () => {
-  const { data, error } = await supabase
+  // Get help requests without trying to join with profiles
+  const { data: helpRequests, error } = await supabase
     .from('help_requests')
-    .select('*, profiles(*)')
+    .select('*')
     .order('created_at', { ascending: false });
   
   if (error) {
@@ -125,7 +126,37 @@ export const fetchHelpRequests = async () => {
     throw error;
   }
   
-  return data || [];
+  // Now fetch user profiles separately to get user information
+  if (helpRequests && helpRequests.length > 0) {
+    const userIds = [...new Set(helpRequests.map(request => request.user_id))];
+    
+    // Fetch profiles for these users
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', userIds);
+    
+    if (profilesError) {
+      console.error('Error fetching user profiles:', profilesError);
+      // Continue without profiles rather than failing completely
+    }
+    
+    // Create a map of user IDs to their profile data for easy lookup
+    const profilesMap = (profiles || []).reduce((acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {});
+    
+    // Add profile data to each help request
+    const helpRequestsWithProfiles = helpRequests.map(request => ({
+      ...request,
+      profiles: profilesMap[request.user_id] || null
+    }));
+    
+    return helpRequestsWithProfiles;
+  }
+  
+  return helpRequests || [];
 };
 
 export const updateHelpRequestStatus = async (id: string, status: string, resolutionNotes?: string) => {
