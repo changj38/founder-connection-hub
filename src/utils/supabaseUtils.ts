@@ -93,10 +93,15 @@ export const getUserProfileMap = async (userIds: string[]) => {
     });
   }
   
-  // Log which user IDs don't have profiles
+  // For any user IDs that don't have profiles, create default entries
   validUserIds.forEach(id => {
     if (!profileMap[id]) {
       console.warn(`No profile found for user ID: ${id}`);
+      profileMap[id] = {
+        name: 'Anonymous User',
+        company: '',
+        role: 'user'
+      };
     }
   });
   

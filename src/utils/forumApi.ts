@@ -101,6 +101,7 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
     
     // Enrich posts with author names, companies, and comment counts
     const enrichedPosts = posts.map(post => {
+      // Always have a default author info even if userMap doesn't have the user
       const authorInfo = userMap[post.user_id] || { name: 'Anonymous User', company: '' };
       
       return {
