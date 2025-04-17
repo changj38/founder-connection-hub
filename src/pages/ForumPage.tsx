@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -34,7 +35,7 @@ const ForumPage = () => {
   const createComment = useCreateComment();
 
   const getInitials = (name: string) => {
-    if (!name || name === 'User') return 'U';
+    if (!name || name === 'Anonymous User') return 'AU';
     return name
       .split(' ')
       .map(word => word[0])
@@ -44,7 +45,7 @@ const ForumPage = () => {
   };
 
   const formatAuthor = (name?: string, company?: string) => {
-    if (!name || name === 'User') return 'User';
+    if (!name || name === 'Anonymous User') return 'Anonymous User';
     if (!company) return name;
     return `${name} from ${company}`;
   };

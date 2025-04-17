@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -47,20 +48,24 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
   }
 
   // Get unique user IDs from posts
-  const userIds = posts.map(post => post.user_id).filter(Boolean);
+  const userIds = [...new Set(posts.map(post => post.user_id))].filter(Boolean);
   
   // Fetch user profiles
-  const { data: profiles } = await supabase
+  const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
     .select('id, full_name, company')
     .in('id', userIds);
   
+  if (profilesError) {
+    console.error('Error fetching profiles:', profilesError);
+  }
+
   // Create a map of user IDs to names and companies
   const userMap: Record<string, { name: string, company: string }> = {};
-  if (profiles) {
+  if (profiles && profiles.length > 0) {
     profiles.forEach(profile => {
       userMap[profile.id] = {
-        name: profile.full_name || 'User',
+        name: profile.full_name || 'Anonymous User',
         company: profile.company || ''
       };
     });
@@ -84,7 +89,7 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
   // Enrich posts with author names, companies, and comment counts
   return posts.map(post => ({
     ...post,
-    author_name: userMap[post.user_id]?.name || 'User',
+    author_name: userMap[post.user_id]?.name || 'Anonymous User',
     author_company: userMap[post.user_id]?.company || '',
     comment_count: commentCounts[post.id] || 0
   }));
@@ -120,23 +125,30 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   }
   
   // Get unique user IDs from post and comments
-  const userIds = [
+  const allUserIds = [
     post.user_id,
     ...(comments || []).map(comment => comment.user_id)
   ].filter(Boolean);
   
+  // Remove duplicates
+  const userIds = [...new Set(allUserIds)];
+  
   // Fetch user profiles
-  const { data: profiles } = await supabase
+  const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
     .select('id, full_name, company')
     .in('id', userIds);
   
+  if (profilesError) {
+    console.error('Error fetching profiles:', profilesError);
+  }
+  
   // Create a map of user IDs to names and companies
   const userMap: Record<string, { name: string, company: string }> = {};
-  if (profiles) {
+  if (profiles && profiles.length > 0) {
     profiles.forEach(profile => {
       userMap[profile.id] = {
-        name: profile.full_name || 'User',
+        name: profile.full_name || 'Anonymous User',
         company: profile.company || ''
       };
     });
@@ -145,7 +157,7 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   // Enrich post with author name and company
   const enrichedPost: ForumPost = {
     ...post,
-    author_name: userMap[post.user_id]?.name || 'User',
+    author_name: userMap[post.user_id]?.name || 'Anonymous User',
     author_company: userMap[post.user_id]?.company || '',
     comment_count: comments?.length || 0
   };
@@ -153,7 +165,7 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   // Enrich comments with author names and companies
   const enrichedComments: ForumComment[] = (comments || []).map(comment => ({
     ...comment,
-    author_name: userMap[comment.user_id]?.name || 'User',
+    author_name: userMap[comment.user_id]?.name || 'Anonymous User',
     author_company: userMap[comment.user_id]?.company || ''
   }));
   
