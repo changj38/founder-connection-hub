@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -16,6 +15,8 @@ export interface ForumPost {
   author_name?: string;
   author_company?: string;
   comment_count?: number;
+  heart_count?: number;
+  is_hearted?: boolean;
 }
 
 export interface ForumComment {
@@ -313,18 +314,147 @@ export const createForumComment = async (postId: string, content: string): Promi
   };
 };
 
+// Heart-related functions
+export const togglePostHeart = async (postId: string): Promise<boolean> => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    throw new Error('You must be logged in to heart a post');
+  }
+
+  console.log('Toggling heart for post:', postId);
+
+  // First, check if the user has already hearted this post
+  const { data: existingHeart, error: checkError } = await supabase
+    .from('forum_post_hearts')
+    .select('*')
+    .eq('post_id', postId)
+    .eq('user_id', userData.user.id)
+    .single();
+
+  if (checkError && checkError.code !== 'PGRST116') {
+    console.error('Error checking existing heart:', checkError);
+    throw checkError;
+  }
+
+  if (existingHeart) {
+    // If heart exists, remove it
+    const { error: deleteError } = await supabase
+      .from('forum_post_hearts')
+      .delete()
+      .eq('post_id', postId)
+      .eq('user_id', userData.user.id);
+
+    if (deleteError) {
+      console.error('Error removing heart:', deleteError);
+      throw deleteError;
+    }
+
+    console.log('Heart removed successfully');
+    return false;
+  } else {
+    // If heart doesn't exist, add it
+    const { error: insertError } = await supabase
+      .from('forum_post_hearts')
+      .insert({
+        post_id: postId,
+        user_id: userData.user.id
+      });
+
+    if (insertError) {
+      console.error('Error adding heart:', insertError);
+      throw insertError;
+    }
+
+    console.log('Heart added successfully');
+    return true;
+  }
+};
+
+export const checkUserHeart = async (postId: string): Promise<boolean> => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    return false;
+  }
+
+  const { data: heart, error } = await supabase
+    .from('forum_post_hearts')
+    .select('*')
+    .eq('post_id', postId)
+    .eq('user_id', userData.user.id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return false; // No heart found
+    }
+    console.error('Error checking user heart:', error);
+    return false;
+  }
+
+  return !!heart;
+};
+
 // Hooks for React Query integration
 export const useForumPosts = () => {
   return useQuery({
     queryKey: ['forumPosts'],
-    queryFn: fetchForumPosts
+    queryFn: async () => {
+      const posts = await fetchForumPosts();
+      
+      // If user is logged in, check which posts they've hearted
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const postIds = posts.map(post => post.id);
+        const { data: hearts } = await supabase
+          .from('forum_post_hearts')
+          .select('post_id')
+          .eq('user_id', user.id)
+          .in('post_id', postIds);
+
+        const heartedPostIds = hearts?.map(h => h.post_id) || [];
+        
+        return posts.map(post => ({
+          ...post,
+          is_hearted: heartedPostIds.includes(post.id)
+        }));
+      }
+      
+      return posts;
+    }
   });
 };
 
 export const useForumPost = (postId: string) => {
   return useQuery({
     queryKey: ['forumPost', postId],
-    queryFn: () => fetchPostWithComments(postId),
+    queryFn: async () => {
+      const postWithComments = await fetchPostWithComments(postId);
+      
+      // Check if the user has hearted this post
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: heart } = await supabase
+          .from('forum_post_hearts')
+          .select('*')
+          .eq('post_id', postId)
+          .eq('user_id', user.id)
+          .single();
+        
+        return {
+          ...postWithComments,
+          post: {
+            ...postWithComments.post,
+            is_hearted: !!heart
+          }
+        };
+      }
+      
+      return postWithComments;
+    },
     enabled: !!postId
   });
 };

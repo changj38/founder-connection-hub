@@ -44,10 +44,40 @@ export type Database = {
           },
         ]
       }
+      forum_post_hearts: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_post_hearts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       forum_posts: {
         Row: {
           content: string
           created_at: string
+          heart_count: number
           id: string
           is_locked: boolean | null
           is_pinned: boolean | null
@@ -58,6 +88,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          heart_count?: number
           id?: string
           is_locked?: boolean | null
           is_pinned?: boolean | null
@@ -68,6 +99,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          heart_count?: number
           id?: string
           is_locked?: boolean | null
           is_pinned?: boolean | null

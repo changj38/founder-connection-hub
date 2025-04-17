@@ -11,9 +11,9 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowUpCircle, MessageSquare, RefreshCcw, Send } from 'lucide-react';
+import { ArrowUpCircle, MessageSquare, RefreshCcw, Send, Heart } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useForumPosts, useForumPost, useCreatePost, useCreateComment, formatDate, ForumPost } from '@/utils/forumApi';
+import { useForumPosts, useForumPost, useCreatePost, useCreateComment, formatDate, ForumPost, togglePostHeart } from '@/utils/forumApi';
 
 const ForumPage = () => {
   const { session } = useAuth();
@@ -130,6 +130,36 @@ const ForumPage = () => {
     setCommentContent('');
   };
 
+  const handleHeartPost = async (postId: string) => {
+    if (!session) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to heart a post.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const isHearted = await togglePostHeart(postId);
+      // Refetch posts to update the heart count and state
+      refetchPosts();
+      
+      toast({
+        title: isHearted ? "Post Hearted" : "Heart Removed",
+        description: isHearted 
+          ? "You've added a heart to this post." 
+          : "You've removed your heart from this post.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to heart post.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoadingPosts) {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
@@ -196,6 +226,18 @@ const ForumPage = () => {
                 <div className="text-xs text-[#828282]">
                   by {formatAuthor(post.author_name, post.author_company)} | {formatDate(post.created_at)} | {post.comment_count} comments
                 </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => handleHeartPost(post.id)}
+                >
+                  <Heart 
+                    className={`h-5 w-5 ${post.is_hearted ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} 
+                  />
+                  <span className="ml-1 text-sm">{post.heart_count || 0}</span>
+                </Button>
               </div>
             </div>
             {index < paginatedPosts.length - 1 && <Separator className="my-2" />}
