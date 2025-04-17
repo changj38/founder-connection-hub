@@ -69,7 +69,8 @@ const AdminHelpRequestsTab = () => {
           variant: "destructive",
         });
       }
-    }
+    },
+    retry: 1
   });
 
   const handleOpenDetail = (request: HelpRequest) => {
@@ -224,7 +225,7 @@ const AdminHelpRequestsTab = () => {
               <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
               <h3 className="text-lg font-medium mb-2">Unable to Load Help Requests</h3>
               <p className="text-gray-500 mb-4">
-                There was a problem connecting to the database. This may be due to a foreign key constraint issue.
+                {error instanceof Error ? error.message : "There was a problem connecting to the database. Please try again."}
               </p>
               <Button 
                 onClick={() => queryClient.invalidateQueries({ queryKey: ['helpRequests'] })}

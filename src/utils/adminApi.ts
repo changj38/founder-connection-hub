@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -224,9 +223,7 @@ export const addPortfolioCompany = async (companyData: {
 // Help requests functions
 export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => {
   try {
-    console.log('Fetching help requests without join...');
-    
-    // Get all help requests without attempting to join with profiles
+    // Get all help requests directly without attempting to join
     const { data: helpRequests, error } = await supabase
       .from('help_requests')
       .select('*')
@@ -237,20 +234,15 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
       throw error;
     }
     
-    console.log('Fetched help requests:', helpRequests);
-    
+    // Return empty array if no help requests found
     if (!helpRequests || helpRequests.length === 0) {
-      console.log('No help requests found');
       return [];
     }
     
-    // Now fetch user profiles separately for those user IDs that exist
+    // If user_id is available, fetch profiles separately
     const userIds = helpRequests
-      .map(request => request.user_id)
-      .filter(id => id) // Filter out any null/undefined IDs
-      .filter((id, index, self) => self.indexOf(id) === index); // Get unique IDs
-    
-    console.log('Fetching profiles for user IDs:', userIds);
+      .filter(req => req.user_id) // Filter out any nulls
+      .map(req => req.user_id);
     
     let profilesMap: Record<string, Profile> = {};
     
@@ -265,9 +257,7 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
         console.error('Error fetching user profiles:', profilesError);
         // Continue without profiles rather than failing completely
       } else if (profiles) {
-        console.log('Fetched profiles:', profiles);
-        
-        // Create a map of user IDs to their profile data for easy lookup
+        // Create a map of user IDs to their profile data
         profiles.forEach(profile => {
           profilesMap[profile.id] = profile;
         });
@@ -285,7 +275,6 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
       };
     });
     
-    console.log('Final help requests with profiles:', helpRequestsWithProfiles);
     return helpRequestsWithProfiles;
   } catch (error) {
     console.error('Failed to load help requests:', error);
