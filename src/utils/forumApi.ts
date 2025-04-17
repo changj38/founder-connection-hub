@@ -215,6 +215,22 @@ export const createForumPost = async (title: string, content: string): Promise<F
     throw new Error('You must be logged in to create a post');
   }
   
+  console.log('Creating post as user:', userData.user.id);
+  
+  // First get the user's profile to ensure we have their name and company
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('full_name, company')
+    .eq('id', userData.user.id)
+    .single();
+    
+  if (profileError) {
+    console.error('Error fetching user profile for post creation:', profileError);
+    // Continue anyway, we'll use default values if needed
+  }
+  
+  console.log('User profile for post creation:', profile);
+  
   const { data: post, error } = await supabase
     .from('forum_posts')
     .insert({
@@ -234,17 +250,9 @@ export const createForumPost = async (title: string, content: string): Promise<F
     throw new Error('Failed to create post');
   }
   
-  // Fetch the current user's profile data to return with the new post
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('full_name, company')
-    .eq('id', userData.user.id)
-    .single();
-    
-  if (profileError) {
-    console.error('Error fetching current user profile:', profileError);
-  }
+  console.log('Post created successfully:', post);
   
+  // Return the post with author information from their profile
   return {
     ...post,
     author_name: profile?.full_name || 'Anonymous User',
@@ -259,6 +267,22 @@ export const createForumComment = async (postId: string, content: string): Promi
   if (userError || !userData.user) {
     throw new Error('You must be logged in to comment');
   }
+  
+  console.log('Creating comment as user:', userData.user.id);
+  
+  // First get the user's profile to ensure we have their name and company
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('full_name, company')
+    .eq('id', userData.user.id)
+    .single();
+    
+  if (profileError) {
+    console.error('Error fetching user profile for comment creation:', profileError);
+    // Continue anyway, we'll use default values if needed
+  }
+  
+  console.log('User profile for comment creation:', profile);
   
   const { data: comment, error } = await supabase
     .from('forum_comments')
@@ -279,17 +303,9 @@ export const createForumComment = async (postId: string, content: string): Promi
     throw new Error('Failed to create comment');
   }
   
-  // Fetch the current user's profile data to return with the new comment
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('full_name, company')
-    .eq('id', userData.user.id)
-    .single();
-    
-  if (profileError) {
-    console.error('Error fetching current user profile:', profileError);
-  }
+  console.log('Comment created successfully:', comment);
   
+  // Return the comment with author information from their profile
   return {
     ...comment,
     author_name: profile?.full_name || 'Anonymous User',
