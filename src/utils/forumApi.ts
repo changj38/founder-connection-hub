@@ -30,6 +30,59 @@ export interface ForumComment {
   author_company?: string;
 }
 
+// Fetch profiles for multiple user IDs
+const fetchProfiles = async (userIds: string[]) => {
+  if (!userIds || userIds.length === 0) return {};
+  
+  // Filter out any null or undefined IDs
+  const validUserIds = userIds.filter(Boolean);
+  
+  if (validUserIds.length === 0) return {};
+  
+  console.log('Fetching profiles for user IDs:', validUserIds);
+  
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, company')
+    .in('id', validUserIds);
+  
+  if (error) {
+    console.error('Error fetching profiles:', error);
+    return {};
+  }
+  
+  console.log('Profiles retrieved from database:', profiles);
+  
+  // Create a map of user IDs to profiles
+  const userMap: Record<string, { name: string, company: string }> = {};
+  
+  if (profiles && profiles.length > 0) {
+    profiles.forEach(profile => {
+      userMap[profile.id] = {
+        name: profile.full_name || 'Anonymous User',
+        company: profile.company || ''
+      };
+    });
+  }
+  
+  return userMap;
+};
+
+// Fetch user email from auth (as a fallback)
+const fetchUserEmail = async (userId: string) => {
+  if (!userId) return null;
+  
+  try {
+    // Try to get user email from auth.users via the admin API
+    // Note: This is only accessible in edge functions or server-side
+    // For client-side, we'll need to rely on the profiles table
+    return null;
+  } catch (error) {
+    console.error('Error fetching user email:', error);
+    return null;
+  }
+};
+
 // Forum posts functions
 export const fetchForumPosts = async (): Promise<ForumPost[]> => {
   // Fetch posts
@@ -51,25 +104,7 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
   const userIds = [...new Set(posts.map(post => post.user_id))].filter(Boolean);
   
   // Fetch user profiles
-  const { data: profiles, error: profilesError } = await supabase
-    .from('profiles')
-    .select('id, full_name, company')
-    .in('id', userIds);
-  
-  if (profilesError) {
-    console.error('Error fetching profiles:', profilesError);
-  }
-
-  // Create a map of user IDs to names and companies
-  const userMap: Record<string, { name: string, company: string }> = {};
-  if (profiles && profiles.length > 0) {
-    profiles.forEach(profile => {
-      userMap[profile.id] = {
-        name: profile.full_name || 'Anonymous User',
-        company: profile.company || ''
-      };
-    });
-  }
+  const userMap = await fetchProfiles(userIds);
   
   // Count comments for each post
   const commentCounts: Record<string, number> = {};
@@ -138,27 +173,7 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   console.log('User IDs to fetch profiles for:', userIds);
   
   // Fetch user profiles
-  const { data: profiles, error: profilesError } = await supabase
-    .from('profiles')
-    .select('id, full_name, company')
-    .in('id', userIds);
-  
-  if (profilesError) {
-    console.error('Error fetching profiles:', profilesError);
-  }
-  
-  console.log('Profiles fetched:', profiles);
-  
-  // Create a map of user IDs to names and companies
-  const userMap: Record<string, { name: string, company: string }> = {};
-  if (profiles && profiles.length > 0) {
-    profiles.forEach(profile => {
-      userMap[profile.id] = {
-        name: profile.full_name || 'Anonymous User',
-        company: profile.company || ''
-      };
-    });
-  }
+  const userMap = await fetchProfiles(userIds);
   
   console.log('User mapping created:', userMap);
   
@@ -216,7 +231,23 @@ export const createForumPost = async (title: string, content: string): Promise<F
     throw new Error('Failed to create post');
   }
   
-  return post;
+  // Fetch the current user's profile data to return with the new post
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('full_name, company')
+    .eq('id', userData.user.id)
+    .single();
+    
+  if (profileError) {
+    console.error('Error fetching current user profile:', profileError);
+  }
+  
+  return {
+    ...post,
+    author_name: profile?.full_name || 'Anonymous User',
+    author_company: profile?.company || '',
+    comment_count: 0
+  };
 };
 
 export const createForumComment = async (postId: string, content: string): Promise<ForumComment> => {
@@ -245,7 +276,22 @@ export const createForumComment = async (postId: string, content: string): Promi
     throw new Error('Failed to create comment');
   }
   
-  return comment;
+  // Fetch the current user's profile data to return with the new comment
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('full_name, company')
+    .eq('id', userData.user.id)
+    .single();
+    
+  if (profileError) {
+    console.error('Error fetching current user profile:', profileError);
+  }
+  
+  return {
+    ...comment,
+    author_name: profile?.full_name || 'Anonymous User',
+    author_company: profile?.company || ''
+  };
 };
 
 // Hooks for React Query integration
