@@ -37,7 +37,7 @@ const ForumPage = () => {
     if (!name || name === 'Anonymous User') return 'AU';
     const nameParts = name.split(' ');
     if (nameParts.length === 1) return name.substring(0, 2).toUpperCase();
-    return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+    return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
   };
 
   const formatAuthor = (name?: string, company?: string) => {

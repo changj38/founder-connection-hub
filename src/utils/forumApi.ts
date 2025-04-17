@@ -68,23 +68,10 @@ const fetchProfiles = async (userIds: string[]) => {
   return userMap;
 };
 
-// Fetch user email from auth (as a fallback)
-const fetchUserEmail = async (userId: string) => {
-  if (!userId) return null;
-  
-  try {
-    // Try to get user email from auth.users via the admin API
-    // Note: This is only accessible in edge functions or server-side
-    // For client-side, we'll need to rely on the profiles table
-    return null;
-  } catch (error) {
-    console.error('Error fetching user email:', error);
-    return null;
-  }
-};
-
 // Forum posts functions
 export const fetchForumPosts = async (): Promise<ForumPost[]> => {
+  console.log('Fetching all forum posts');
+  
   // Fetch posts
   const { data: posts, error } = await supabase
     .from('forum_posts')
@@ -100,11 +87,15 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
     return [];
   }
 
+  console.log('Retrieved posts:', posts);
+
   // Get unique user IDs from posts
   const userIds = [...new Set(posts.map(post => post.user_id))].filter(Boolean);
+  console.log('Unique user IDs from posts:', userIds);
   
   // Fetch user profiles
   const userMap = await fetchProfiles(userIds);
+  console.log('User profile map for posts:', userMap);
   
   // Count comments for each post
   const commentCounts: Record<string, number> = {};
@@ -122,12 +113,20 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
   }
   
   // Enrich posts with author names, companies, and comment counts
-  return posts.map(post => ({
-    ...post,
-    author_name: userMap[post.user_id]?.name || 'Anonymous User',
-    author_company: userMap[post.user_id]?.company || '',
-    comment_count: commentCounts[post.id] || 0
-  }));
+  const enrichedPosts = posts.map(post => {
+    const authorInfo = userMap[post.user_id] || { name: 'Anonymous User', company: '' };
+    console.log(`Enriching post by user_id: ${post.user_id} with author info:`, authorInfo);
+    
+    return {
+      ...post,
+      author_name: authorInfo.name,
+      author_company: authorInfo.company,
+      comment_count: commentCounts[post.id] || 0
+    };
+  });
+  
+  console.log('Enriched posts:', enrichedPosts);
+  return enrichedPosts;
 };
 
 export const fetchPostWithComments = async (postId: string): Promise<{ post: ForumPost, comments: ForumComment[] }> => {
@@ -149,6 +148,8 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
     throw new Error('Post not found');
   }
   
+  console.log('Retrieved post:', post);
+  
   // Fetch comments for the post
   const { data: comments, error: commentsError } = await supabase
     .from('forum_comments')
@@ -160,6 +161,8 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
     console.error('Error fetching comments:', commentsError);
     throw commentsError;
   }
+  
+  console.log('Retrieved comments:', comments);
   
   // Get unique user IDs from post and comments
   const allUserIds = [
