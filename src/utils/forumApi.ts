@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -57,6 +58,7 @@ const fetchProfiles = async (userIds: string[]) => {
   // Create a map of user IDs to profiles
   const userMap: Record<string, { name: string, company: string }> = {};
   
+  // First, add all the profiles we found
   if (profiles && profiles.length > 0) {
     profiles.forEach(profile => {
       userMap[profile.id] = {
@@ -66,6 +68,51 @@ const fetchProfiles = async (userIds: string[]) => {
     });
   } else {
     console.warn('No profiles found for user IDs:', validUserIds);
+  }
+  
+  // For each user ID that doesn't have a profile, fetch their auth data and create one
+  const missingUserIds = validUserIds.filter(id => !userMap[id]);
+  
+  if (missingUserIds.length > 0) {
+    console.log('Attempting to create profiles for missing users:', missingUserIds);
+    
+    for (const userId of missingUserIds) {
+      // Try to get user data from auth
+      const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+      
+      if (authUser?.user) {
+        const userData = authUser.user;
+        const fullName = userData.user_metadata?.full_name || 'User ' + userId.substring(0, 8);
+        const company = userData.user_metadata?.company || '';
+        
+        console.log(`Creating profile for user ${userId} with name: ${fullName}, company: ${company}`);
+        
+        // Create a profile for this user
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name: fullName,
+            company: company
+          });
+          
+        if (insertError) {
+          console.error(`Error creating profile for user ${userId}:`, insertError);
+        } else {
+          // Add to our map
+          userMap[userId] = {
+            name: fullName,
+            company: company
+          };
+        }
+      } else {
+        console.warn(`Could not find auth data for user ${userId}`);
+        userMap[userId] = {
+          name: 'Anonymous User',
+          company: ''
+        };
+      }
+    }
   }
   
   return userMap;
