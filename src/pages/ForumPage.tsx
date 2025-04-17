@@ -18,6 +18,9 @@ import { useForumPosts, useForumPost, useCreatePost, useCreateComment, formatDat
 import { countProfilesInSupabase, getProfilesInSupabase, getSpecificProfile } from '@/utils/supabaseUtils';
 
 const ForumPage = () => {
+  // Move these React Query hooks before the useEffect that depends on them
+  const { data: posts, isLoading: isLoadingPosts, isError: isPostsError, error: postsError, refetch: refetchPosts } = useForumPosts();
+  
   const { session } = useAuth();
   const [isNewPostOpen, setIsNewPostOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -29,10 +32,7 @@ const ForumPage = () => {
   const postsPerPage = 10;
   const [profileCount, setProfileCount] = useState<number | null>(null);
   const [profiles, setProfiles] = useState<any[] | null>(null);
-  const [specificProfile, setSpecificProfile] = useState<any | null>(null);
-
-  // Move these React Query hooks before the useEffect that depends on them
-  const { data: posts, isLoading: isLoadingPosts, isError: isPostsError, error: postsError, refetch: refetchPosts } = useForumPosts();
+  const [specificProfile, setSpecificProfile] = useState<Record<string, any> | null>(null);
   
   const { data: selectedPostData, isLoading: isLoadingPost, isError: isPostError } = useForumPost(selectedPostId || '');
   
@@ -51,12 +51,26 @@ const ForumPage = () => {
         const userIds = [...new Set(posts.map(post => post.user_id))];
         console.log('Post user IDs for profile check:', userIds);
         
+        // Create a new object to store profiles
+        const profilesById: Record<string, any> = {};
+        
         for (const userId of userIds) {
           const profile = await getSpecificProfile(userId);
           if (profile) {
-            setSpecificProfile(prev => ({...prev, [userId]: profile}));
+            profilesById[userId] = profile;
+          } else {
+            console.warn(`No profile found for user ID: ${userId} in ForumPage useEffect`);
+            // Add default profile if none found
+            profilesById[userId] = {
+              id: userId,
+              full_name: 'Anonymous User',
+              company: '',
+              role: 'user'
+            };
           }
         }
+        
+        setSpecificProfile(profilesById);
       }
     };
 
@@ -247,6 +261,18 @@ const ForumPage = () => {
               {Object.entries(specificProfile).map(([userId, profile]) => (
                 <li key={userId} className="text-xs">
                   {userId.substring(0, 8)}... - {(profile as any).full_name || 'No name'} ({(profile as any).company || 'No company'})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {posts && (
+          <div className="mt-2">
+            <p>Post user IDs:</p>
+            <ul className="list-disc pl-5">
+              {posts.map(post => (
+                <li key={post.id} className="text-xs">
+                  {post.id.substring(0, 8)}... - User: {post.user_id.substring(0, 8)}... - Author: {post.author_name || 'Anonymous'}
                 </li>
               ))}
             </ul>

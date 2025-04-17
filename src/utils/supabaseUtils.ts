@@ -58,6 +58,9 @@ export const getUserProfileMap = async (userIds: string[]) => {
     return {};
   }
 
+  // Log the user IDs we're trying to fetch profiles for
+  console.log('Attempting to fetch profiles for user IDs:', userIds);
+  
   // Filter out any invalid IDs
   const validUserIds = userIds.filter(id => id && typeof id === 'string');
   
@@ -68,35 +71,46 @@ export const getUserProfileMap = async (userIds: string[]) => {
 
   console.log('Fetching profiles for users:', validUserIds);
   
-  const { data, error } = await supabase
+  // Fetch all profiles first instead of filtering by user IDs
+  const { data: allProfiles, error } = await supabase
     .from('profiles')
-    .select('id, full_name, company, role')
-    .in('id', validUserIds);
+    .select('id, full_name, company, role');
 
   if (error) {
     console.error('Error fetching profiles:', error);
     return {};
   }
 
-  console.log(`Retrieved ${data?.length || 0} profiles out of ${validUserIds.length} requested user IDs`);
+  console.log(`Retrieved ${allProfiles?.length || 0} total profiles from database`);
   
   // Convert to a map for easy lookup
   const profileMap: Record<string, any> = {};
   
-  if (data && data.length > 0) {
-    data.forEach(profile => {
+  if (allProfiles && allProfiles.length > 0) {
+    // First add all profiles to the map
+    allProfiles.forEach(profile => {
       profileMap[profile.id] = {
         name: profile.full_name || 'Anonymous User',
         company: profile.company || '',
         role: profile.role || 'user'
       };
     });
+    
+    // Then check which of our requested profiles were found
+    let foundCount = 0;
+    validUserIds.forEach(id => {
+      if (profileMap[id]) {
+        foundCount++;
+      }
+    });
+    
+    console.log(`Found ${foundCount} profiles out of ${validUserIds.length} requested user IDs`);
   }
   
   // For any user IDs that don't have profiles, create default entries
   validUserIds.forEach(id => {
     if (!profileMap[id]) {
-      console.warn(`No profile found for user ID: ${id}`);
+      console.warn(`No profile found for user ID: ${id}, creating default entry`);
       profileMap[id] = {
         name: 'Anonymous User',
         company: '',
