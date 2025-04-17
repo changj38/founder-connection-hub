@@ -27,6 +27,8 @@ export interface ForumComment {
   updated_at: string;
   heart_count?: number;
   is_hearted?: boolean;
+  author_name?: string;
+  author_company?: string;
 }
 
 export const fetchForumPosts = async (): Promise<ForumPost[]> => {
