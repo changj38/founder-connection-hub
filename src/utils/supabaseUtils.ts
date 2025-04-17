@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const countProfilesInSupabase = async () => {
@@ -45,6 +44,32 @@ export const getSpecificProfile = async (userId: string) => {
 
   if (error) {
     console.error(`Error fetching profile for user ${userId}:`, error);
+    
+    if (error.code === 'PGRST116') {
+      console.log(`No profile found for user ${userId}, creating a default profile`);
+      
+      const defaultProfile = {
+        id: userId,
+        full_name: 'Anonymous User',
+        company: '',
+        role: 'user'
+      };
+      
+      const { data: newData, error: insertError } = await supabase
+        .from('profiles')
+        .insert([defaultProfile])
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error(`Error creating default profile for user ${userId}:`, insertError);
+        return defaultProfile;
+      }
+      
+      console.log(`Default profile created for user ${userId}:`, newData);
+      return newData;
+    }
+    
     return null;
   }
 
@@ -58,10 +83,8 @@ export const getUserProfileMap = async (userIds: string[]) => {
     return {};
   }
 
-  // Log the user IDs we're trying to fetch profiles for
   console.log('Attempting to fetch profiles for user IDs:', userIds);
   
-  // Filter out any invalid IDs
   const validUserIds = userIds.filter(id => id && typeof id === 'string');
   
   if (validUserIds.length === 0) {
@@ -71,7 +94,6 @@ export const getUserProfileMap = async (userIds: string[]) => {
 
   console.log('Fetching profiles for users:', validUserIds);
   
-  // Fetch all profiles first instead of filtering by user IDs
   const { data: allProfiles, error } = await supabase
     .from('profiles')
     .select('id, full_name, company, role');
@@ -83,11 +105,9 @@ export const getUserProfileMap = async (userIds: string[]) => {
 
   console.log(`Retrieved ${allProfiles?.length || 0} total profiles from database`);
   
-  // Convert to a map for easy lookup
   const profileMap: Record<string, any> = {};
   
   if (allProfiles && allProfiles.length > 0) {
-    // First add all profiles to the map
     allProfiles.forEach(profile => {
       profileMap[profile.id] = {
         name: profile.full_name || 'Anonymous User',
@@ -96,7 +116,6 @@ export const getUserProfileMap = async (userIds: string[]) => {
       };
     });
     
-    // Then check which of our requested profiles were found
     let foundCount = 0;
     validUserIds.forEach(id => {
       if (profileMap[id]) {
@@ -107,7 +126,6 @@ export const getUserProfileMap = async (userIds: string[]) => {
     console.log(`Found ${foundCount} profiles out of ${validUserIds.length} requested user IDs`);
   }
   
-  // For any user IDs that don't have profiles, create default entries
   validUserIds.forEach(id => {
     if (!profileMap[id]) {
       console.warn(`No profile found for user ID: ${id}, creating default entry`);
@@ -122,14 +140,12 @@ export const getUserProfileMap = async (userIds: string[]) => {
   return profileMap;
 };
 
-// Create a profile for a user if it doesn't exist
 export const ensureUserProfile = async (userId: string, fullName?: string, company?: string) => {
   if (!userId) {
     console.error('Cannot ensure profile: userId is empty or undefined');
     return null;
   }
   
-  // First check if the profile exists
   const { data: existingProfile, error: checkError } = await supabase
     .from('profiles')
     .select('id, full_name, company')
@@ -137,7 +153,7 @@ export const ensureUserProfile = async (userId: string, fullName?: string, compa
     .single();
     
   if (checkError) {
-    if (checkError.code === 'PGRST116') { // Record not found
+    if (checkError.code === 'PGRST116') {
       console.log(`No profile found for user ${userId}, creating one...`);
       
       const { data: userData, error: userError } = await supabase.auth.getUser();
