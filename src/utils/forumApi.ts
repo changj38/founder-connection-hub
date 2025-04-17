@@ -1,9 +1,7 @@
-
 import { supabase } from '../integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserProfileMap, ensureUserProfile } from './supabaseUtils';
 
-// Define types
 export interface ForumPost {
   id: string;
   title: string;
@@ -14,7 +12,6 @@ export interface ForumPost {
   is_pinned?: boolean;
   is_locked?: boolean;
   heart_count?: number;
-  // Additional fields for UI
   author_name?: string;
   author_company?: string;
   comment_count?: number;
@@ -28,17 +25,14 @@ export interface ForumComment {
   content: string;
   created_at: string;
   updated_at: string;
-  // Additional fields for UI
-  author_name?: string;
-  author_company?: string;
+  heart_count?: number;
+  is_hearted?: boolean;
 }
 
-// Forum posts functions
 export const fetchForumPosts = async (): Promise<ForumPost[]> => {
   console.log('Fetching all forum posts');
   
   try {
-    // Fetch posts
     const { data: posts, error } = await supabase
       .from('forum_posts')
       .select('*')
@@ -56,15 +50,12 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
 
     console.log(`Retrieved ${posts.length} forum posts`);
     
-    // Get unique user IDs from posts
     const userIds = [...new Set(posts.map(post => post.user_id))].filter(Boolean);
     console.log('Unique user IDs from posts:', userIds);
     
-    // Fetch user profiles using the improved function
     const userMap = await getUserProfileMap(userIds);
     console.log('User profile map created with keys:', Object.keys(userMap));
     
-    // Count comments for each post
     const commentCounts: Record<string, number> = {};
     for (const post of posts) {
       const { count, error } = await supabase
@@ -79,7 +70,6 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
       }
     }
     
-    // Check heart status for posts if user is logged in
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData?.user?.id;
     
@@ -99,9 +89,7 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
       }
     }
     
-    // Enrich posts with author names, companies, and comment counts
     const enrichedPosts = posts.map(post => {
-      // Always have a default author info even if userMap doesn't have the user
       const authorInfo = userMap[post.user_id] || { name: 'Anonymous User', company: '' };
       
       return {
@@ -125,7 +113,6 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   console.log('Fetching post and comments for postId:', postId);
   
   try {
-    // Fetch the post
     const { data: post, error: postError } = await supabase
       .from('forum_posts')
       .select('*')
@@ -143,7 +130,6 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
     
     console.log('Retrieved post:', post);
     
-    // Fetch comments for the post
     const { data: comments, error: commentsError } = await supabase
       .from('forum_comments')
       .select('*')
@@ -157,21 +143,17 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
     
     console.log(`Retrieved ${comments?.length || 0} comments for post ${postId}`);
     
-    // Get unique user IDs from post and comments
     const allUserIds = [
       post.user_id,
       ...(comments || []).map(comment => comment.user_id)
     ].filter(Boolean);
     
-    // Remove duplicates
     const userIds = [...new Set(allUserIds)];
     console.log('User IDs to fetch profiles for:', userIds);
     
-    // Fetch user profiles using the improved function
     const userMap = await getUserProfileMap(userIds);
     console.log('User profile map created for post with comments:', Object.keys(userMap));
     
-    // Enrich post with author name and company
     const enrichedPost: ForumPost = {
       ...post,
       author_name: userMap[post.user_id]?.name || 'Anonymous User',
@@ -179,7 +161,6 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
       comment_count: comments?.length || 0
     };
     
-    // Enrich comments with author names and companies
     const enrichedComments: ForumComment[] = (comments || []).map(comment => {
       const authorInfo = userMap[comment.user_id] || { name: 'Anonymous User', company: '' };
       
@@ -190,7 +171,6 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
       };
     });
     
-    // Check if current user has hearted this post
     const { data: userData } = await supabase.auth.getUser();
     if (userData?.user) {
       const { data: heart } = await supabase
@@ -225,14 +205,12 @@ export const createForumPost = async (title: string, content: string): Promise<F
     const userId = userData.user.id;
     console.log('Creating post as user:', userId);
     
-    // Ensure the user has a profile record
     await ensureUserProfile(
       userId, 
       userData.user?.user_metadata?.full_name,
       userData.user?.user_metadata?.company
     );
     
-    // Create the post
     const { data: post, error } = await supabase
       .from('forum_posts')
       .insert({
@@ -254,14 +232,12 @@ export const createForumPost = async (title: string, content: string): Promise<F
     
     console.log('Post created successfully:', post);
     
-    // Get the user's profile info
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, company')
       .eq('id', userId)
       .single();
     
-    // Return the post with author information
     return {
       ...post,
       author_name: profile?.full_name || 'Anonymous User',
@@ -286,14 +262,12 @@ export const createForumComment = async (postId: string, content: string): Promi
     const userId = userData.user.id;
     console.log('Creating comment as user:', userId);
     
-    // Ensure the user has a profile record
     await ensureUserProfile(
       userId, 
       userData.user?.user_metadata?.full_name,
       userData.user?.user_metadata?.company
     );
     
-    // Create the comment
     const { data: comment, error } = await supabase
       .from('forum_comments')
       .insert({
@@ -315,14 +289,12 @@ export const createForumComment = async (postId: string, content: string): Promi
     
     console.log('Comment created successfully:', comment);
     
-    // Get the user's profile info
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, company')
       .eq('id', userId)
       .single();
     
-    // Return the comment with author information
     return {
       ...comment,
       author_name: profile?.full_name || 'Anonymous User',
@@ -334,7 +306,6 @@ export const createForumComment = async (postId: string, content: string): Promi
   }
 };
 
-// Heart-related functions
 export const togglePostHeart = async (postId: string): Promise<boolean> => {
   try {
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -346,7 +317,6 @@ export const togglePostHeart = async (postId: string): Promise<boolean> => {
     const userId = userData.user.id;
     console.log('Toggling heart for post:', postId, 'by user:', userId);
 
-    // First, check if the user has already hearted this post
     const { data: existingHeart, error: checkError } = await supabase
       .from('forum_post_hearts')
       .select('*')
@@ -360,7 +330,6 @@ export const togglePostHeart = async (postId: string): Promise<boolean> => {
     }
 
     if (existingHeart) {
-      // If heart exists, remove it
       const { error: deleteError } = await supabase
         .from('forum_post_hearts')
         .delete()
@@ -375,7 +344,6 @@ export const togglePostHeart = async (postId: string): Promise<boolean> => {
       console.log('Heart removed successfully');
       return false;
     } else {
-      // If heart doesn't exist, add it
       const { error: insertError } = await supabase
         .from('forum_post_hearts')
         .insert({
@@ -397,7 +365,65 @@ export const togglePostHeart = async (postId: string): Promise<boolean> => {
   }
 };
 
-// Hooks for React Query integration
+export const toggleCommentHeart = async (commentId: string): Promise<boolean> => {
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !userData.user) {
+      throw new Error('You must be logged in to heart a comment');
+    }
+
+    const userId = userData.user.id;
+    console.log('Toggling heart for comment:', commentId, 'by user:', userId);
+
+    const { data: existingHeart, error: checkError } = await supabase
+      .from('forum_comment_hearts')
+      .select('*')
+      .eq('comment_id', commentId)
+      .eq('user_id', userId)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing heart:', checkError);
+      throw checkError;
+    }
+
+    if (existingHeart) {
+      const { error: deleteError } = await supabase
+        .from('forum_comment_hearts')
+        .delete()
+        .eq('comment_id', commentId)
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.error('Error removing heart:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Heart removed successfully');
+      return false;
+    } else {
+      const { error: insertError } = await supabase
+        .from('forum_comment_hearts')
+        .insert({
+          comment_id: commentId,
+          user_id: userId
+        });
+
+      if (insertError) {
+        console.error('Error adding heart:', insertError);
+        throw insertError;
+      }
+
+      console.log('Heart added successfully');
+      return true;
+    }
+  } catch (error) {
+    console.error('Error in toggleCommentHeart:', error);
+    throw error;
+  }
+};
+
 export const useForumPosts = () => {
   return useQuery({
     queryKey: ['forumPosts'],
@@ -438,7 +464,6 @@ export const useCreateComment = () => {
   });
 };
 
-// Formatting functions
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   const now = new Date();

@@ -9,10 +9,40 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      forum_comment_hearts: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_comment_hearts_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "forum_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       forum_comments: {
         Row: {
           content: string
           created_at: string
+          heart_count: number
           id: string
           post_id: string
           updated_at: string
@@ -21,6 +51,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          heart_count?: number
           id?: string
           post_id: string
           updated_at?: string
@@ -29,6 +60,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          heart_count?: number
           id?: string
           post_id?: string
           updated_at?: string

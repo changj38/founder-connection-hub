@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,11 +13,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowUpCircle, MessageSquare, RefreshCcw, Send, Heart } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useForumPosts, useForumPost, useCreatePost, useCreateComment, formatDate, ForumPost, togglePostHeart } from '@/utils/forumApi';
+import { useForumPosts, useForumPost, useCreatePost, useCreateComment, formatDate, ForumPost, togglePostHeart, toggleCommentHeart } from '@/utils/forumApi';
 import { countProfilesInSupabase, getProfilesInSupabase, getSpecificProfile } from '@/utils/supabaseUtils';
 
 const ForumPage = () => {
-  // Move these React Query hooks before the useEffect that depends on them
   const { data: posts, isLoading: isLoadingPosts, isError: isPostsError, error: postsError, refetch: refetchPosts } = useForumPosts();
   
   const { session } = useAuth();
@@ -51,7 +49,6 @@ const ForumPage = () => {
         const userIds = [...new Set(posts.map(post => post.user_id))];
         console.log('Post user IDs for profile check:', userIds);
         
-        // Create a new object to store profiles
         const profilesById: Record<string, any> = {};
         
         for (const userId of userIds) {
@@ -60,7 +57,6 @@ const ForumPage = () => {
             profilesById[userId] = profile;
           } else {
             console.warn(`No profile found for user ID: ${userId} in ForumPage useEffect`);
-            // Add default profile if none found
             profilesById[userId] = {
               id: userId,
               full_name: 'Anonymous User',
@@ -198,6 +194,37 @@ const ForumPage = () => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to heart post.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleHeartComment = async (commentId: string) => {
+    if (!session) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to heart a comment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const isHearted = await toggleCommentHeart(commentId);
+      if (selectedPostId) {
+        await refetchPosts();
+      }
+      
+      toast({
+        title: isHearted ? "Comment Hearted" : "Heart Removed",
+        description: isHearted 
+          ? "You've added a heart to this comment." 
+          : "You've removed your heart from this comment.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to heart comment.",
         variant: "destructive",
       });
     }
@@ -461,11 +488,30 @@ const ForumPage = () => {
                             </Avatar>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm">{formatAuthor(comment.author_name, comment.author_company)}</span>
-                                <span className="text-xs text-[#828282]">{formatDate(comment.created_at)}</span>
+                                <span className="font-medium text-sm">
+                                  {formatAuthor(comment.author_name, comment.author_company)}
+                                </span>
+                                <span className="text-xs text-[#828282]">
+                                  {formatDate(comment.created_at)}
+                                </span>
                               </div>
                               <div className="mt-1 text-sm whitespace-pre-line">
                                 {comment.content}
+                              </div>
+                              <div className="mt-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleHeartComment(comment.id)}
+                                  className="h-8 px-2"
+                                >
+                                  <Heart 
+                                    className={`h-4 w-4 ${comment.is_hearted ? 'fill-red-500 text-red-500' : 'text-gray-500'}`}
+                                  />
+                                  <span className="ml-1 text-xs">
+                                    {comment.heart_count || 0}
+                                  </span>
+                                </Button>
                               </div>
                             </div>
                           </div>
