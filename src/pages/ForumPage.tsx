@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -27,17 +26,13 @@ const ForumPage = () => {
   const { toast } = useToast();
   const postsPerPage = 10;
 
-  // Fetch forum posts
   const { data: posts, isLoading: isLoadingPosts, isError: isPostsError, error: postsError, refetch: refetchPosts } = useForumPosts();
   
-  // Fetch selected post and its comments
   const { data: selectedPostData, isLoading: isLoadingPost, isError: isPostError } = useForumPost(selectedPostId || '');
   
-  // Mutations
   const createPost = useCreatePost();
   const createComment = useCreateComment();
 
-  // Get initial letters for avatar
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -47,11 +42,15 @@ const ForumPage = () => {
       .substring(0, 2);
   };
 
-  // Handle pagination
+  const formatAuthor = (name?: string, company?: string) => {
+    if (!name) return 'User';
+    if (!company) return name;
+    return `${name} from ${company}`;
+  };
+
   const paginatedPosts = posts ? posts.slice((currentPage - 1) * postsPerPage, currentPage * postsPerPage) : [];
   const totalPages = posts ? Math.ceil(posts.length / postsPerPage) : 0;
 
-  // Handle creating a new post
   const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session) {
@@ -90,7 +89,6 @@ const ForumPage = () => {
     }
   };
 
-  // Handle creating a new comment
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session) {
@@ -129,13 +127,11 @@ const ForumPage = () => {
     }
   };
 
-  // Handle viewing a post
   const handleViewPost = (postId: string) => {
     setSelectedPostId(postId);
     setCommentContent('');
   };
 
-  // Render loading state
   if (isLoadingPosts) {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
@@ -155,7 +151,6 @@ const ForumPage = () => {
     );
   }
 
-  // Render error state
   if (isPostsError) {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
@@ -183,7 +178,6 @@ const ForumPage = () => {
         </Button>
       </div>
 
-      {/* Post list */}
       <div className="bg-[#f6f6ef] border border-[#e6e6e0] rounded">
         {paginatedPosts.map((post, index) => (
           <div key={post.id} className="p-2 hover:bg-[#f0f0e8]">
@@ -202,7 +196,7 @@ const ForumPage = () => {
                   </Button>
                 </div>
                 <div className="text-xs text-[#828282]">
-                  by {post.author_name} | {formatDate(post.created_at)} | {post.comment_count} comments
+                  by {formatAuthor(post.author_name, post.author_company)} | {formatDate(post.created_at)} | {post.comment_count} comments
                 </div>
               </div>
             </div>
@@ -210,7 +204,6 @@ const ForumPage = () => {
           </div>
         ))}
 
-        {/* Empty state */}
         {posts && posts.length === 0 && (
           <div className="p-8 text-center">
             <p className="text-[#828282] mb-4">No posts yet. Be the first to start a discussion!</p>
@@ -223,7 +216,6 @@ const ForumPage = () => {
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <Pagination className="mt-4">
           <PaginationContent>
@@ -255,7 +247,6 @@ const ForumPage = () => {
         </Pagination>
       )}
 
-      {/* Create post sheet */}
       <Sheet open={isNewPostOpen} onOpenChange={setIsNewPostOpen}>
         <SheetContent className="sm:max-w-[500px]">
           <SheetHeader>
@@ -300,7 +291,6 @@ const ForumPage = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Post details dialog */}
       <Dialog open={!!selectedPostId} onOpenChange={(open) => !open && setSelectedPostId(null)}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           {isLoadingPost ? (
@@ -319,7 +309,7 @@ const ForumPage = () => {
               <DialogHeader>
                 <DialogTitle className="text-xl">{selectedPostData.post.title}</DialogTitle>
                 <div className="text-sm text-[#828282] mt-1">
-                  By {selectedPostData.post.author_name} • {formatDate(selectedPostData.post.created_at)}
+                  By {formatAuthor(selectedPostData.post.author_name, selectedPostData.post.author_company)} • {formatDate(selectedPostData.post.created_at)}
                 </div>
               </DialogHeader>
               
@@ -346,7 +336,7 @@ const ForumPage = () => {
                           </Avatar>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">{comment.author_name}</span>
+                              <span className="font-medium text-sm">{formatAuthor(comment.author_name, comment.author_company)}</span>
                               <span className="text-xs text-[#828282]">{formatDate(comment.created_at)}</span>
                             </div>
                             <div className="mt-1 text-sm whitespace-pre-line">

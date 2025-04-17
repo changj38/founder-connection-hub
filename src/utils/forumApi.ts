@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -14,6 +13,7 @@ export interface ForumPost {
   is_locked?: boolean;
   // Additional fields for UI
   author_name?: string;
+  author_company?: string; // Added company field
   comment_count?: number;
 }
 
@@ -26,6 +26,7 @@ export interface ForumComment {
   updated_at: string;
   // Additional fields for UI
   author_name?: string;
+  author_company?: string; // Added company field
 }
 
 // Forum posts functions
@@ -51,14 +52,17 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
   // Fetch user profiles
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, full_name')
+    .select('id, full_name, company')
     .in('id', userIds);
   
-  // Create a map of user IDs to names
-  const userMap: Record<string, string> = {};
+  // Create a map of user IDs to names and companies
+  const userMap: Record<string, { name: string, company: string }> = {};
   if (profiles) {
     profiles.forEach(profile => {
-      userMap[profile.id] = profile.full_name || 'Anonymous User';
+      userMap[profile.id] = {
+        name: profile.full_name || 'User',
+        company: profile.company || ''
+      };
     });
   }
   
@@ -77,10 +81,11 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
     }
   }
   
-  // Enrich posts with author names and comment counts
+  // Enrich posts with author names, companies, and comment counts
   return posts.map(post => ({
     ...post,
-    author_name: userMap[post.user_id] || 'Anonymous User',
+    author_name: userMap[post.user_id]?.name || 'User',
+    author_company: userMap[post.user_id]?.company || '',
     comment_count: commentCounts[post.id] || 0
   }));
 };
@@ -123,28 +128,33 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   // Fetch user profiles
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, full_name')
+    .select('id, full_name, company')
     .in('id', userIds);
   
-  // Create a map of user IDs to names
-  const userMap: Record<string, string> = {};
+  // Create a map of user IDs to names and companies
+  const userMap: Record<string, { name: string, company: string }> = {};
   if (profiles) {
     profiles.forEach(profile => {
-      userMap[profile.id] = profile.full_name || 'Anonymous User';
+      userMap[profile.id] = {
+        name: profile.full_name || 'User',
+        company: profile.company || ''
+      };
     });
   }
   
-  // Enrich post with author name
+  // Enrich post with author name and company
   const enrichedPost: ForumPost = {
     ...post,
-    author_name: userMap[post.user_id] || 'Anonymous User',
+    author_name: userMap[post.user_id]?.name || 'User',
+    author_company: userMap[post.user_id]?.company || '',
     comment_count: comments?.length || 0
   };
   
-  // Enrich comments with author names
+  // Enrich comments with author names and companies
   const enrichedComments: ForumComment[] = (comments || []).map(comment => ({
     ...comment,
-    author_name: userMap[comment.user_id] || 'Anonymous User'
+    author_name: userMap[comment.user_id]?.name || 'User',
+    author_company: userMap[comment.user_id]?.company || ''
   }));
   
   return {
