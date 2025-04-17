@@ -1,6 +1,7 @@
 
 import { supabase } from '../integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getUserProfileMap, ensureUserProfile } from './supabaseUtils';
 
 // Define types
 export interface ForumPost {
@@ -12,11 +13,11 @@ export interface ForumPost {
   updated_at: string;
   is_pinned?: boolean;
   is_locked?: boolean;
+  heart_count?: number;
   // Additional fields for UI
   author_name?: string;
   author_company?: string;
   comment_count?: number;
-  heart_count?: number;
   is_hearted?: boolean;
 }
 
@@ -32,516 +33,381 @@ export interface ForumComment {
   author_company?: string;
 }
 
-// Fetch profiles for multiple user IDs
-const fetchProfiles = async (userIds: string[]) => {
-  if (!userIds || userIds.length === 0) return {};
-  
-  // Filter out any null or undefined IDs
-  const validUserIds = userIds.filter(Boolean);
-  
-  if (validUserIds.length === 0) return {};
-  
-  console.log('Fetching profiles for user IDs:', validUserIds);
-  
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('id, full_name, company')
-    .in('id', validUserIds);
-  
-  if (error) {
-    console.error('Error fetching profiles:', error);
-    return {};
-  }
-  
-  console.log('Profiles retrieved from database:', profiles);
-  
-  // Create a map of user IDs to profiles
-  const userMap: Record<string, { name: string, company: string }> = {};
-  
-  // First, add all the profiles we found
-  if (profiles && profiles.length > 0) {
-    profiles.forEach(profile => {
-      userMap[profile.id] = {
-        name: profile.full_name || 'Anonymous User',
-        company: profile.company || ''
-      };
-    });
-  } else {
-    console.warn('No profiles found for user IDs:', validUserIds);
-  }
-  
-  // For each user ID that doesn't have a profile, fetch their auth data and create one
-  const missingUserIds = validUserIds.filter(id => !userMap[id]);
-  
-  if (missingUserIds.length > 0) {
-    console.log('Attempting to create profiles for missing users:', missingUserIds);
-    
-    for (const userId of missingUserIds) {
-      // Try to get user data from auth
-      const { data: authUser } = await supabase.auth.admin.getUserById(userId);
-      
-      if (authUser?.user) {
-        const userData = authUser.user;
-        const fullName = userData.user_metadata?.full_name || 'User ' + userId.substring(0, 8);
-        const company = userData.user_metadata?.company || '';
-        
-        console.log(`Creating profile for user ${userId} with name: ${fullName}, company: ${company}`);
-        
-        // Create a profile for this user
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            full_name: fullName,
-            company: company
-          });
-          
-        if (insertError) {
-          console.error(`Error creating profile for user ${userId}:`, insertError);
-        } else {
-          // Add to our map
-          userMap[userId] = {
-            name: fullName,
-            company: company
-          };
-        }
-      } else {
-        console.warn(`Could not find auth data for user ${userId}`);
-        userMap[userId] = {
-          name: 'Anonymous User',
-          company: ''
-        };
-      }
-    }
-  }
-  
-  return userMap;
-};
-
 // Forum posts functions
 export const fetchForumPosts = async (): Promise<ForumPost[]> => {
   console.log('Fetching all forum posts');
   
-  // Fetch posts
-  const { data: posts, error } = await supabase
-    .from('forum_posts')
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching forum posts:', error);
-    throw error;
-  }
-  
-  if (!posts || posts.length === 0) {
-    return [];
-  }
-
-  console.log('Retrieved posts:', posts);
-
-  // Get unique user IDs from posts
-  const userIds = [...new Set(posts.map(post => post.user_id))].filter(Boolean);
-  console.log('Unique user IDs from posts:', userIds);
-  
-  // Fetch user profiles
-  const userMap = await fetchProfiles(userIds);
-  console.log('User profile map for posts:', userMap);
-  
-  // Count comments for each post
-  const commentCounts: Record<string, number> = {};
-  for (const post of posts) {
-    const { count, error } = await supabase
-      .from('forum_comments')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', post.id);
+  try {
+    // Fetch posts
+    const { data: posts, error } = await supabase
+      .from('forum_posts')
+      .select('*')
+      .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching comment count:', error);
-    } else {
-      commentCounts[post.id] = count || 0;
+      console.error('Error fetching forum posts:', error);
+      throw error;
     }
-  }
-  
-  // Enrich posts with author names, companies, and comment counts
-  const enrichedPosts = posts.map(post => {
-    const authorInfo = userMap[post.user_id] || { name: 'Anonymous User', company: '' };
-    console.log(`Enriching post by user_id: ${post.user_id} with author info:`, authorInfo);
     
-    return {
-      ...post,
-      author_name: authorInfo.name,
-      author_company: authorInfo.company,
-      comment_count: commentCounts[post.id] || 0
-    };
-  });
-  
-  console.log('Enriched posts:', enrichedPosts);
-  return enrichedPosts;
+    if (!posts || posts.length === 0) {
+      console.log('No forum posts found');
+      return [];
+    }
+
+    console.log(`Retrieved ${posts.length} forum posts`);
+    
+    // Get unique user IDs from posts
+    const userIds = [...new Set(posts.map(post => post.user_id))].filter(Boolean);
+    console.log('Unique user IDs from posts:', userIds);
+    
+    // Fetch user profiles using the improved function
+    const userMap = await getUserProfileMap(userIds);
+    console.log('User profile map created with keys:', Object.keys(userMap));
+    
+    // Count comments for each post
+    const commentCounts: Record<string, number> = {};
+    for (const post of posts) {
+      const { count, error } = await supabase
+        .from('forum_comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', post.id);
+      
+      if (error) {
+        console.error(`Error fetching comment count for post ${post.id}:`, error);
+      } else {
+        commentCounts[post.id] = count || 0;
+      }
+    }
+    
+    // Check heart status for posts if user is logged in
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    
+    let userHearts: Record<string, boolean> = {};
+    if (userId) {
+      const postIds = posts.map(post => post.id);
+      const { data: hearts } = await supabase
+        .from('forum_post_hearts')
+        .select('post_id')
+        .eq('user_id', userId)
+        .in('post_id', postIds);
+        
+      if (hearts) {
+        hearts.forEach(heart => {
+          userHearts[heart.post_id] = true;
+        });
+      }
+    }
+    
+    // Enrich posts with author names, companies, and comment counts
+    const enrichedPosts = posts.map(post => {
+      const authorInfo = userMap[post.user_id] || { name: 'Anonymous User', company: '' };
+      
+      return {
+        ...post,
+        author_name: authorInfo.name,
+        author_company: authorInfo.company,
+        comment_count: commentCounts[post.id] || 0,
+        is_hearted: userHearts[post.id] || false
+      };
+    });
+    
+    console.log('Enriched posts with author info and comment counts');
+    return enrichedPosts;
+  } catch (error) {
+    console.error('Error in fetchForumPosts:', error);
+    throw error;
+  }
 };
 
 export const fetchPostWithComments = async (postId: string): Promise<{ post: ForumPost, comments: ForumComment[] }> => {
   console.log('Fetching post and comments for postId:', postId);
   
-  // Fetch the post
-  const { data: post, error: postError } = await supabase
-    .from('forum_posts')
-    .select('*')
-    .eq('id', postId)
-    .single();
-  
-  if (postError) {
-    console.error('Error fetching forum post:', postError);
-    throw postError;
-  }
-  
-  if (!post) {
-    throw new Error('Post not found');
-  }
-  
-  console.log('Retrieved post:', post);
-  
-  // Fetch comments for the post
-  const { data: comments, error: commentsError } = await supabase
-    .from('forum_comments')
-    .select('*')
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true });
-  
-  if (commentsError) {
-    console.error('Error fetching comments:', commentsError);
-    throw commentsError;
-  }
-  
-  console.log('Retrieved comments:', comments);
-  
-  // Get unique user IDs from post and comments
-  const allUserIds = [
-    post.user_id,
-    ...(comments || []).map(comment => comment.user_id)
-  ].filter(Boolean);
-  
-  // Remove duplicates
-  const userIds = [...new Set(allUserIds)];
-  
-  console.log('User IDs to fetch profiles for:', userIds);
-  
-  // Fetch user profiles
-  const userMap = await fetchProfiles(userIds);
-  
-  console.log('User mapping created:', userMap);
-  
-  // Enrich post with author name and company
-  const enrichedPost: ForumPost = {
-    ...post,
-    author_name: userMap[post.user_id]?.name || 'Anonymous User',
-    author_company: userMap[post.user_id]?.company || '',
-    comment_count: comments?.length || 0
-  };
-  
-  // Enrich comments with author names and companies
-  const enrichedComments: ForumComment[] = (comments || []).map(comment => {
-    const authorInfo = userMap[comment.user_id] || { name: 'Anonymous User', company: '' };
-    console.log('Enriching comment by user_id:', comment.user_id, 'with author info:', authorInfo);
-    return {
-      ...comment,
-      author_name: authorInfo.name,
-      author_company: authorInfo.company
+  try {
+    // Fetch the post
+    const { data: post, error: postError } = await supabase
+      .from('forum_posts')
+      .select('*')
+      .eq('id', postId)
+      .single();
+    
+    if (postError) {
+      console.error('Error fetching forum post:', postError);
+      throw postError;
+    }
+    
+    if (!post) {
+      throw new Error('Post not found');
+    }
+    
+    console.log('Retrieved post:', post);
+    
+    // Fetch comments for the post
+    const { data: comments, error: commentsError } = await supabase
+      .from('forum_comments')
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+    
+    if (commentsError) {
+      console.error('Error fetching comments:', commentsError);
+      throw commentsError;
+    }
+    
+    console.log(`Retrieved ${comments?.length || 0} comments for post ${postId}`);
+    
+    // Get unique user IDs from post and comments
+    const allUserIds = [
+      post.user_id,
+      ...(comments || []).map(comment => comment.user_id)
+    ].filter(Boolean);
+    
+    // Remove duplicates
+    const userIds = [...new Set(allUserIds)];
+    console.log('User IDs to fetch profiles for:', userIds);
+    
+    // Fetch user profiles using the improved function
+    const userMap = await getUserProfileMap(userIds);
+    console.log('User profile map created for post with comments:', Object.keys(userMap));
+    
+    // Enrich post with author name and company
+    const enrichedPost: ForumPost = {
+      ...post,
+      author_name: userMap[post.user_id]?.name || 'Anonymous User',
+      author_company: userMap[post.user_id]?.company || '',
+      comment_count: comments?.length || 0
     };
-  });
-  
-  console.log('Enriched post:', enrichedPost);
-  console.log('Enriched comments:', enrichedComments);
-  
-  return {
-    post: enrichedPost,
-    comments: enrichedComments
-  };
+    
+    // Enrich comments with author names and companies
+    const enrichedComments: ForumComment[] = (comments || []).map(comment => {
+      const authorInfo = userMap[comment.user_id] || { name: 'Anonymous User', company: '' };
+      
+      return {
+        ...comment,
+        author_name: authorInfo.name,
+        author_company: authorInfo.company
+      };
+    });
+    
+    // Check if current user has hearted this post
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData?.user) {
+      const { data: heart } = await supabase
+        .from('forum_post_hearts')
+        .select('*')
+        .eq('post_id', postId)
+        .eq('user_id', userData.user.id)
+        .single();
+        
+      enrichedPost.is_hearted = !!heart;
+    }
+    
+    console.log('Successfully enriched post and comments with author info');
+    return {
+      post: enrichedPost,
+      comments: enrichedComments
+    };
+  } catch (error) {
+    console.error('Error in fetchPostWithComments:', error);
+    throw error;
+  }
 };
 
 export const createForumPost = async (title: string, content: string): Promise<ForumPost> => {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !userData.user) {
-    throw new Error('You must be logged in to create a post');
-  }
-  
-  console.log('Creating post as user:', userData.user.id);
-  
-  // First ensure we have a profile for this user
-  const { data: existingProfile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('id, full_name, company')
-    .eq('id', userData.user.id)
-    .single();
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
     
-  if (profileCheckError) {
-    console.warn('User profile not found, creating a basic one:', profileCheckError);
-    
-    // Create a default profile if none exists
-    const { error: insertProfileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: userData.user.id,
-        full_name: userData.user?.user_metadata?.full_name || 'Anonymous User',
-        company: userData.user?.user_metadata?.company || ''
-      });
-      
-    if (insertProfileError) {
-      console.error('Error creating default profile:', insertProfileError);
+    if (userError || !userData.user) {
+      throw new Error('You must be logged in to create a post');
     }
-  }
-  
-  // Get the user's profile again (existing or newly created)
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('full_name, company')
-    .eq('id', userData.user.id)
-    .single();
     
-  console.log('User profile for post creation:', profile);
-  
-  const { data: post, error } = await supabase
-    .from('forum_posts')
-    .insert({
-      title,
-      content,
-      user_id: userData.user.id
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating forum post:', error);
+    const userId = userData.user.id;
+    console.log('Creating post as user:', userId);
+    
+    // Ensure the user has a profile record
+    await ensureUserProfile(
+      userId, 
+      userData.user?.user_metadata?.full_name,
+      userData.user?.user_metadata?.company
+    );
+    
+    // Create the post
+    const { data: post, error } = await supabase
+      .from('forum_posts')
+      .insert({
+        title,
+        content,
+        user_id: userId
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating forum post:', error);
+      throw error;
+    }
+    
+    if (!post) {
+      throw new Error('Failed to create post');
+    }
+    
+    console.log('Post created successfully:', post);
+    
+    // Get the user's profile info
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, company')
+      .eq('id', userId)
+      .single();
+    
+    // Return the post with author information
+    return {
+      ...post,
+      author_name: profile?.full_name || 'Anonymous User',
+      author_company: profile?.company || '',
+      comment_count: 0,
+      is_hearted: false
+    };
+  } catch (error) {
+    console.error('Error in createForumPost:', error);
     throw error;
   }
-  
-  if (!post) {
-    throw new Error('Failed to create post');
-  }
-  
-  console.log('Post created successfully:', post);
-  
-  // Return the post with author information from their profile
-  return {
-    ...post,
-    author_name: profile?.full_name || 'Anonymous User',
-    author_company: profile?.company || '',
-    comment_count: 0
-  };
 };
 
 export const createForumComment = async (postId: string, content: string): Promise<ForumComment> => {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !userData.user) {
-    throw new Error('You must be logged in to comment');
-  }
-  
-  console.log('Creating comment as user:', userData.user.id);
-  
-  // First ensure we have a profile for this user
-  const { data: existingProfile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('id, full_name, company')
-    .eq('id', userData.user.id)
-    .single();
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
     
-  if (profileCheckError) {
-    console.warn('User profile not found, creating a basic one:', profileCheckError);
-    
-    // Create a default profile if none exists
-    const { error: insertProfileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: userData.user.id,
-        full_name: userData.user?.user_metadata?.full_name || 'Anonymous User',
-        company: userData.user?.user_metadata?.company || ''
-      });
-      
-    if (insertProfileError) {
-      console.error('Error creating default profile:', insertProfileError);
+    if (userError || !userData.user) {
+      throw new Error('You must be logged in to comment');
     }
-  }
-  
-  // Get the user's profile again (existing or newly created)
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('full_name, company')
-    .eq('id', userData.user.id)
-    .single();
     
-  console.log('User profile for comment creation:', profile);
-  
-  const { data: comment, error } = await supabase
-    .from('forum_comments')
-    .insert({
-      post_id: postId,
-      content,
-      user_id: userData.user.id
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating comment:', error);
+    const userId = userData.user.id;
+    console.log('Creating comment as user:', userId);
+    
+    // Ensure the user has a profile record
+    await ensureUserProfile(
+      userId, 
+      userData.user?.user_metadata?.full_name,
+      userData.user?.user_metadata?.company
+    );
+    
+    // Create the comment
+    const { data: comment, error } = await supabase
+      .from('forum_comments')
+      .insert({
+        post_id: postId,
+        content,
+        user_id: userId
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating comment:', error);
+      throw error;
+    }
+    
+    if (!comment) {
+      throw new Error('Failed to create comment');
+    }
+    
+    console.log('Comment created successfully:', comment);
+    
+    // Get the user's profile info
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, company')
+      .eq('id', userId)
+      .single();
+    
+    // Return the comment with author information
+    return {
+      ...comment,
+      author_name: profile?.full_name || 'Anonymous User',
+      author_company: profile?.company || ''
+    };
+  } catch (error) {
+    console.error('Error in createForumComment:', error);
     throw error;
   }
-  
-  if (!comment) {
-    throw new Error('Failed to create comment');
-  }
-  
-  console.log('Comment created successfully:', comment);
-  
-  // Return the comment with author information from their profile
-  return {
-    ...comment,
-    author_name: profile?.full_name || 'Anonymous User',
-    author_company: profile?.company || ''
-  };
 };
 
 // Heart-related functions
 export const togglePostHeart = async (postId: string): Promise<boolean> => {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !userData.user) {
-    throw new Error('You must be logged in to heart a post');
-  }
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !userData.user) {
+      throw new Error('You must be logged in to heart a post');
+    }
 
-  console.log('Toggling heart for post:', postId);
+    const userId = userData.user.id;
+    console.log('Toggling heart for post:', postId, 'by user:', userId);
 
-  // First, check if the user has already hearted this post
-  const { data: existingHeart, error: checkError } = await supabase
-    .from('forum_post_hearts')
-    .select('*')
-    .eq('post_id', postId)
-    .eq('user_id', userData.user.id)
-    .single();
-
-  if (checkError && checkError.code !== 'PGRST116') {
-    console.error('Error checking existing heart:', checkError);
-    throw checkError;
-  }
-
-  if (existingHeart) {
-    // If heart exists, remove it
-    const { error: deleteError } = await supabase
+    // First, check if the user has already hearted this post
+    const { data: existingHeart, error: checkError } = await supabase
       .from('forum_post_hearts')
-      .delete()
+      .select('*')
       .eq('post_id', postId)
-      .eq('user_id', userData.user.id);
+      .eq('user_id', userId)
+      .single();
 
-    if (deleteError) {
-      console.error('Error removing heart:', deleteError);
-      throw deleteError;
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing heart:', checkError);
+      throw checkError;
     }
 
-    console.log('Heart removed successfully');
-    return false;
-  } else {
-    // If heart doesn't exist, add it
-    const { error: insertError } = await supabase
-      .from('forum_post_hearts')
-      .insert({
-        post_id: postId,
-        user_id: userData.user.id
-      });
+    if (existingHeart) {
+      // If heart exists, remove it
+      const { error: deleteError } = await supabase
+        .from('forum_post_hearts')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', userId);
 
-    if (insertError) {
-      console.error('Error adding heart:', insertError);
-      throw insertError;
+      if (deleteError) {
+        console.error('Error removing heart:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Heart removed successfully');
+      return false;
+    } else {
+      // If heart doesn't exist, add it
+      const { error: insertError } = await supabase
+        .from('forum_post_hearts')
+        .insert({
+          post_id: postId,
+          user_id: userId
+        });
+
+      if (insertError) {
+        console.error('Error adding heart:', insertError);
+        throw insertError;
+      }
+
+      console.log('Heart added successfully');
+      return true;
     }
-
-    console.log('Heart added successfully');
-    return true;
+  } catch (error) {
+    console.error('Error in togglePostHeart:', error);
+    throw error;
   }
-};
-
-export const checkUserHeart = async (postId: string): Promise<boolean> => {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !userData.user) {
-    return false;
-  }
-
-  const { data: heart, error } = await supabase
-    .from('forum_post_hearts')
-    .select('*')
-    .eq('post_id', postId)
-    .eq('user_id', userData.user.id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return false; // No heart found
-    }
-    console.error('Error checking user heart:', error);
-    return false;
-  }
-
-  return !!heart;
 };
 
 // Hooks for React Query integration
 export const useForumPosts = () => {
   return useQuery({
     queryKey: ['forumPosts'],
-    queryFn: async () => {
-      const posts = await fetchForumPosts();
-      
-      // If user is logged in, check which posts they've hearted
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const postIds = posts.map(post => post.id);
-        const { data: hearts } = await supabase
-          .from('forum_post_hearts')
-          .select('post_id')
-          .eq('user_id', user.id)
-          .in('post_id', postIds);
-
-        const heartedPostIds = hearts?.map(h => h.post_id) || [];
-        
-        return posts.map(post => ({
-          ...post,
-          is_hearted: heartedPostIds.includes(post.id)
-        }));
-      }
-      
-      return posts;
-    }
+    queryFn: fetchForumPosts
   });
 };
 
 export const useForumPost = (postId: string) => {
   return useQuery({
     queryKey: ['forumPost', postId],
-    queryFn: async () => {
-      const postWithComments = await fetchPostWithComments(postId);
-      
-      // Check if the user has hearted this post
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { data: heart } = await supabase
-          .from('forum_post_hearts')
-          .select('*')
-          .eq('post_id', postId)
-          .eq('user_id', user.id)
-          .single();
-        
-        return {
-          ...postWithComments,
-          post: {
-            ...postWithComments.post,
-            is_hearted: !!heart
-          }
-        };
-      }
-      
-      return postWithComments;
-    },
+    queryFn: () => fetchPostWithComments(postId),
     enabled: !!postId
   });
 };
