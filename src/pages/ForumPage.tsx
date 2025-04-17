@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,14 @@ const ForumPage = () => {
   const [profiles, setProfiles] = useState<any[] | null>(null);
   const [specificProfile, setSpecificProfile] = useState<any | null>(null);
 
+  // Move these React Query hooks before the useEffect that depends on them
+  const { data: posts, isLoading: isLoadingPosts, isError: isPostsError, error: postsError, refetch: refetchPosts } = useForumPosts();
+  
+  const { data: selectedPostData, isLoading: isLoadingPost, isError: isPostError } = useForumPost(selectedPostId || '');
+  
+  const createPost = useCreatePost();
+  const createComment = useCreateComment();
+
   useEffect(() => {
     const fetchData = async () => {
       const count = await countProfilesInSupabase();
@@ -53,13 +62,6 @@ const ForumPage = () => {
 
     fetchData();
   }, [posts]);
-
-  const { data: posts, isLoading: isLoadingPosts, isError: isPostsError, error: postsError, refetch: refetchPosts } = useForumPosts();
-  
-  const { data: selectedPostData, isLoading: isLoadingPost, isError: isPostError } = useForumPost(selectedPostId || '');
-  
-  const createPost = useCreatePost();
-  const createComment = useCreateComment();
 
   const getInitials = (name: string) => {
     if (!name || name === 'Anonymous User') return 'AU';
