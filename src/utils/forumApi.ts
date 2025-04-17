@@ -14,7 +14,7 @@ export interface ForumPost {
   is_locked?: boolean;
   // Additional fields for UI
   author_name?: string;
-  author_company?: string; // Added company field
+  author_company?: string;
   comment_count?: number;
 }
 
@@ -27,7 +27,7 @@ export interface ForumComment {
   updated_at: string;
   // Additional fields for UI
   author_name?: string;
-  author_company?: string; // Added company field
+  author_company?: string;
 }
 
 // Forum posts functions
