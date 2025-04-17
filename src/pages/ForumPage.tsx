@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowUpCircle, MessageSquare, RefreshCcw, Send, Heart } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useForumPosts, useForumPost, useCreatePost, useCreateComment, formatDate, ForumPost, togglePostHeart } from '@/utils/forumApi';
-import { countProfilesInSupabase } from '@/utils/supabaseUtils';
+import { countProfilesInSupabase, getProfilesInSupabase, getSpecificProfile } from '@/utils/supabaseUtils';
 
 const ForumPage = () => {
   const { session } = useAuth();
@@ -27,15 +27,32 @@ const ForumPage = () => {
   const { toast } = useToast();
   const postsPerPage = 10;
   const [profileCount, setProfileCount] = useState<number | null>(null);
+  const [profiles, setProfiles] = useState<any[] | null>(null);
+  const [specificProfile, setSpecificProfile] = useState<any | null>(null);
 
   useEffect(() => {
-    const fetchProfileCount = async () => {
+    const fetchData = async () => {
       const count = await countProfilesInSupabase();
       setProfileCount(count);
+      
+      const allProfiles = await getProfilesInSupabase();
+      setProfiles(allProfiles);
+      
+      if (posts && posts.length > 0) {
+        const userIds = [...new Set(posts.map(post => post.user_id))];
+        console.log('Post user IDs for profile check:', userIds);
+        
+        for (const userId of userIds) {
+          const profile = await getSpecificProfile(userId);
+          if (profile) {
+            setSpecificProfile(prev => ({...prev, [userId]: profile}));
+          }
+        }
+      }
     };
 
-    fetchProfileCount();
-  }, []);
+    fetchData();
+  }, [posts]);
 
   const { data: posts, isLoading: isLoadingPosts, isError: isPostsError, error: postsError, refetch: refetchPosts } = useForumPosts();
   
@@ -206,9 +223,35 @@ const ForumPage = () => {
 
   return (
     <div>
-      {profileCount !== null && (
-        <div>Total Profiles: {profileCount}</div>
-      )}
+      <div className="bg-slate-100 p-4 mb-4 rounded-md">
+        <h3 className="font-semibold mb-2">Debug Information:</h3>
+        <p>Total Profiles: {profileCount}</p>
+        {profiles && (
+          <div className="mt-2">
+            <p>Profile IDs:</p>
+            <ul className="list-disc pl-5">
+              {profiles.map(profile => (
+                <li key={profile.id} className="text-xs">
+                  {profile.id.substring(0, 8)}... - {profile.full_name || 'No name'} ({profile.company || 'No company'})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {specificProfile && (
+          <div className="mt-2">
+            <p>Post author profiles:</p>
+            <ul className="list-disc pl-5">
+              {Object.entries(specificProfile).map(([userId, profile]) => (
+                <li key={userId} className="text-xs">
+                  {userId.substring(0, 8)}... - {(profile as any).full_name || 'No name'} ({(profile as any).company || 'No company'})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
       <div className="container mx-auto p-4 max-w-4xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Founder Forum</h1>

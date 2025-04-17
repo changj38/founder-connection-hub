@@ -14,3 +14,33 @@ export const countProfilesInSupabase = async () => {
   console.log('Number of profiles:', count);
   return count;
 };
+
+export const getProfilesInSupabase = async () => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, company, role');
+
+  if (error) {
+    console.error('Error fetching profiles:', error);
+    return null;
+  }
+
+  console.log('Profiles in database:', data);
+  return data;
+};
+
+export const getSpecificProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, company, role')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching profile for user ${userId}:`, error);
+    return null;
+  }
+
+  console.log(`Profile for user ${userId}:`, data);
+  return data;
+};
