@@ -96,6 +96,8 @@ export const fetchForumPosts = async (): Promise<ForumPost[]> => {
 };
 
 export const fetchPostWithComments = async (postId: string): Promise<{ post: ForumPost, comments: ForumComment[] }> => {
+  console.log('Fetching post and comments for postId:', postId);
+  
   // Fetch the post
   const { data: post, error: postError } = await supabase
     .from('forum_posts')
@@ -133,6 +135,8 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   // Remove duplicates
   const userIds = [...new Set(allUserIds)];
   
+  console.log('User IDs to fetch profiles for:', userIds);
+  
   // Fetch user profiles
   const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
@@ -142,6 +146,8 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   if (profilesError) {
     console.error('Error fetching profiles:', profilesError);
   }
+  
+  console.log('Profiles fetched:', profiles);
   
   // Create a map of user IDs to names and companies
   const userMap: Record<string, { name: string, company: string }> = {};
@@ -154,6 +160,8 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
     });
   }
   
+  console.log('User mapping created:', userMap);
+  
   // Enrich post with author name and company
   const enrichedPost: ForumPost = {
     ...post,
@@ -163,11 +171,18 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
   };
   
   // Enrich comments with author names and companies
-  const enrichedComments: ForumComment[] = (comments || []).map(comment => ({
-    ...comment,
-    author_name: userMap[comment.user_id]?.name || 'Anonymous User',
-    author_company: userMap[comment.user_id]?.company || ''
-  }));
+  const enrichedComments: ForumComment[] = (comments || []).map(comment => {
+    const authorInfo = userMap[comment.user_id] || { name: 'Anonymous User', company: '' };
+    console.log('Enriching comment by user_id:', comment.user_id, 'with author info:', authorInfo);
+    return {
+      ...comment,
+      author_name: authorInfo.name,
+      author_company: authorInfo.company
+    };
+  });
+  
+  console.log('Enriched post:', enrichedPost);
+  console.log('Enriched comments:', enrichedComments);
   
   return {
     post: enrichedPost,

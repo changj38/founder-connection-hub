@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
@@ -36,12 +35,9 @@ const ForumPage = () => {
 
   const getInitials = (name: string) => {
     if (!name || name === 'Anonymous User') return 'AU';
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+    const nameParts = name.split(' ');
+    if (nameParts.length === 1) return name.substring(0, 2).toUpperCase();
+    return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
   };
 
   const formatAuthor = (name?: string, company?: string) => {
@@ -333,7 +329,7 @@ const ForumPage = () => {
                         <div className="flex items-start gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-[#ff6600] text-white text-xs">
-                              {getInitials(comment.author_name || '')}
+                              {getInitials(comment.author_name || 'Anonymous User')}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
