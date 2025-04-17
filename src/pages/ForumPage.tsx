@@ -34,6 +34,7 @@ const ForumPage = () => {
   const createComment = useCreateComment();
 
   const getInitials = (name: string) => {
+    if (!name || name === 'User') return 'U';
     return name
       .split(' ')
       .map(word => word[0])
@@ -43,7 +44,7 @@ const ForumPage = () => {
   };
 
   const formatAuthor = (name?: string, company?: string) => {
-    if (!name) return 'User';
+    if (!name || name === 'User') return 'User';
     if (!company) return name;
     return `${name} from ${company}`;
   };
@@ -331,7 +332,7 @@ const ForumPage = () => {
                         <div className="flex items-start gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="bg-[#ff6600] text-white text-xs">
-                              {getInitials(comment.author_name || 'User')}
+                              {getInitials(comment.author_name || '')}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
