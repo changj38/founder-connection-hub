@@ -64,6 +64,8 @@ const fetchProfiles = async (userIds: string[]) => {
         company: profile.company || ''
       };
     });
+  } else {
+    console.warn('No profiles found for user IDs:', validUserIds);
   }
   
   return userMap;
@@ -218,18 +220,37 @@ export const createForumPost = async (title: string, content: string): Promise<F
   
   console.log('Creating post as user:', userData.user.id);
   
-  // First get the user's profile to ensure we have their name and company
+  // First ensure we have a profile for this user
+  const { data: existingProfile, error: profileCheckError } = await supabase
+    .from('profiles')
+    .select('id, full_name, company')
+    .eq('id', userData.user.id)
+    .single();
+    
+  if (profileCheckError) {
+    console.warn('User profile not found, creating a basic one:', profileCheckError);
+    
+    // Create a default profile if none exists
+    const { error: insertProfileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userData.user.id,
+        full_name: userData.user?.user_metadata?.full_name || 'Anonymous User',
+        company: userData.user?.user_metadata?.company || ''
+      });
+      
+    if (insertProfileError) {
+      console.error('Error creating default profile:', insertProfileError);
+    }
+  }
+  
+  // Get the user's profile again (existing or newly created)
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('full_name, company')
     .eq('id', userData.user.id)
     .single();
     
-  if (profileError) {
-    console.error('Error fetching user profile for post creation:', profileError);
-    // Continue anyway, we'll use default values if needed
-  }
-  
   console.log('User profile for post creation:', profile);
   
   const { data: post, error } = await supabase
@@ -271,18 +292,37 @@ export const createForumComment = async (postId: string, content: string): Promi
   
   console.log('Creating comment as user:', userData.user.id);
   
-  // First get the user's profile to ensure we have their name and company
+  // First ensure we have a profile for this user
+  const { data: existingProfile, error: profileCheckError } = await supabase
+    .from('profiles')
+    .select('id, full_name, company')
+    .eq('id', userData.user.id)
+    .single();
+    
+  if (profileCheckError) {
+    console.warn('User profile not found, creating a basic one:', profileCheckError);
+    
+    // Create a default profile if none exists
+    const { error: insertProfileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userData.user.id,
+        full_name: userData.user?.user_metadata?.full_name || 'Anonymous User',
+        company: userData.user?.user_metadata?.company || ''
+      });
+      
+    if (insertProfileError) {
+      console.error('Error creating default profile:', insertProfileError);
+    }
+  }
+  
+  // Get the user's profile again (existing or newly created)
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('full_name, company')
     .eq('id', userData.user.id)
     .single();
     
-  if (profileError) {
-    console.error('Error fetching user profile for comment creation:', profileError);
-    // Continue anyway, we'll use default values if needed
-  }
-  
   console.log('User profile for comment creation:', profile);
   
   const { data: comment, error } = await supabase
