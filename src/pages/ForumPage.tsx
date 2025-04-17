@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowUpCircle, MessageSquare, RefreshCcw, Send, Heart } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useForumPosts, useForumPost, useCreatePost, useCreateComment, formatDate, ForumPost, togglePostHeart } from '@/utils/forumApi';
+import { countProfilesInSupabase } from '@/utils/supabaseUtils';
 
 const ForumPage = () => {
   const { session } = useAuth();
@@ -25,6 +26,16 @@ const ForumPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const postsPerPage = 10;
+  const [profileCount, setProfileCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchProfileCount = async () => {
+      const count = await countProfilesInSupabase();
+      setProfileCount(count);
+    };
+
+    fetchProfileCount();
+  }, []);
 
   const { data: posts, isLoading: isLoadingPosts, isError: isPostsError, error: postsError, refetch: refetchPosts } = useForumPosts();
   
@@ -142,7 +153,6 @@ const ForumPage = () => {
 
     try {
       const isHearted = await togglePostHeart(postId);
-      // Refetch posts to update the heart count and state
       refetchPosts();
       
       toast({
@@ -195,236 +205,241 @@ const ForumPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Founder Forum</h1>
-        <Button 
-          onClick={() => setIsNewPostOpen(true)}
-          disabled={!session}
-        >
-          New Post
-        </Button>
-      </div>
+    <div>
+      {profileCount !== null && (
+        <div>Total Profiles: {profileCount}</div>
+      )}
+      <div className="container mx-auto p-4 max-w-4xl">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Founder Forum</h1>
+          <Button 
+            onClick={() => setIsNewPostOpen(true)}
+            disabled={!session}
+          >
+            New Post
+          </Button>
+        </div>
 
-      <div className="bg-[#f6f6ef] border border-[#e6e6e0] rounded">
-        {paginatedPosts.map((post, index) => (
-          <div key={post.id} className="p-2 hover:bg-[#f0f0e8]">
-            <div className="flex items-start">
-              <div className="mr-2 text-center">
-                <div className="text-[#828282] text-xs">{index + 1 + (currentPage - 1) * postsPerPage}</div>
-              </div>
-              <div className="flex-1">
-                <div>
+        <div className="bg-[#f6f6ef] border border-[#e6e6e0] rounded">
+          {paginatedPosts.map((post, index) => (
+            <div key={post.id} className="p-2 hover:bg-[#f0f0e8]">
+              <div className="flex items-start">
+                <div className="mr-2 text-center">
+                  <div className="text-[#828282] text-xs">{index + 1 + (currentPage - 1) * postsPerPage}</div>
+                </div>
+                <div className="flex-1">
+                  <div>
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-[#000000] font-medium hover:text-[#ff6600] text-base text-left"
+                      onClick={() => handleViewPost(post.id)}
+                    >
+                      {post.title}
+                    </Button>
+                  </div>
+                  <div className="text-xs text-[#828282]">
+                    by {formatAuthor(post.author_name, post.author_company)} | {formatDate(post.created_at)} | {post.comment_count} comments
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
                   <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-[#000000] font-medium hover:text-[#ff6600] text-base text-left"
-                    onClick={() => handleViewPost(post.id)}
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleHeartPost(post.id)}
                   >
-                    {post.title}
+                    <Heart 
+                      className={`h-5 w-5 ${post.is_hearted ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} 
+                    />
+                    <span className="ml-1 text-sm">{post.heart_count || 0}</span>
                   </Button>
                 </div>
-                <div className="text-xs text-[#828282]">
-                  by {formatAuthor(post.author_name, post.author_company)} | {formatDate(post.created_at)} | {post.comment_count} comments
-                </div>
               </div>
-              <div className="flex items-center space-x-2">
+              {index < paginatedPosts.length - 1 && <Separator className="my-2" />}
+            </div>
+          ))}
+
+          {posts && posts.length === 0 && (
+            <div className="p-8 text-center">
+              <p className="text-[#828282] mb-4">No posts yet. Be the first to start a discussion!</p>
+              {session ? (
+                <Button onClick={() => setIsNewPostOpen(true)}>Create a Post</Button>
+              ) : (
+                <p className="text-sm">Please log in to create a post.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <Pagination className="mt-4">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(i + 1)}
+                    isActive={currentPage === i + 1}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+
+        <Sheet open={isNewPostOpen} onOpenChange={setIsNewPostOpen}>
+          <SheetContent className="sm:max-w-[500px]">
+            <SheetHeader>
+              <SheetTitle>Create a New Post</SheetTitle>
+            </SheetHeader>
+            
+            <form onSubmit={handleSubmitPost} className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter a title for your post"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Share your thoughts, ask questions, or start a discussion..."
+                  className="min-h-[150px]"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsNewPostOpen(false)}>
+                  Cancel
+                </Button>
                 <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleHeartPost(post.id)}
+                  type="submit" 
+                  disabled={createPost.isPending || !title.trim()}
                 >
-                  <Heart 
-                    className={`h-5 w-5 ${post.is_hearted ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} 
-                  />
-                  <span className="ml-1 text-sm">{post.heart_count || 0}</span>
+                  {createPost.isPending ? "Posting..." : "Post"}
                 </Button>
               </div>
-            </div>
-            {index < paginatedPosts.length - 1 && <Separator className="my-2" />}
-          </div>
-        ))}
+            </form>
+          </SheetContent>
+        </Sheet>
 
-        {posts && posts.length === 0 && (
-          <div className="p-8 text-center">
-            <p className="text-[#828282] mb-4">No posts yet. Be the first to start a discussion!</p>
-            {session ? (
-              <Button onClick={() => setIsNewPostOpen(true)}>Create a Post</Button>
-            ) : (
-              <p className="text-sm">Please log in to create a post.</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <Pagination className="mt-4">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-            
-            {[...Array(totalPages)].map((_, i) => (
-              <PaginationItem key={i}>
-                <PaginationLink
-                  onClick={() => setCurrentPage(i + 1)}
-                  isActive={currentPage === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            
-            <PaginationItem>
-              <PaginationNext 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
-
-      <Sheet open={isNewPostOpen} onOpenChange={setIsNewPostOpen}>
-        <SheetContent className="sm:max-w-[500px]">
-          <SheetHeader>
-            <SheetTitle>Create a New Post</SheetTitle>
-          </SheetHeader>
-          
-          <form onSubmit={handleSubmitPost} className="mt-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter a title for your post"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Share your thoughts, ask questions, or start a discussion..."
-                className="min-h-[150px]"
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsNewPostOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={createPost.isPending || !title.trim()}
-              >
-                {createPost.isPending ? "Posting..." : "Post"}
-              </Button>
-            </div>
-          </form>
-        </SheetContent>
-      </Sheet>
-
-      <Dialog open={!!selectedPostId} onOpenChange={(open) => !open && setSelectedPostId(null)}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          {isLoadingPost ? (
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-24 w-full" />
-            </div>
-          ) : isPostError ? (
-            <div className="text-center py-8">
-              <p className="text-red-500 mb-4">Error loading post</p>
-              <Button onClick={() => setSelectedPostId(null)}>Close</Button>
-            </div>
-          ) : selectedPostData ? (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-xl">{selectedPostData.post.title}</DialogTitle>
-                <div className="text-sm text-[#828282] mt-1">
-                  By {formatAuthor(selectedPostData.post.author_name, selectedPostData.post.author_company)} • {formatDate(selectedPostData.post.created_at)}
-                </div>
-              </DialogHeader>
-              
-              {selectedPostData.post.content && (
-                <div className="mt-4 whitespace-pre-line">
-                  {selectedPostData.post.content}
-                </div>
-              )}
-              
-              <Separator className="my-4" />
-              
-              <div>
-                <h3 className="text-lg font-medium mb-4">Comments ({selectedPostData.comments.length})</h3>
+        <Dialog open={!!selectedPostId} onOpenChange={(open) => !open && setSelectedPostId(null)}>
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            {isLoadingPost ? (
+              <div className="space-y-4">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            ) : isPostError ? (
+              <div className="text-center py-8">
+                <p className="text-red-500 mb-4">Error loading post</p>
+                <Button onClick={() => setSelectedPostId(null)}>Close</Button>
+              </div>
+            ) : selectedPostData ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-xl">{selectedPostData.post.title}</DialogTitle>
+                  <div className="text-sm text-[#828282] mt-1">
+                    By {formatAuthor(selectedPostData.post.author_name, selectedPostData.post.author_company)} • {formatDate(selectedPostData.post.created_at)}
+                  </div>
+                </DialogHeader>
                 
-                {selectedPostData.comments.length > 0 ? (
-                  <div className="space-y-4">
-                    {selectedPostData.comments.map((comment) => (
-                      <div key={comment.id} className="border-b pb-4 last:border-b-0">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-[#ff6600] text-white text-xs">
-                              {getInitials(comment.author_name || 'Anonymous User')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">{formatAuthor(comment.author_name, comment.author_company)}</span>
-                              <span className="text-xs text-[#828282]">{formatDate(comment.created_at)}</span>
-                            </div>
-                            <div className="mt-1 text-sm whitespace-pre-line">
-                              {comment.content}
+                {selectedPostData.post.content && (
+                  <div className="mt-4 whitespace-pre-line">
+                    {selectedPostData.post.content}
+                  </div>
+                )}
+                
+                <Separator className="my-4" />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Comments ({selectedPostData.comments.length})</h3>
+                  
+                  {selectedPostData.comments.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedPostData.comments.map((comment) => (
+                        <div key={comment.id} className="border-b pb-4 last:border-b-0">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-[#ff6600] text-white text-xs">
+                                {getInitials(comment.author_name || 'Anonymous User')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">{formatAuthor(comment.author_name, comment.author_company)}</span>
+                                <span className="text-xs text-[#828282]">{formatDate(comment.created_at)}</span>
+                              </div>
+                              <div className="mt-1 text-sm whitespace-pre-line">
+                                {comment.content}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[#828282] text-center py-4">No comments yet. Be the first to respond!</p>
-                )}
-                
-                {session ? (
-                  <form onSubmit={handleSubmitComment} className="mt-6">
-                    <Textarea
-                      value={commentContent}
-                      onChange={(e) => setCommentContent(e.target.value)}
-                      placeholder="Write a comment..."
-                      className="mb-3"
-                    />
-                    <div className="flex justify-end">
-                      <Button 
-                        type="submit"
-                        disabled={createComment.isPending || !commentContent.trim()}
-                        className="flex items-center gap-2"
-                      >
-                        {createComment.isPending ? (
-                          "Posting..."
-                        ) : (
-                          <>
-                            <Send className="h-4 w-4" /> Post Comment
-                          </>
-                        )}
-                      </Button>
+                      ))}
                     </div>
-                  </form>
-                ) : (
-                  <p className="text-center text-sm text-[#828282] mt-4">
-                    You must be logged in to comment.
-                  </p>
-                )}
-              </div>
-            </>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+                  ) : (
+                    <p className="text-[#828282] text-center py-4">No comments yet. Be the first to respond!</p>
+                  )}
+                  
+                  {session ? (
+                    <form onSubmit={handleSubmitComment} className="mt-6">
+                      <Textarea
+                        value={commentContent}
+                        onChange={(e) => setCommentContent(e.target.value)}
+                        placeholder="Write a comment..."
+                        className="mb-3"
+                      />
+                      <div className="flex justify-end">
+                        <Button 
+                          type="submit"
+                          disabled={createComment.isPending || !commentContent.trim()}
+                          className="flex items-center gap-2"
+                        >
+                          {createComment.isPending ? (
+                            "Posting..."
+                          ) : (
+                            <>
+                              <Send className="h-4 w-4" /> Post Comment
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <p className="text-center text-sm text-[#828282] mt-4">
+                      You must be logged in to comment.
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };
