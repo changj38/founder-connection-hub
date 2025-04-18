@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -191,136 +190,95 @@ export const ensureUserProfile = async (userId: string, fullName?: string, compa
 
 export const uploadProfilePhoto = async (userId: string, file: File) => {
   try {
-    console.log('Starting upload process:', {
-      userId,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type
-    });
-
-    // List available buckets with more comprehensive logging
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    console.log('Starting upload process for userId:', userId);
     
-    console.log('Available buckets:', buckets ? buckets.map(b => b.name) : 'No buckets found');
-    
-    if (bucketsError) {
-      console.error('Error listing buckets:', bucketsError);
-      throw new Error(`Failed to list storage buckets: ${bucketsError.message}`);
+    // Validate file size
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error('File size exceeds 5MB limit');
     }
     
-    // Explicitly create the bucket if it doesn't exist
-    if (!buckets?.some(b => b.name === 'profile-photos')) {
-      console.log('Creating profile-photos bucket...');
-      const { data, error } = await supabase.storage.createBucket('profile-photos', {
-        public: true,
-        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-      });
-      
-      if (error) {
-        console.error('Error creating profile-photos bucket:', error);
-        throw new Error(`Failed to create profile-photos bucket: ${error.message}`);
-      }
-      
-      console.log('Profile-photos bucket created successfully');
+    // Validate file type
+    const fileType = file.type.toLowerCase();
+    if (!fileType.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
+      throw new Error('Invalid file type. Please upload a JPG, PNG, GIF, or WEBP image');
     }
-
-    // Create a unique filename including timestamp to prevent conflicts
+    
+    // Create a simple filename with timestamp
     const timestamp = new Date().getTime();
     const fileExtension = file.name.split('.').pop();
-    const filePath = `${userId}/profile-${timestamp}.${fileExtension}`;
+    const filePath = `${userId}/${timestamp}.${fileExtension}`;
+    
     console.log('Uploading to path:', filePath);
-
-    // First check if folder exists
+    
+    // Create the bucket if it doesn't exist (this is redundant but important for safety)
     try {
-      const { data: existingFiles, error: listError } = await supabase.storage
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(b => b.name === 'profile-photos');
+      
+      if (!bucketExists) {
+        console.log('Attempting to create profile-photos bucket');
+        await supabase.storage.createBucket('profile-photos', {
+          public: true,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        });
+      }
+    } catch (error) {
+      console.warn('Note: Could not check/create bucket, will try upload anyway:', error);
+    }
+    
+    // Try to clean up old files first
+    try {
+      const { data: existingFiles } = await supabase.storage
         .from('profile-photos')
         .list(userId);
         
-      if (listError) {
-        console.error('Error listing existing files:', listError);
-        // Continue anyway - folder might not exist yet
-      } else {
-        console.log('Existing files in folder:', existingFiles);
-        
-        // Remove existing profile photos to save storage space
-        if (existingFiles && existingFiles.length > 0) {
-          console.log('Removing existing files:', existingFiles);
-          const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
-          const { error: removeError } = await supabase.storage
-            .from('profile-photos')
-            .remove(filesToRemove);
-            
-          if (removeError) {
-            console.error('Error removing existing files:', removeError);
-            // Continue anyway - this isn't critical
-          } else {
-            console.log('Successfully removed old files');
-          }
-        }
+      if (existingFiles && existingFiles.length > 0) {
+        const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
+        await supabase.storage
+          .from('profile-photos')
+          .remove(filesToRemove);
       }
-    } catch (listError) {
-      console.error('Error listing existing files:', listError);
-      // Continue with upload anyway
+    } catch (error) {
+      console.warn('Note: Could not remove old files:', error);
+      // Continue with upload
     }
-
-    // Upload the new file - make sure we're using the correct API
-    console.log('Starting file upload to', filePath);
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    
+    // Direct upload approach
+    const { data, error } = await supabase.storage
       .from('profile-photos')
       .upload(filePath, file, { 
-        upsert: true,
-        contentType: file.type
+        cacheControl: 'no-cache',
+        upsert: true 
       });
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
       
-      // Add more detailed error messages
-      if (uploadError.message.includes('Permission denied')) {
-        throw new Error('Permission denied. The storage bucket may have restrictive policies.');
-      } else if (uploadError.message.includes('Request entity too large')) {
-        throw new Error('File is too large. Please upload a smaller file (max 5MB).');
-      } else {
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
+    if (error) {
+      console.error('Upload error details:', error);
+      throw new Error(`Could not upload image: ${error.message}`);
     }
-
-    console.log('Upload successful, data:', uploadData);
-
-    // Get public URL - make sure we use the correct API format and bucket name
-    const { data: publicUrlData } = supabase.storage
+    
+    if (!data) {
+      throw new Error('Upload failed: No data returned');
+    }
+    
+    console.log('Upload successful:', data);
+    
+    // Get public URL
+    const { data: urlData } = supabase.storage
       .from('profile-photos')
       .getPublicUrl(filePath);
-    
-    const publicUrl = publicUrlData.publicUrl;
-    console.log('Generated public URL:', publicUrl);
-    
-    // Add cache buster to prevent browser caching
-    const finalUrl = `${publicUrl}?t=${timestamp}`;
-    console.log('Final URL with cache buster:', finalUrl);
-    
-    // Test URL accessibility
-    try {
-      const response = await fetch(finalUrl, { method: 'HEAD' });
-      console.log('URL accessibility test:', {
-        status: response.status,
-        ok: response.ok,
-        contentType: response.headers.get('content-type')
-      });
       
-      if (!response.ok) {
-        console.warn('URL may not be accessible, status:', response.status);
-      }
-    } catch (checkError) {
-      console.warn('Could not verify URL accessibility:', checkError);
-      // Continue anyway - this is just a validation check
+    if (!urlData?.publicUrl) {
+      throw new Error('Could not get public URL for uploaded file');
     }
     
-    toast.success('Profile photo uploaded successfully');
-    return finalUrl;
+    // Add cache buster
+    const publicUrl = `${urlData.publicUrl}?t=${timestamp}`;
+    console.log('Public URL with cache buster:', publicUrl);
+    
+    return publicUrl;
   } catch (error: any) {
     console.error('Profile photo upload failed:', error);
-    toast.error(`Upload failed: ${error.message || 'Unknown error'}`);
+    toast.error(error.message || 'Failed to upload profile photo');
     throw error;
   }
 };

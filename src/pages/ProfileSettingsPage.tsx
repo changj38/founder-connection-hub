@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { updateUserProfile, uploadProfilePhoto } from '@/utils/supabaseUtils';
 
@@ -94,30 +93,30 @@ const ProfileSettingsPage = () => {
     
     setIsSubmitting(true);
     setUploadError(null);
-
+    
     try {
-      // Upload profile photo if selected
+      toast.info('Updating your profile...');
+      
+      // Step 1: Upload profile photo if one is selected
       let avatarUrl = currentUser.avatar_url || '';
+      
       if (selectedFile) {
-        console.log('Starting profile photo upload process...');
+        console.log('Starting profile photo upload...');
         setIsUploading(true);
-        toast.info('Uploading photo...');
         
         try {
           avatarUrl = await uploadProfilePhoto(currentUser.id, selectedFile);
-          console.log('Upload successful, new avatar URL:', avatarUrl);
-          toast.success('Photo uploaded successfully');
+          console.log('Photo upload successful, URL:', avatarUrl);
         } catch (error: any) {
-          console.error('Error uploading profile photo:', error);
-          setUploadError(error.message || 'Failed to upload profile photo. Please try again.');
-          toast.error(error.message || 'Failed to upload profile photo. Please try again.');
-          // Continue with the profile update even if the photo upload fails
+          console.error('Photo upload error:', error);
+          setUploadError(error.message || 'Failed to upload photo');
+          // Continue with profile update even if photo upload fails
         } finally {
           setIsUploading(false);
         }
       }
-
-      // Update profile
+      
+      // Step 2: Update profile data
       const profileData = {
         full_name: fullName,
         company,
@@ -128,13 +127,13 @@ const ProfileSettingsPage = () => {
       console.log('Updating profile with data:', profileData);
       await updateUserProfile(currentUser.id, profileData);
       
-      // Refresh the user data in the auth context
+      // Step 3: Refresh user data in context
       await refreshUserData();
-      console.log('Profile refreshed');
-
+      
       toast.success('Profile updated successfully');
+      setSelectedFile(null); // Clear selected file after successful update
     } catch (error: any) {
-      console.error('Profile update error:', error);
+      console.error('Profile update failed:', error);
       toast.error(error.message || 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
