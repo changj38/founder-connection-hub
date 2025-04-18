@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const countProfilesInSupabase = async () => {
   const { count, error } = await supabase
@@ -185,4 +186,53 @@ export const ensureUserProfile = async (userId: string, fullName?: string, compa
   
   console.log('Profile already exists:', existingProfile);
   return existingProfile;
+};
+
+export const uploadProfilePhoto = async (userId: string, file: File) => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${userId}/profile.${fileExt}`;
+
+    const { data, error: uploadError } = await supabase.storage
+      .from('profile-photos')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    // Get public URL
+    const { data: { publicUrl }, error: urlError } = supabase.storage
+      .from('profile-photos')
+      .getPublicUrl(filePath);
+
+    if (urlError) throw urlError;
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading profile photo:', error);
+    toast.error('Failed to upload profile photo');
+    throw error;
+  }
+};
+
+export const updateUserProfile = async (
+  userId: string, 
+  profileData: {
+    full_name?: string, 
+    company?: string, 
+    location?: string, 
+    avatar_url?: string
+  }
+) => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update(profileData)
+      .eq('id', userId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    toast.error('Failed to update profile');
+    throw error;
+  }
 };
