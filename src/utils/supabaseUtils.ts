@@ -38,26 +38,7 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
       throw new Error(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`);
     }
     
-    const bucketName = 'profile-photos';
-    
-    // Enhanced bucket existence check with more detailed logging
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
-    if (bucketsError) {
-      console.error('Error listing buckets:', bucketsError);
-      throw new Error('Could not verify storage buckets');
-    }
-    
-    console.log('Available buckets:', buckets.map(b => ({ id: b.id, name: b.name })));
-    
-    const bucketExists = buckets.some(bucket => 
-      bucket.id === bucketName || bucket.name === bucketName
-    );
-    
-    if (!bucketExists) {
-      console.error(`Bucket '${bucketName}' not found among available buckets`);
-      throw new Error(`Storage bucket '${bucketName}' does not exist`);
-    }
+    const bucketName = 'Updated-Photo';
     
     // Generate a simple filename with timestamp
     const timestamp = new Date().getTime();
