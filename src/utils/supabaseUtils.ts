@@ -2,6 +2,27 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export const updateUserProfile = async (userId: string, userData: {
+  full_name: string;
+  company: string;
+  location: string;
+  avatar_url?: string;
+}) => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update(userData)
+      .eq('id', userId);
+      
+    if (error) throw error;
+    return true;
+  } catch (error: any) {
+    console.error('Error updating profile:', error);
+    toast.error(error.message || 'Failed to update profile');
+    return false;
+  }
+};
+
 export const uploadProfilePhoto = async (userId: string, file: File) => {
   try {
     console.log('Starting upload process for userId:', userId);
@@ -76,5 +97,105 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     console.error('Profile photo upload failed:', error);
     toast.error(error.message || 'Failed to upload profile photo');
     throw error;
+  }
+};
+
+// Re-add missing exported functions to fix build errors
+export const getUserProfileMap = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url');
+    
+    if (error) throw error;
+    
+    const profileMap: Record<string, { fullName: string, avatarUrl: string }> = {};
+    
+    data?.forEach(profile => {
+      profileMap[profile.id] = {
+        fullName: profile.full_name || 'Anonymous User',
+        avatarUrl: profile.avatar_url || ''
+      };
+    });
+    
+    return profileMap;
+  } catch (error) {
+    console.error('Error fetching user profiles:', error);
+    return {};
+  }
+};
+
+export const ensureUserProfile = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    
+    // If profile doesn't exist, create it
+    if (!data) {
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([{ id: userId }]);
+      
+      if (insertError) throw insertError;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error ensuring user profile:', error);
+    return false;
+  }
+};
+
+export const countProfilesInSupabase = async () => {
+  try {
+    const { count, error } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) throw error;
+    
+    return count || 0;
+  } catch (error) {
+    console.error('Error counting profiles:', error);
+    return 0;
+  }
+};
+
+export const getProfilesInSupabase = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*');
+    
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching profiles:', error);
+    return [];
+  }
+};
+
+export const getSpecificProfile = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching specific profile:', error);
+    return null;
   }
 };
