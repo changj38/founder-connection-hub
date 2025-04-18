@@ -190,24 +190,34 @@ export const ensureUserProfile = async (userId: string, fullName?: string, compa
 
 export const uploadProfilePhoto = async (userId: string, file: File) => {
   try {
+    console.log(`Uploading profile photo for user ${userId}`);
+    
+    // Create folder structure with user ID
     const fileExt = file.name.split('.').pop();
     const filePath = `${userId}/profile.${fileExt}`;
+    
+    console.log(`Storage path: ${filePath}`);
 
     const { data, error: uploadError } = await supabase.storage
       .from('profile-photos')
       .upload(filePath, file, { upsert: true });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Error uploading profile photo:', uploadError);
+      throw uploadError;
+    }
+
+    console.log('Upload successful:', data);
 
     // Get public URL
     const publicUrlResponse = supabase.storage
       .from('profile-photos')
       .getPublicUrl(filePath);
 
+    console.log('Public URL:', publicUrlResponse.data.publicUrl);
     return publicUrlResponse.data.publicUrl;
   } catch (error) {
     console.error('Error uploading profile photo:', error);
-    toast.error('Failed to upload profile photo');
     throw error;
   }
 };
@@ -222,15 +232,21 @@ export const updateUserProfile = async (
   }
 ) => {
   try {
+    console.log(`Updating profile for user ${userId} with data:`, profileData);
+    
     const { error } = await supabase
       .from('profiles')
       .update(profileData)
       .eq('id', userId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+    
+    console.log('Profile updated successfully');
   } catch (error) {
     console.error('Error updating profile:', error);
-    toast.error('Failed to update profile');
     throw error;
   }
 };

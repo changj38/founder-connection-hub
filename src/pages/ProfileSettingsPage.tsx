@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,9 +17,18 @@ const ProfileSettingsPage = () => {
 
   const [fullName, setFullName] = useState(currentUser?.fullName || '');
   const [company, setCompany] = useState(currentUser?.company || '');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState(currentUser?.location || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Load user data
+  useEffect(() => {
+    if (currentUser) {
+      setFullName(currentUser.fullName || '');
+      setCompany(currentUser.company || '');
+      setLocation(currentUser.location || '');
+    }
+  }, [currentUser]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -29,17 +38,29 @@ const ProfileSettingsPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!currentUser) {
+      toast.error('You must be logged in to update your profile');
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
       // Upload profile photo if selected
-      let avatarUrl = currentUser?.avatar_url;
+      let avatarUrl = currentUser.avatar_url;
       if (selectedFile) {
-        avatarUrl = await uploadProfilePhoto(currentUser!.id, selectedFile);
+        try {
+          avatarUrl = await uploadProfilePhoto(currentUser.id, selectedFile);
+        } catch (error) {
+          console.error('Error uploading profile photo:', error);
+          toast.error('Failed to upload profile photo');
+          // Continue with the profile update even if the photo upload fails
+        }
       }
 
       // Update profile
-      await updateUserProfile(currentUser!.id, {
+      await updateUserProfile(currentUser.id, {
         full_name: fullName,
         company,
         location,

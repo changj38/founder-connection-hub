@@ -1,4 +1,3 @@
-
 import { supabase } from './client';
 import { toast } from 'sonner';
 
@@ -10,8 +9,8 @@ export interface AuthUser {
   company?: string;
   role?: string;
   lastLogin?: Date | string; // Added this property for compatibility
-  avatar_url?: string; // Added this property
-  location?: string; // Added this property
+  avatar_url?: string; 
+  location?: string;
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
