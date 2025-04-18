@@ -163,29 +163,46 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
       comment_count: comments?.length || 0
     };
     
-    const enrichedComments: ForumComment[] = (comments || []).map(comment => {
-      const authorInfo = userMap[comment.user_id] || { name: 'Anonymous User', company: '' };
-      
-      return {
-        ...comment,
-        author_name: authorInfo.name,
-        author_company: authorInfo.company
-      };
-    });
-    
     const { data: userData } = await supabase.auth.getUser();
-    if (userData?.user) {
+    const userId = userData?.user?.id;
+    
+    if (userId) {
       const { data: heart } = await supabase
         .from('forum_post_hearts')
         .select('*')
         .eq('post_id', postId)
-        .eq('user_id', userData.user.id)
+        .eq('user_id', userId)
         .single();
         
       enrichedPost.is_hearted = !!heart;
     }
     
-    console.log('Successfully enriched post and comments with author info');
+    const enrichedComments: ForumComment[] = [];
+    
+    for (const comment of comments || []) {
+      const authorInfo = userMap[comment.user_id] || { name: 'Anonymous User', company: '' };
+      
+      let isHearted = false;
+      if (userId) {
+        const { data: heart } = await supabase
+          .from('forum_comment_hearts')
+          .select('*')
+          .eq('comment_id', comment.id)
+          .eq('user_id', userId)
+          .single();
+          
+        isHearted = !!heart;
+      }
+      
+      enrichedComments.push({
+        ...comment,
+        author_name: authorInfo.name,
+        author_company: authorInfo.company,
+        is_hearted: isHearted
+      });
+    }
+    
+    console.log('Successfully enriched post and comments with author info and heart status');
     return {
       post: enrichedPost,
       comments: enrichedComments
@@ -402,7 +419,7 @@ export const toggleCommentHeart = async (commentId: string): Promise<boolean> =>
         throw deleteError;
       }
 
-      console.log('Heart removed successfully');
+      console.log('Comment heart removed successfully');
       return false;
     } else {
       const { error: insertError } = await supabase
@@ -413,11 +430,11 @@ export const toggleCommentHeart = async (commentId: string): Promise<boolean> =>
         });
 
       if (insertError) {
-        console.error('Error adding heart:', insertError);
+        console.error('Error adding heart to comment:', insertError);
         throw insertError;
       }
 
-      console.log('Heart added successfully');
+      console.log('Comment heart added successfully');
       return true;
     }
   } catch (error) {
@@ -462,6 +479,29 @@ export const useCreateComment = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['forumPost', variables.postId] });
       queryClient.invalidateQueries({ queryKey: ['forumPosts'] });
+    }
+  });
+};
+
+export const useTogglePostHeart = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (postId: string) => togglePostHeart(postId),
+    onSuccess: (_, postId) => {
+      queryClient.invalidateQueries({ queryKey: ['forumPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['forumPost', postId] });
+    }
+  });
+};
+
+export const useToggleCommentHeart = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ postId, commentId }: { postId: string; commentId: string }) => toggleCommentHeart(commentId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['forumPost', variables.postId] });
     }
   });
 };

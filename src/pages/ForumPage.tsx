@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowUpCircle, MessageSquare, RefreshCcw, Send, Heart } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useForumPosts, useForumPost, useCreatePost, useCreateComment, formatDate, ForumPost, togglePostHeart, toggleCommentHeart } from '@/utils/forumApi';
+import { useForumPosts, useForumPost, useCreatePost, useCreateComment, useTogglePostHeart, useToggleCommentHeart, formatDate, ForumPost } from '@/utils/forumApi';
 import { countProfilesInSupabase, getProfilesInSupabase, getSpecificProfile } from '@/utils/supabaseUtils';
 
 const ForumPage = () => {
@@ -36,6 +36,8 @@ const ForumPage = () => {
   
   const createPost = useCreatePost();
   const createComment = useCreateComment();
+  const togglePostHeart = useTogglePostHeart();
+  const toggleCommentHeart = useToggleCommentHeart();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -181,8 +183,7 @@ const ForumPage = () => {
     }
 
     try {
-      const isHearted = await togglePostHeart(postId);
-      refetchPosts();
+      const isHearted = await togglePostHeart.mutateAsync(postId);
       
       toast({
         title: isHearted ? "Post Hearted" : "Heart Removed",
@@ -199,7 +200,7 @@ const ForumPage = () => {
     }
   };
 
-  const handleHeartComment = async (commentId: string) => {
+  const handleHeartComment = async (postId: string, commentId: string) => {
     if (!session) {
       toast({
         title: "Authentication Required",
@@ -210,10 +211,7 @@ const ForumPage = () => {
     }
 
     try {
-      const isHearted = await toggleCommentHeart(commentId);
-      if (selectedPostId) {
-        await refetchPosts();
-      }
+      const isHearted = await toggleCommentHeart.mutateAsync({ postId, commentId });
       
       toast({
         title: isHearted ? "Comment Hearted" : "Heart Removed",
@@ -344,12 +342,13 @@ const ForumPage = () => {
                     variant="ghost" 
                     size="icon"
                     onClick={() => handleHeartPost(post.id)}
+                    className="h-8 w-8 p-0"
                   >
                     <Heart 
                       className={`h-5 w-5 ${post.is_hearted ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} 
                     />
-                    <span className="ml-1 text-sm">{post.heart_count || 0}</span>
                   </Button>
+                  <span className="text-sm text-gray-500">{post.heart_count || 0}</span>
                 </div>
               </div>
               {index < paginatedPosts.length - 1 && <Separator className="my-2" />}
@@ -465,6 +464,22 @@ const ForumPage = () => {
                   </div>
                 </DialogHeader>
                 
+                <div className="flex items-center gap-2 mt-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleHeartPost(selectedPostData.post.id)}
+                    className="flex items-center gap-1 h-8"
+                  >
+                    <Heart 
+                      className={`h-5 w-5 ${selectedPostData.post.is_hearted ? 'fill-red-500 text-red-500' : 'text-gray-500'}`}
+                    />
+                    <span className="text-sm">
+                      {selectedPostData.post.heart_count || 0} {selectedPostData.post.heart_count === 1 ? 'heart' : 'hearts'}
+                    </span>
+                  </Button>
+                </div>
+                
                 {selectedPostData.post.content && (
                   <div className="mt-4 whitespace-pre-line">
                     {selectedPostData.post.content}
@@ -502,13 +517,13 @@ const ForumPage = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleHeartComment(comment.id)}
-                                  className="h-8 px-2"
+                                  onClick={() => handleHeartComment(selectedPostData.post.id, comment.id)}
+                                  className="h-8 px-2 flex items-center gap-1"
                                 >
                                   <Heart 
                                     className={`h-4 w-4 ${comment.is_hearted ? 'fill-red-500 text-red-500' : 'text-gray-500'}`}
                                   />
-                                  <span className="ml-1 text-xs">
+                                  <span className="text-xs">
                                     {comment.heart_count || 0}
                                   </span>
                                 </Button>
