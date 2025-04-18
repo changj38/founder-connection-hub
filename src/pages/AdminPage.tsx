@@ -276,12 +276,87 @@ const AdminPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Forum Management</CardTitle>
-              <CardDescription>Moderate forum discussions and manage content</CardDescription>
+              <CardDescription>Manage forum settings and content moderation</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-8 text-gray-500">
-                Forum management features coming soon.
-              </p>
+              <div className="space-y-6">
+                <div className="grid gap-6">
+                  <Card className="p-4">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-daydream-purple" />
+                      Post Moderation
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Auto-moderate posts</p>
+                          <p className="text-sm text-gray-500">Automatically filter spam and inappropriate content</p>
+                        </div>
+                        <Switch />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Require approval</p>
+                          <p className="text-sm text-gray-500">New posts require admin approval before publishing</p>
+                        </div>
+                        <Switch />
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-4">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-daydream-blue" />
+                      User Permissions
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Allow guest posting</p>
+                          <p className="text-sm text-gray-500">Let non-registered users create posts</p>
+                        </div>
+                        <Switch />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">User post limits</p>
+                          <p className="text-sm text-gray-500">Limit number of posts per user per day</p>
+                        </div>
+                        <Switch />
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-4">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-gray-600" />
+                      General Settings
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Enable reactions</p>
+                          <p className="text-sm text-gray-500">Allow users to react to posts and comments</p>
+                        </div>
+                        <Switch />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Enable file attachments</p>
+                          <p className="text-sm text-gray-500">Allow users to attach files to their posts</p>
+                        </div>
+                        <Switch />
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
+                    Save Settings
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
