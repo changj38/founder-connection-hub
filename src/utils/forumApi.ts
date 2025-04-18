@@ -224,11 +224,7 @@ export const createForumPost = async (title: string, content: string): Promise<F
     const userId = userData.user.id;
     console.log('Creating post as user:', userId);
     
-    await ensureUserProfile(
-      userId, 
-      userData.user?.user_metadata?.full_name,
-      userData.user?.user_metadata?.company
-    );
+    await ensureUserProfile(userId);
     
     const { data: post, error } = await supabase
       .from('forum_posts')
@@ -281,11 +277,7 @@ export const createForumComment = async (postId: string, content: string): Promi
     const userId = userData.user.id;
     console.log('Creating comment as user:', userId);
     
-    await ensureUserProfile(
-      userId, 
-      userData.user?.user_metadata?.full_name,
-      userData.user?.user_metadata?.company
-    );
+    await ensureUserProfile(userId);
     
     const { data: comment, error } = await supabase
       .from('forum_comments')

@@ -100,21 +100,29 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
   }
 };
 
-// Re-add missing exported functions to fix build errors
-export const getUserProfileMap = async () => {
+// Define the proper return type for getUserProfileMap
+export const getUserProfileMap = async (userIds?: string[]) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('profiles')
-      .select('id, full_name, avatar_url');
+      .select('id, full_name, avatar_url, company');
+    
+    if (userIds && userIds.length > 0) {
+      query = query.in('id', userIds);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     
-    const profileMap: Record<string, { fullName: string, avatarUrl: string }> = {};
+    const profileMap: Record<string, { fullName: string, avatarUrl: string, name: string, company: string }> = {};
     
     data?.forEach(profile => {
       profileMap[profile.id] = {
         fullName: profile.full_name || 'Anonymous User',
-        avatarUrl: profile.avatar_url || ''
+        avatarUrl: profile.avatar_url || '',
+        name: profile.full_name || 'Anonymous User',
+        company: profile.company || ''
       };
     });
     
@@ -125,7 +133,7 @@ export const getUserProfileMap = async () => {
   }
 };
 
-export const ensureUserProfile = async (userId: string) => {
+export const ensureUserProfile = async (userId: string, fullName?: string, company?: string) => {
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -139,9 +147,15 @@ export const ensureUserProfile = async (userId: string) => {
     
     // If profile doesn't exist, create it
     if (!data) {
+      const newProfile = { 
+        id: userId,
+        full_name: fullName || null,
+        company: company || null
+      };
+      
       const { error: insertError } = await supabase
         .from('profiles')
-        .insert([{ id: userId }]);
+        .insert([newProfile]);
       
       if (insertError) throw insertError;
     }
