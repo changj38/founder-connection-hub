@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -13,7 +13,8 @@ import {
   HelpCircle, 
   LogOut,
   UserRound,
-  MapPin
+  MapPin,
+  Shield
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -21,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,6 +42,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     { path: '/forum', label: 'Forum', icon: <MessageSquare className="w-5 h-5" /> },
     { path: '/help', label: 'Help', icon: <HelpCircle className="w-5 h-5" /> },
   ];
+
+  // Admin dashboard button will only be shown if the user is an admin
+  const showAdminButton = isAdmin && isAdmin();
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -73,6 +77,21 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     {item.label}
                   </Link>
                 ))}
+                
+                {/* Admin Dashboard Link - Only visible to admins */}
+                {showAdminButton && (
+                  <Link
+                    to="/admin"
+                    className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname.startsWith('/admin')
+                        ? 'bg-indigo-50 text-indigo-600'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
+                    }`}
+                  >
+                    <Shield className="w-5 h-5" />
+                    Admin
+                  </Link>
+                )}
               </div>
             </div>
             
@@ -112,6 +131,19 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       <UserRound className="mr-2 h-4 w-4" />
                       Update Profile
                     </Button>
+                    
+                    {/* Admin Dashboard - Only visible to admins (in profile menu) */}
+                    {showAdminButton && (
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={() => navigate('/admin')}
+                      >
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Dashboard
+                      </Button>
+                    )}
+                    
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -174,6 +206,23 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   {item.label}
                 </Link>
               ))}
+              
+              {/* Admin Dashboard Link - Mobile, only visible to admins */}
+              {showAdminButton && (
+                <Link
+                  to="/admin"
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    location.pathname.startsWith('/admin')
+                      ? 'bg-indigo-50 text-indigo-600'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Shield className="w-5 h-5" />
+                  Admin Dashboard
+                </Link>
+              )}
+              
               <Link
                 to="/profile/settings"
                 className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
