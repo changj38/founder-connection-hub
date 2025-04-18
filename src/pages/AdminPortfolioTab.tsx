@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { fetchPortfolioCompanies, addPortfolioCompany } from '../utils/adminApi';
@@ -32,26 +31,20 @@ const AdminPortfolioTab = () => {
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
 
-  // Fetch portfolio companies from Supabase
   const { data: portfolioCompanies = [], isLoading, error: fetchError } = useQuery({
     queryKey: ['portfolioCompanies'],
     queryFn: fetchPortfolioCompanies
   });
 
-  // Setup mutation for adding a company
   const addCompanyMutation = useMutation({
     mutationFn: (companyData: any) => addPortfolioCompany(companyData),
     onSuccess: (data) => {
       console.log('Company added successfully:', data);
       setIsSubmitting(false);
-      // Reset form
       resetForm();
-      // Close dialog
       setIsAddDialogOpen(false);
-      // Show success toast and dialog
       setNewCompanyName(formData.name);
       setSuccessDialogOpen(true);
-      // Refresh companies list
       queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
     },
     onError: (error: any) => {
@@ -106,9 +99,8 @@ const AdminPortfolioTab = () => {
 
       setIsSubmitting(true);
 
-      // Process year fields to be numbers or null
       const companyData = {
-        name: formData.name.trim(), // Ensure name is included and not empty
+        name: formData.name.trim(),
         description: formData.description,
         industry: formData.industry,
         founded_year: formData.founded_year ? parseInt(formData.founded_year) : undefined,
@@ -117,7 +109,6 @@ const AdminPortfolioTab = () => {
       };
 
       console.log('AdminPortfolioTab: Submitting company data:', companyData);
-      // Use the mutation to add the company
       addCompanyMutation.mutate(companyData);
     } catch (error) {
       console.error("AdminPortfolioTab: Error in handleAddCompany:", error);
@@ -128,6 +119,30 @@ const AdminPortfolioTab = () => {
         variant: "destructive",
       });
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCompany = async (companyId: string) => {
+    try {
+      const { error } = await supabase
+        .from('portfolio_companies')
+        .delete()
+        .eq('id', companyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Company deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete company",
+        variant: "destructive",
+      });
     }
   };
 
@@ -222,6 +237,39 @@ const AdminPortfolioTab = () => {
                             "—"
                           )}
                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete company</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Company</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this company? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteCompany(company.id)}
+                                    className="bg-red-500 text-white hover:bg-red-600"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -232,7 +280,6 @@ const AdminPortfolioTab = () => {
         </Card>
       )}
 
-      {/* Add New Company Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={closeDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -349,7 +396,6 @@ const AdminPortfolioTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Success Dialog */}
       <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
