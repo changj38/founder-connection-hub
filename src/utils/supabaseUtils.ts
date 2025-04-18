@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -230,34 +231,39 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     console.log('Uploading to path:', filePath);
 
     // First check if folder exists
-    const { data: existingFiles, error: listError } = await supabase.storage
-      .from('profile-photos')
-      .list(userId);
-      
-    if (listError) {
-      console.error('Error listing existing files:', listError);
-      // Continue anyway - folder might not exist yet
-    } else {
-      console.log('Existing files in folder:', existingFiles);
-      
-      // Remove existing profile photos to save storage space
-      if (existingFiles && existingFiles.length > 0) {
-        console.log('Removing existing files:', existingFiles);
-        const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
-        const { error: removeError } = await supabase.storage
-          .from('profile-photos')
-          .remove(filesToRemove);
-          
-        if (removeError) {
-          console.error('Error removing existing files:', removeError);
-          // Continue anyway - this isn't critical
-        } else {
-          console.log('Successfully removed old files');
+    try {
+      const { data: existingFiles, error: listError } = await supabase.storage
+        .from('profile-photos')
+        .list(userId);
+        
+      if (listError) {
+        console.error('Error listing existing files:', listError);
+        // Continue anyway - folder might not exist yet
+      } else {
+        console.log('Existing files in folder:', existingFiles);
+        
+        // Remove existing profile photos to save storage space
+        if (existingFiles && existingFiles.length > 0) {
+          console.log('Removing existing files:', existingFiles);
+          const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
+          const { error: removeError } = await supabase.storage
+            .from('profile-photos')
+            .remove(filesToRemove);
+            
+          if (removeError) {
+            console.error('Error removing existing files:', removeError);
+            // Continue anyway - this isn't critical
+          } else {
+            console.log('Successfully removed old files');
+          }
         }
       }
+    } catch (listError) {
+      console.error('Error listing existing files:', listError);
+      // Continue with upload anyway
     }
 
-    // Upload the new file
+    // Upload the new file - make sure we're using the correct API
     console.log('Starting file upload to', filePath);
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('profile-photos')
@@ -268,16 +274,25 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      throw new Error(`Upload failed: ${uploadError.message}`);
+      
+      // Add more detailed error messages
+      if (uploadError.message.includes('Permission denied')) {
+        throw new Error('Permission denied. The storage bucket may have restrictive policies.');
+      } else if (uploadError.message.includes('Request entity too large')) {
+        throw new Error('File is too large. Please upload a smaller file (max 5MB).');
+      } else {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
     }
 
     console.log('Upload successful, data:', uploadData);
 
-    // Get public URL with cache busting
-    const { data: { publicUrl } } = supabase.storage
+    // Get public URL - make sure we use the correct API format and bucket name
+    const { data: publicUrlData } = supabase.storage
       .from('profile-photos')
       .getPublicUrl(filePath);
-
+    
+    const publicUrl = publicUrlData.publicUrl;
     console.log('Generated public URL:', publicUrl);
     
     // Add cache buster to prevent browser caching
@@ -301,6 +316,7 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
       // Continue anyway - this is just a validation check
     }
     
+    toast.success('Profile photo uploaded successfully');
     return finalUrl;
   } catch (error: any) {
     console.error('Profile photo upload failed:', error);
