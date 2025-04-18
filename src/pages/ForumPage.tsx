@@ -268,47 +268,6 @@ const ForumPage = () => {
 
   return (
     <div>
-      <div className="bg-slate-100 p-4 mb-4 rounded-md">
-        <h3 className="font-semibold mb-2">Debug Information:</h3>
-        <p>Total Profiles: {profileCount}</p>
-        {profiles && (
-          <div className="mt-2">
-            <p>Profile IDs:</p>
-            <ul className="list-disc pl-5">
-              {profiles.map(profile => (
-                <li key={profile.id} className="text-xs">
-                  {profile.id.substring(0, 8)}... - {profile.full_name || 'No name'} ({profile.company || 'No company'})
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {specificProfile && (
-          <div className="mt-2">
-            <p>Post author profiles:</p>
-            <ul className="list-disc pl-5">
-              {Object.entries(specificProfile).map(([userId, profile]) => (
-                <li key={userId} className="text-xs">
-                  {userId.substring(0, 8)}... - {(profile as any).full_name || 'No name'} ({(profile as any).company || 'No company'})
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {posts && (
-          <div className="mt-2">
-            <p>Post user IDs:</p>
-            <ul className="list-disc pl-5">
-              {posts.map(post => (
-                <li key={post.id} className="text-xs">
-                  {post.id.substring(0, 8)}... - User: {post.user_id.substring(0, 8)}... - Author: {post.author_name || 'Anonymous'}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
       <div className="container mx-auto p-4 max-w-4xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Founder Forum</h1>
