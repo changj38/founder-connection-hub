@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -87,6 +88,32 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     console.log(`Attempting to upload file to ${bucketName}/${filePath}`);
     console.log('Session status:', session ? 'Active' : 'None');
     console.log('User ID in session:', session?.user?.id);
+    
+    // Check if bucket exists before attempting upload
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    
+    if (bucketsError) {
+      console.error('Error fetching buckets:', bucketsError);
+      throw new Error('Could not verify storage buckets');
+    }
+    
+    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    console.log('Bucket exists:', bucketExists);
+    
+    if (!bucketExists) {
+      console.error('Bucket does not exist:', bucketName);
+      throw new Error(`Storage bucket '${bucketName}' does not exist`);
+    }
+    
+    // Try getting supabase auth user directly before upload
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Error getting user:', userError);
+      throw new Error('Could not verify user authentication');
+    }
+    
+    console.log('Authenticated user from getUser():', user.id);
     
     // Upload the file
     const { data, error: uploadError } = await supabase.storage

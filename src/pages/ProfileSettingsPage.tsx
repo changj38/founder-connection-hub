@@ -27,13 +27,39 @@ const ProfileSettingsPage = () => {
   // Check if user is authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error('No session found, redirecting to login');
-        toast.error('Please log in to access profile settings');
-        navigate('/login');
-      } else {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error checking session:', error);
+          toast.error('Session error: ' + error.message);
+          navigate('/login');
+          return;
+        }
+        
+        if (!session) {
+          console.error('No session found, redirecting to login');
+          toast.error('Please log in to access profile settings');
+          navigate('/login');
+          return;
+        } 
+        
         console.log('Session found in ProfileSettingsPage:', session.user.id);
+        
+        // Verify storage bucket exists
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+        
+        if (bucketsError) {
+          console.error('Error checking storage buckets:', bucketsError);
+        } else {
+          console.log('Available buckets:', buckets);
+          const profilePhotoBucket = buckets?.find(b => b.name === 'profile-photos');
+          console.log('Profile photos bucket exists:', !!profilePhotoBucket);
+        }
+      } catch (err) {
+        console.error('Error in checkAuth:', err);
+        toast.error('Authentication error');
+        navigate('/login');
       }
     };
     
@@ -110,7 +136,15 @@ const ProfileSettingsPage = () => {
     }
     
     // Double-check session before proceeding
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      toast.error('Session error: ' + sessionError.message);
+      navigate('/login');
+      return;
+    }
+    
     if (!session) {
       toast.error('Your session has expired. Please log in again.');
       navigate('/login');
@@ -149,6 +183,16 @@ const ProfileSettingsPage = () => {
         setIsUploading(true);
         
         try {
+          // Directly call getUser to confirm authentication
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          
+          if (userError || !user) {
+            console.error('Error getting user before upload:', userError);
+            throw new Error('Could not verify user authentication');
+          }
+          
+          console.log('Authenticated user from getUser() before upload:', user.id);
+          
           const uploadResult = await uploadProfilePhoto(currentUser.id, selectedFile);
           console.log('Photo upload result:', uploadResult);
           
