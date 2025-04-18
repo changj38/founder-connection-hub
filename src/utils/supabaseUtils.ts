@@ -1,41 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export const updateUserProfile = async (userId: string, userData: {
-  full_name: string;
-  company: string;
-  location: string;
-  avatar_url?: string;
-}) => {
-  try {
-    // Check authentication first
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error('You must be logged in to update your profile');
-    }
-    
-    console.log('Updating profile for user:', userId);
-    console.log('Profile data:', userData);
-    
-    const { error } = await supabase
-      .from('profiles')
-      .update(userData)
-      .eq('id', userId);
-      
-    if (error) {
-      console.error('Error from Supabase:', error);
-      throw error;
-    }
-    
-    console.log('Profile updated successfully');
-    return true;
-  } catch (error: any) {
-    console.error('Error updating profile:', error);
-    toast.error(error.message || 'Failed to update profile');
-    return false;
-  }
-};
-
 export const uploadProfilePhoto = async (userId: string, file: File) => {
   try {
     // Verify session before doing anything
@@ -75,6 +40,25 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     
     const bucketName = 'profile-photos';
     
+    // More verbose logging for bucket existence
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    
+    if (bucketsError) {
+      console.error('Error listing buckets:', bucketsError);
+      throw new Error('Could not verify storage buckets');
+    }
+    
+    console.log('Available buckets:', buckets.map(b => ({ id: b.id, name: b.name })));
+    
+    const bucketExists = buckets.some(bucket => 
+      bucket.id === bucketName || bucket.name === bucketName
+    );
+    
+    if (!bucketExists) {
+      console.error(`Bucket '${bucketName}' not found among available buckets`);
+      throw new Error(`Storage bucket '${bucketName}' does not exist`);
+    }
+    
     // Generate a simple filename with timestamp
     const timestamp = new Date().getTime();
     const fileExtension = file.name.split('.').pop();
@@ -92,17 +76,17 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Check if bucket exists before attempting upload with retry
-    let bucketExists = false;
+    let bucketExists2 = false;
     let retryCount = 0;
     const maxRetries = 3;
     
-    while (!bucketExists && retryCount < maxRetries) {
+    while (!bucketExists2 && retryCount < maxRetries) {
       console.log(`Checking bucket existence (attempt ${retryCount + 1}/${maxRetries})...`);
       
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      const { data: buckets2, error: bucketsError2 } = await supabase.storage.listBuckets();
       
-      if (bucketsError) {
-        console.error('Error fetching buckets:', bucketsError);
+      if (bucketsError2) {
+        console.error('Error fetching buckets:', bucketsError2);
         retryCount++;
         
         if (retryCount >= maxRetries) {
@@ -114,11 +98,11 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
         continue;
       }
       
-      bucketExists = buckets?.some(bucket => bucket.id === bucketName);
-      console.log('Buckets found:', buckets?.map(b => b.id));
-      console.log(`Bucket '${bucketName}' exists:`, bucketExists);
+      bucketExists2 = buckets2?.some(bucket => bucket.id === bucketName);
+      console.log('Buckets found:', buckets2?.map(b => b.id));
+      console.log(`Bucket '${bucketName}' exists:`, bucketExists2);
       
-      if (!bucketExists) {
+      if (!bucketExists2) {
         retryCount++;
         
         if (retryCount >= maxRetries) {
@@ -177,6 +161,41 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     console.error('Profile photo upload failed:', error);
     toast.error(error.message || 'Failed to upload profile photo');
     throw error;
+  }
+};
+
+export const updateUserProfile = async (userId: string, userData: {
+  full_name: string;
+  company: string;
+  location: string;
+  avatar_url?: string;
+}) => {
+  try {
+    // Check authentication first
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('You must be logged in to update your profile');
+    }
+    
+    console.log('Updating profile for user:', userId);
+    console.log('Profile data:', userData);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update(userData)
+      .eq('id', userId);
+      
+    if (error) {
+      console.error('Error from Supabase:', error);
+      throw error;
+    }
+    
+    console.log('Profile updated successfully');
+    return true;
+  } catch (error: any) {
+    console.error('Error updating profile:', error);
+    toast.error(error.message || 'Failed to update profile');
+    return false;
   }
 };
 
