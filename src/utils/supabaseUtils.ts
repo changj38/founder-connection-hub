@@ -203,30 +203,7 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
       throw new Error('Invalid file type. Please upload a JPG, PNG, GIF, or WEBP image');
     }
     
-    // Check if bucket exists first and create it if it doesn't
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
-    if (bucketsError) {
-      console.error('Error checking buckets:', bucketsError);
-      throw new Error(`Could not check storage buckets: ${bucketsError.message}`);
-    }
-    
     const bucketName = 'profile-photos';
-    const bucketExists = buckets?.some(b => b.name === bucketName);
-    
-    if (!bucketExists) {
-      console.log('Bucket does not exist, creating it now');
-      const { error: createError } = await supabase.storage.createBucket(bucketName, {
-        public: true
-      });
-      
-      if (createError) {
-        console.error('Error creating bucket:', createError);
-        throw new Error(`Could not create bucket: ${createError.message}`);
-      }
-      
-      console.log('Bucket created successfully');
-    }
     
     // Generate a simple filename with timestamp
     const timestamp = new Date().getTime();
