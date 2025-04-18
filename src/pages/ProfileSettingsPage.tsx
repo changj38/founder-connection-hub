@@ -21,30 +21,59 @@ const ProfileSettingsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Load user data
   useEffect(() => {
     if (currentUser) {
+      console.log('Loading user data in profile settings:', currentUser);
       setFullName(currentUser.fullName || '');
       setCompany(currentUser.company || '');
       setLocation(currentUser.location || '');
       if (currentUser.avatar_url) {
+        console.log('Setting avatar URL from user data:', currentUser.avatar_url);
         setPreviewUrl(currentUser.avatar_url);
       }
     }
   }, [currentUser]);
 
+  // Clear preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
+    
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log('File selected:', file.name, file.type, file.size);
+      
+      // Validate file size
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        setUploadError('File size exceeds 5MB limit');
+        toast.error('File size exceeds 5MB limit');
+        return;
+      }
+      
+      // Validate file type
+      const fileType = file.type.toLowerCase();
+      if (!fileType.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
+        setUploadError('Invalid file type. Please upload a JPG, PNG, GIF, or WEBP image');
+        toast.error('Invalid file type. Please upload a JPG, PNG, GIF, or WEBP image');
+        return;
+      }
+      
       setSelectedFile(file);
       
       // Create a preview URL for the selected image
       const objectUrl = URL.createObjectURL(file);
+      console.log('Created object URL for preview:', objectUrl);
       setPreviewUrl(objectUrl);
-      
-      // Clean up the previous preview URL to avoid memory leaks
-      return () => URL.revokeObjectURL(objectUrl);
     }
   };
 
@@ -57,6 +86,7 @@ const ProfileSettingsPage = () => {
     }
     
     setIsSubmitting(true);
+    setUploadError(null);
 
     try {
       // Upload profile photo if selected
@@ -67,8 +97,15 @@ const ProfileSettingsPage = () => {
         try {
           avatarUrl = await uploadProfilePhoto(currentUser.id, selectedFile);
           console.log('Upload successful, new avatar URL:', avatarUrl);
+          
+          // Test if the URL is accessible
+          const testImg = new Image();
+          testImg.onload = () => console.log('Image URL is valid and accessible');
+          testImg.onerror = () => console.error('Image URL cannot be loaded');
+          testImg.src = avatarUrl;
         } catch (error) {
           console.error('Error uploading profile photo:', error);
+          setUploadError('Failed to upload profile photo. Please try again.');
           toast.error('Failed to upload profile photo. Please try again.');
           // Continue with the profile update even if the photo upload fails
         }
@@ -90,7 +127,15 @@ const ProfileSettingsPage = () => {
       console.log('Profile refreshed, updated user data:', updatedUser);
 
       toast.success('Profile updated successfully');
-      navigate('/dashboard');
+      
+      // Force reload the avatar image if it exists
+      if (avatarUrl) {
+        const timestamp = new Date().getTime();
+        const refreshedUrl = avatarUrl.includes('?') 
+          ? `${avatarUrl}&_=${timestamp}` 
+          : `${avatarUrl}?_=${timestamp}`;
+        setPreviewUrl(refreshedUrl);
+      }
     } catch (error) {
       console.error('Profile update error:', error);
       toast.error('Failed to update profile');
@@ -112,7 +157,7 @@ const ProfileSettingsPage = () => {
           type="file" 
           ref={fileInputRef}
           onChange={handleFileChange}
-          accept="image/*"
+          accept="image/jpeg,image/png,image/gif,image/webp"
           className="hidden" 
         />
         <div className="relative">
@@ -120,6 +165,7 @@ const ProfileSettingsPage = () => {
             <AvatarImage 
               src={previewUrl || undefined} 
               alt="Profile photo" 
+              onError={() => console.error('Error loading avatar image from URL:', previewUrl)}
             />
             <AvatarFallback>{currentUser?.fullName?.charAt(0) || '?'}</AvatarFallback>
           </Avatar>
@@ -133,6 +179,10 @@ const ProfileSettingsPage = () => {
           </Button>
         </div>
       </div>
+
+      {uploadError && (
+        <div className="text-red-500 text-sm text-center">{uploadError}</div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">

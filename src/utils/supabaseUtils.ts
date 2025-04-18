@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -191,6 +192,11 @@ export const ensureUserProfile = async (userId: string, fullName?: string, compa
 export const uploadProfilePhoto = async (userId: string, file: File) => {
   try {
     console.log(`Starting photo upload for user ${userId}`);
+    console.log('File details:', {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
     
     // Validate file type
     const fileExt = file.name.split('.').pop()?.toLowerCase();
@@ -204,6 +210,22 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     // that users can only access their own folders with RLS policies
     const filePath = `${userId}/profile.${fileExt}`;
     console.log('Uploading file to path:', filePath);
+
+    // Check if bucket exists
+    const { data: buckets, error: bucketsError } = await supabase.storage
+      .listBuckets();
+    
+    if (bucketsError) {
+      console.error('Error checking buckets:', bucketsError);
+      throw bucketsError;
+    }
+    
+    console.log('Available buckets:', buckets.map(b => b.name));
+    
+    if (!buckets.some(b => b.name === 'profile-photos')) {
+      console.error('profile-photos bucket does not exist');
+      throw new Error('Storage bucket not configured properly');
+    }
 
     // Upload the file with upsert: true to replace existing files
     const { data, error: uploadError } = await supabase.storage
@@ -226,6 +248,18 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
       .getPublicUrl(filePath);
 
     console.log('Generated public URL:', publicUrl);
+    
+    // Test URL accessibility
+    try {
+      const response = await fetch(publicUrl, { method: 'HEAD' });
+      if (!response.ok) {
+        console.warn(`URL check returned status ${response.status}`);
+      } else {
+        console.log('URL is accessible:', publicUrl);
+      }
+    } catch (checkError) {
+      console.warn('Could not verify URL accessibility:', checkError);
+    }
     
     return publicUrl;
   } catch (error) {
