@@ -200,13 +200,11 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     if (uploadError) throw uploadError;
 
     // Get public URL
-    const { data: { publicUrl }, error: urlError } = supabase.storage
+    const publicUrlResponse = supabase.storage
       .from('profile-photos')
       .getPublicUrl(filePath);
 
-    if (urlError) throw urlError;
-
-    return publicUrl;
+    return publicUrlResponse.data.publicUrl;
   } catch (error) {
     console.error('Error uploading profile photo:', error);
     toast.error('Failed to upload profile photo');

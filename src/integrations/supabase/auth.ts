@@ -10,6 +10,8 @@ export interface AuthUser {
   company?: string;
   role?: string;
   lastLogin?: Date | string; // Added this property for compatibility
+  avatar_url?: string; // Added this property
+  location?: string; // Added this property
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
@@ -42,7 +44,9 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     name: profile?.full_name || '', // Map full_name to name for compatibility
     company: profile?.company || '',
     role: profile?.role || 'user', // Default to 'user' if no role is specified
-    lastLogin: session.user.last_sign_in_at
+    lastLogin: session.user.last_sign_in_at,
+    avatar_url: profile?.avatar_url || '',
+    location: profile?.location || ''
   };
 };
 
