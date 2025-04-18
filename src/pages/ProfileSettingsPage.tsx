@@ -20,6 +20,7 @@ const ProfileSettingsPage = () => {
   const [location, setLocation] = useState(currentUser?.location || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Load user data
   useEffect(() => {
@@ -27,12 +28,23 @@ const ProfileSettingsPage = () => {
       setFullName(currentUser.fullName || '');
       setCompany(currentUser.company || '');
       setLocation(currentUser.location || '');
+      if (currentUser.avatar_url) {
+        setPreviewUrl(currentUser.avatar_url);
+      }
     }
   }, [currentUser]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      
+      // Create a preview URL for the selected image
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+      
+      // Clean up the previous preview URL to avoid memory leaks
+      return () => URL.revokeObjectURL(objectUrl);
     }
   };
 
@@ -50,11 +62,14 @@ const ProfileSettingsPage = () => {
       // Upload profile photo if selected
       let avatarUrl = currentUser.avatar_url;
       if (selectedFile) {
+        console.log('Uploading profile photo...');
+        
         try {
           avatarUrl = await uploadProfilePhoto(currentUser.id, selectedFile);
+          console.log('Upload successful, avatar URL:', avatarUrl);
         } catch (error) {
           console.error('Error uploading profile photo:', error);
-          toast.error('Failed to upload profile photo');
+          toast.error('Failed to upload profile photo. Please try again.');
           // Continue with the profile update even if the photo upload fails
         }
       }
@@ -96,13 +111,10 @@ const ProfileSettingsPage = () => {
         <div className="relative">
           <Avatar className="h-24 w-24">
             <AvatarImage 
-              src={selectedFile 
-                ? URL.createObjectURL(selectedFile) 
-                : currentUser?.avatar_url || undefined
-              } 
+              src={previewUrl || undefined} 
               alt="Profile photo" 
             />
-            <AvatarFallback>{currentUser?.fullName?.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{currentUser?.fullName?.charAt(0) || '?'}</AvatarFallback>
           </Avatar>
           <Button 
             variant="secondary" 

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -192,15 +193,27 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
   try {
     console.log(`Uploading profile photo for user ${userId}`);
     
-    // Create folder structure with user ID
-    const fileExt = file.name.split('.').pop();
+    // Validate file type
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    
+    if (!fileExt || !allowedExtensions.includes(fileExt)) {
+      throw new Error('Unsupported file type. Please upload a valid image (JPG, PNG, GIF, or WEBP).');
+    }
+    
+    // Create folder structure with user ID - using user ID as the folder name ensures
+    // that users can only access their own folders with RLS policies
     const filePath = `${userId}/profile.${fileExt}`;
     
-    console.log(`Storage path: ${filePath}`);
+    console.log(`Storage path for upload: ${filePath}`);
 
+    // Upload the file with upsert: true to replace existing files
     const { data, error: uploadError } = await supabase.storage
       .from('profile-photos')
-      .upload(filePath, file, { upsert: true });
+      .upload(filePath, file, { 
+        upsert: true,
+        contentType: file.type // Explicitly set the content type
+      });
 
     if (uploadError) {
       console.error('Error uploading profile photo:', uploadError);
@@ -209,13 +222,16 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
 
     console.log('Upload successful:', data);
 
-    // Get public URL
-    const publicUrlResponse = supabase.storage
+    // Important: Need to get the public URL after a successful upload
+    const { data: { publicUrl } } = supabase.storage
       .from('profile-photos')
       .getPublicUrl(filePath);
 
-    console.log('Public URL:', publicUrlResponse.data.publicUrl);
-    return publicUrlResponse.data.publicUrl;
+    console.log('Public URL:', publicUrl);
+    
+    // Add a cache busting parameter to ensure the browser fetches the new image
+    const cacheBustedUrl = `${publicUrl}?t=${new Date().getTime()}`;
+    return cacheBustedUrl;
   } catch (error) {
     console.error('Error uploading profile photo:', error);
     throw error;
