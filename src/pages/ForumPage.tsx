@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowUpCircle, MessageSquare, RefreshCcw, Send, Heart } from 'lucide-react';
+import { Heart, MessageSquare, RefreshCcw, Send } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useForumPosts, useForumPost, useCreatePost, useCreateComment, useTogglePostHeart, useToggleCommentHeart, formatDate, ForumPost } from '@/utils/forumApi';
 import { countProfilesInSupabase, getProfilesInSupabase, getSpecificProfile } from '@/utils/supabaseUtils';
@@ -183,6 +183,7 @@ const ForumPage = () => {
     }
 
     try {
+      console.log("Attempting to toggle heart for post:", postId);
       const isHearted = await togglePostHeart.mutateAsync(postId);
       
       toast({
@@ -192,6 +193,7 @@ const ForumPage = () => {
           : "You've removed your heart from this post.",
       });
     } catch (error) {
+      console.error("Error hearting post:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to heart post.",
@@ -211,6 +213,7 @@ const ForumPage = () => {
     }
 
     try {
+      console.log("Attempting to toggle heart for comment:", commentId, "in post:", postId);
       const isHearted = await toggleCommentHeart.mutateAsync({ postId, commentId });
       
       toast({
@@ -220,6 +223,7 @@ const ForumPage = () => {
           : "You've removed your heart from this comment.",
       });
     } catch (error) {
+      console.error("Error hearting comment:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to heart comment.",
