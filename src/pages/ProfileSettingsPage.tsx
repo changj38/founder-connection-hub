@@ -97,7 +97,7 @@ const ProfileSettingsPage = () => {
     try {
       toast.info('Updating your profile...');
       
-      // Prepare profile data
+      // Step 1: Prepare profile data
       const profileData: {
         full_name: string;
         company: string;
@@ -109,10 +109,35 @@ const ProfileSettingsPage = () => {
         location
       };
       
-      // Skip file upload for now due to bucket creation issues
-      // We'll update the profile without changing the avatar
+      // Step 2: Handle file upload separately if needed
+      if (selectedFile) {
+        console.log('Starting profile photo upload...');
+        setIsUploading(true);
+        
+        try {
+          const uploadResult = await uploadProfilePhoto(currentUser.id, selectedFile);
+          console.log('Photo upload result:', uploadResult);
+          
+          if (uploadResult && typeof uploadResult === 'string') {
+            // Update profile data with new avatar URL
+            profileData.avatar_url = uploadResult;
+            console.log('Photo upload successful, URL:', uploadResult);
+          } else {
+            throw new Error('Invalid upload result');
+          }
+        } catch (error: any) {
+          console.error('Photo upload error:', error);
+          setUploadError(error.message || 'Failed to upload photo');
+          toast.error(`Upload failed: ${error.message || 'Unknown error'}`);
+          setIsSubmitting(false);
+          setIsUploading(false);
+          return; // Stop the submission if photo upload fails
+        } finally {
+          setIsUploading(false);
+        }
+      }
       
-      // Only attempt to update the profile data
+      // Step 3: Update profile in database
       console.log('Updating profile with data:', profileData);
       const updateResult = await updateUserProfile(currentUser.id, profileData);
       
@@ -120,7 +145,7 @@ const ProfileSettingsPage = () => {
         throw new Error('Profile update failed');
       }
       
-      // Refresh user data in context
+      // Step 4: Refresh user data in context
       await refreshUserData();
       
       toast.success('Profile updated successfully');
@@ -175,12 +200,6 @@ const ProfileSettingsPage = () => {
 
       {uploadError && (
         <div className="text-red-500 text-sm text-center">{uploadError}</div>
-      )}
-
-      {selectedFile && (
-        <div className="text-amber-500 text-sm text-center">
-          Note: Avatar upload is currently disabled. Profile information will be updated without changing your avatar.
-        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
