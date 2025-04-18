@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -198,19 +197,30 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
       fileType: file.type
     });
 
-    // Check if profile-photos bucket exists, if not we'll log it
+    // List available buckets with more comprehensive logging
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    
+    console.log('Available buckets:', buckets ? buckets.map(b => b.name) : 'No buckets found');
     
     if (bucketsError) {
       console.error('Error listing buckets:', bucketsError);
       throw new Error(`Failed to list storage buckets: ${bucketsError.message}`);
     }
     
-    console.log('Available buckets:', buckets?.map(b => b.name));
-    
+    // Explicitly create the bucket if it doesn't exist
     if (!buckets?.some(b => b.name === 'profile-photos')) {
-      console.error('Storage bucket "profile-photos" not found');
-      throw new Error('Storage bucket "profile-photos" not found');
+      console.log('Creating profile-photos bucket...');
+      const { data, error } = await supabase.storage.createBucket('profile-photos', {
+        public: true,
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      });
+      
+      if (error) {
+        console.error('Error creating profile-photos bucket:', error);
+        throw new Error(`Failed to create profile-photos bucket: ${error.message}`);
+      }
+      
+      console.log('Profile-photos bucket created successfully');
     }
 
     // Create a unique filename including timestamp to prevent conflicts
