@@ -5,12 +5,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertCircle, Info } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('jonathan@daydreamvc.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, currentUser } = useAuth();
@@ -39,9 +38,6 @@ const LoginPage = () => {
     }
   };
 
-  // Disabled auto-login to prevent continuous error loops
-  // Manual login is more reliable for troubleshooting
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="container mx-auto px-4 py-6">
@@ -65,19 +61,10 @@ const LoginPage = () => {
             </div>
 
             {error && (
-              <Alert variant="destructive" className="mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-md mb-6">
+                {error}
+              </div>
             )}
-            
-            <Alert className="mb-6 bg-blue-50 border-blue-200">
-              <Info className="h-4 w-4 text-blue-500" />
-              <AlertDescription className="text-blue-800">
-                Demo credentials are pre-filled.<br />
-                Click "Log in" to continue or try signing up with a new account.
-              </AlertDescription>
-            </Alert>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
