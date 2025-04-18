@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -39,6 +38,19 @@ export const updateUserProfile = async (userId: string, userData: {
 
 export const uploadProfilePhoto = async (userId: string, file: File) => {
   try {
+    // Verify session before doing anything
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('No active session found');
+      throw new Error('You must be logged in to upload a profile photo');
+    }
+    
+    // Ensure userId matches the authenticated user's ID
+    if (userId !== session.user.id) {
+      console.error('User ID mismatch:', { requestedUserId: userId, authenticatedUserId: session.user.id });
+      throw new Error('You can only upload photos to your own profile');
+    }
+    
     console.log('Starting upload process for userId:', userId);
     console.log('File details:', {
       name: file.name,
@@ -73,15 +85,8 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     const filePath = `${userId}/${fileName}`;
     
     console.log(`Attempting to upload file to ${bucketName}/${filePath}`);
-    
-    // Check if session exists
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.error('No active session found');
-      throw new Error('You must be logged in to upload a profile photo');
-    }
-    
-    console.log('Active session found, proceeding with upload');
+    console.log('Session status:', session ? 'Active' : 'None');
+    console.log('User ID in session:', session?.user?.id);
     
     // Upload the file
     const { data, error: uploadError } = await supabase.storage
@@ -123,7 +128,6 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
   }
 };
 
-// Define the proper return type for getUserProfileMap
 export const getUserProfileMap = async (userIds?: string[]) => {
   try {
     let query = supabase

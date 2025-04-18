@@ -109,11 +109,19 @@ const ProfileSettingsPage = () => {
       return;
     }
     
-    // Check session before proceeding
+    // Double-check session before proceeding
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       toast.error('Your session has expired. Please log in again.');
       navigate('/login');
+      return;
+    }
+    
+    console.log('Current user ID:', currentUser.id);
+    console.log('Session user ID:', session.user.id);
+    
+    if (currentUser.id !== session.user.id) {
+      toast.error('User ID mismatch. Please refresh the page and try again.');
       return;
     }
     
