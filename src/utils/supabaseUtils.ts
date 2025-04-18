@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -191,106 +190,84 @@ export const ensureUserProfile = async (userId: string, fullName?: string, compa
 
 export const uploadProfilePhoto = async (userId: string, file: File) => {
   try {
-    console.log(`Starting photo upload for user ${userId}`);
-    console.log('File details:', {
-      name: file.name,
-      size: file.size,
-      type: file.type
+    console.log('Starting upload process:', {
+      userId,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
     });
+
+    // Validate bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    console.log('Available buckets:', buckets?.map(b => b.name));
     
-    // Validate file type
-    const fileExt = file.name.split('.').pop()?.toLowerCase();
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    
-    if (!fileExt || !allowedExtensions.includes(fileExt)) {
-      console.error('Invalid file extension:', fileExt);
-      throw new Error('Unsupported file type. Please upload a valid image (JPG, PNG, GIF, or WEBP).');
+    if (!buckets?.some(b => b.name === 'profile-photos')) {
+      throw new Error('Storage bucket not found');
     }
-    
+
     // Create folder structure with user ID
-    const filePath = `${userId}/profile.${fileExt}`;
-    console.log('Uploading file to path:', filePath);
+    const filePath = `${userId}/profile.${file.name.split('.').pop()}`;
+    console.log('Uploading to path:', filePath);
 
-    // Check if the bucket exists and is accessible
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
-    if (bucketsError) {
-      console.error('Error checking buckets:', bucketsError);
-      throw bucketsError;
-    }
-    
-    console.log('Available buckets:', buckets.map(b => b.name));
-    
-    if (!buckets.some(b => b.name === 'profile-photos')) {
-      console.error('profile-photos bucket not found in available buckets');
-      throw new Error('Storage bucket not properly configured');
-    }
-
-    // Check if file already exists and remove it first
-    const { data: existingFiles, error: listError } = await supabase.storage
+    // Check if file already exists and remove it
+    const { data: existingFiles } = await supabase.storage
       .from('profile-photos')
       .list(userId);
       
-    if (!listError && existingFiles && existingFiles.length > 0) {
-      console.log('Found existing files to remove:', existingFiles);
-      
-      const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
-      
+    console.log('Existing files:', existingFiles);
+    
+    if (existingFiles && existingFiles.length > 0) {
+      console.log('Removing existing files:', existingFiles);
       const { error: removeError } = await supabase.storage
         .from('profile-photos')
-        .remove(filesToRemove);
+        .remove(existingFiles.map(file => `${userId}/${file.name}`));
         
       if (removeError) {
-        console.warn('Error removing existing files:', removeError);
-        // Continue anyway, we'll try to overwrite
-      } else {
-        console.log('Successfully removed existing files');
+        console.error('Error removing existing files:', removeError);
       }
     }
 
-    // Upload the file with upsert: true to replace existing files
+    // Upload new file
     const { data, error: uploadError } = await supabase.storage
       .from('profile-photos')
       .upload(filePath, file, { 
         upsert: true,
-        contentType: file.type // Explicitly set the content type
+        contentType: file.type
       });
 
     if (uploadError) {
-      console.error('Error uploading profile photo:', uploadError);
+      console.error('Upload error:', uploadError);
       throw uploadError;
     }
 
     console.log('Upload successful:', data);
 
-    // Get the public URL for the uploaded file
+    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('profile-photos')
       .getPublicUrl(filePath);
 
     console.log('Generated public URL:', publicUrl);
     
-    // Add a cache buster to the URL to prevent browser caching
-    const cacheBuster = `?t=${new Date().getTime()}`;
-    const finalUrl = publicUrl + cacheBuster;
-    
+    // Add cache buster
+    const finalUrl = `${publicUrl}?t=${new Date().getTime()}`;
     console.log('Final URL with cache buster:', finalUrl);
     
     // Test URL accessibility
     try {
       const response = await fetch(finalUrl, { method: 'HEAD' });
-      if (!response.ok) {
-        console.warn(`URL check returned status ${response.status}`);
-      } else {
-        console.log('URL is accessible:', finalUrl);
-      }
+      console.log('URL accessibility test:', {
+        status: response.status,
+        ok: response.ok,
+        contentType: response.headers.get('content-type')
+      });
     } catch (checkError) {
       console.warn('Could not verify URL accessibility:', checkError);
     }
     
     return finalUrl;
   } catch (error) {
-    console.error('Error uploading profile photo:', error);
+    console.error('Profile photo upload failed:', error);
     throw error;
   }
 };
