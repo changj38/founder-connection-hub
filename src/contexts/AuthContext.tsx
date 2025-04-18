@@ -14,7 +14,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   isAdmin: () => boolean;
-  refreshUserData: () => Promise<void>;
+  refreshUserData: () => Promise<AuthUser | null>; // Updated return type to match implementation
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
