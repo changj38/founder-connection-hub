@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,13 +18,13 @@ import {
 import AdminHelpRequestsTab from './AdminHelpRequestsTab';
 import AdminNetworkTab from './AdminNetworkTab';
 import AdminPortfolioTab from './AdminPortfolioTab';
+import AdminForumTab from './AdminForumTab';
 import { useQuery } from '@tanstack/react-query';
 import { fetchNetworkContacts, fetchPortfolioCompanies, fetchHelpRequests, getHelpRequestStats } from '../utils/adminApi';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Fetch data for overview counts
   const { data: networkContacts = [] } = useQuery({
     queryKey: ['networkContacts'],
     queryFn: fetchNetworkContacts
@@ -41,7 +40,6 @@ const AdminPage = () => {
     queryFn: fetchHelpRequests
   });
   
-  // Fetch help request statistics
   const { data: helpStats = { total: 0, pending: 0, inProgress: 0, completed: 0, declined: 0, byType: { intro: 0, portfolio: 0, other: 0 } } } = useQuery({
     queryKey: ['helpRequestStats'],
     queryFn: getHelpRequestStats,
@@ -55,7 +53,6 @@ const AdminPage = () => {
     }
   });
   
-  // Listen for tab changes from AdminLayout
   useEffect(() => {
     const handleTabChange = (event: CustomEvent) => {
       if (event.detail && event.detail.tab) {
@@ -75,7 +72,6 @@ const AdminPage = () => {
     };
   }, []);
 
-  // Calculate help request by status for overview
   const pendingRequests = helpRequests.filter(req => req.status === 'Pending').length;
   const introRequests = helpRequests.filter(req => req.request_type === 'intro').length;
   const portfolioHelpRequests = helpRequests.filter(req => req.request_type === 'portfolio').length;
@@ -176,7 +172,6 @@ const AdminPage = () => {
                     className="bg-indigo-600 text-white px-3 py-1 rounded text-sm mt-4 hover:bg-indigo-700"
                     onClick={() => {
                       setActiveTab('requests');
-                      // You could set a filter here if you had a way to pass it to the requests tab
                     }}
                   >
                     View All
@@ -199,7 +194,6 @@ const AdminPage = () => {
                     className="bg-indigo-600 text-white px-3 py-1 rounded text-sm mt-4 hover:bg-indigo-700"
                     onClick={() => {
                       setActiveTab('requests');
-                      // You could set a filter here if you had a way to pass it to the requests tab
                     }}
                   >
                     View All
@@ -276,92 +270,7 @@ const AdminPage = () => {
         </TabsContent>
         
         <TabsContent value="forum">
-          <Card>
-            <CardHeader>
-              <CardTitle>Forum Management</CardTitle>
-              <CardDescription>Manage forum settings and content moderation</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="grid gap-6">
-                  <Card className="p-4">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5 text-daydream-purple" />
-                      Post Moderation
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Auto-moderate posts</p>
-                          <p className="text-sm text-gray-500">Automatically filter spam and inappropriate content</p>
-                        </div>
-                        <Switch />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Require approval</p>
-                          <p className="text-sm text-gray-500">New posts require admin approval before publishing</p>
-                        </div>
-                        <Switch />
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-4">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Users className="w-5 h-5 text-daydream-blue" />
-                      User Permissions
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Allow guest posting</p>
-                          <p className="text-sm text-gray-500">Let non-registered users create posts</p>
-                        </div>
-                        <Switch />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">User post limits</p>
-                          <p className="text-sm text-gray-500">Limit number of posts per user per day</p>
-                        </div>
-                        <Switch />
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-4">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Settings className="w-5 h-5 text-gray-600" />
-                      General Settings
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Enable reactions</p>
-                          <p className="text-sm text-gray-500">Allow users to react to posts and comments</p>
-                        </div>
-                        <Switch />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Enable file attachments</p>
-                          <p className="text-sm text-gray-500">Allow users to attach files to their posts</p>
-                        </div>
-                        <Switch />
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
-                    Save Settings
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AdminForumTab />
         </TabsContent>
         
         <TabsContent value="settings">
