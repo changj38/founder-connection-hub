@@ -9,12 +9,26 @@ export const updateUserProfile = async (userId: string, userData: {
   avatar_url?: string;
 }) => {
   try {
+    // Check authentication first
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('You must be logged in to update your profile');
+    }
+    
+    console.log('Updating profile for user:', userId);
+    console.log('Profile data:', userData);
+    
     const { error } = await supabase
       .from('profiles')
       .update(userData)
       .eq('id', userId);
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error from Supabase:', error);
+      throw error;
+    }
+    
+    console.log('Profile updated successfully');
     return true;
   } catch (error: any) {
     console.error('Error updating profile:', error);
