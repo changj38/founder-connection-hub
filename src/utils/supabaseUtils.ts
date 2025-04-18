@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -89,20 +88,46 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     console.log('Session status:', session ? 'Active' : 'None');
     console.log('User ID in session:', session?.user?.id);
     
-    // Check if bucket exists before attempting upload
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    // Add a small delay to ensure bucket is fully created and ready
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    if (bucketsError) {
-      console.error('Error fetching buckets:', bucketsError);
-      throw new Error('Could not verify storage buckets');
-    }
+    // Check if bucket exists before attempting upload with retry
+    let bucketExists = false;
+    let retryCount = 0;
+    const maxRetries = 3;
     
-    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-    console.log('Bucket exists:', bucketExists);
-    
-    if (!bucketExists) {
-      console.error('Bucket does not exist:', bucketName);
-      throw new Error(`Storage bucket '${bucketName}' does not exist`);
+    while (!bucketExists && retryCount < maxRetries) {
+      console.log(`Checking bucket existence (attempt ${retryCount + 1}/${maxRetries})...`);
+      
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error('Error fetching buckets:', bucketsError);
+        retryCount++;
+        
+        if (retryCount >= maxRetries) {
+          throw new Error('Could not verify storage buckets after multiple attempts');
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+      
+      bucketExists = buckets?.some(bucket => bucket.id === bucketName);
+      console.log('Buckets found:', buckets?.map(b => b.id));
+      console.log(`Bucket '${bucketName}' exists:`, bucketExists);
+      
+      if (!bucketExists) {
+        retryCount++;
+        
+        if (retryCount >= maxRetries) {
+          throw new Error(`Storage bucket '${bucketName}' does not exist after multiple checks`);
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
     
     // Try getting supabase auth user directly before upload
