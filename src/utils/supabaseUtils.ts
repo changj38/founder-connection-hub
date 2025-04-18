@@ -203,17 +203,16 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     
     if (!fileExt || !allowedExtensions.includes(fileExt)) {
+      console.error('Invalid file extension:', fileExt);
       throw new Error('Unsupported file type. Please upload a valid image (JPG, PNG, GIF, or WEBP).');
     }
     
-    // Create folder structure with user ID - using user ID as the folder name ensures
-    // that users can only access their own folders with RLS policies
+    // Create folder structure with user ID
     const filePath = `${userId}/profile.${fileExt}`;
     console.log('Uploading file to path:', filePath);
 
-    // Check if bucket exists
-    const { data: buckets, error: bucketsError } = await supabase.storage
-      .listBuckets();
+    // Check if the bucket exists and is accessible
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
       console.error('Error checking buckets:', bucketsError);
@@ -223,8 +222,30 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     console.log('Available buckets:', buckets.map(b => b.name));
     
     if (!buckets.some(b => b.name === 'profile-photos')) {
-      console.error('profile-photos bucket does not exist');
-      throw new Error('Storage bucket not configured properly');
+      console.error('profile-photos bucket not found in available buckets');
+      throw new Error('Storage bucket not properly configured');
+    }
+
+    // Check if file already exists and remove it first
+    const { data: existingFiles, error: listError } = await supabase.storage
+      .from('profile-photos')
+      .list(userId);
+      
+    if (!listError && existingFiles && existingFiles.length > 0) {
+      console.log('Found existing files to remove:', existingFiles);
+      
+      const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
+      
+      const { error: removeError } = await supabase.storage
+        .from('profile-photos')
+        .remove(filesToRemove);
+        
+      if (removeError) {
+        console.warn('Error removing existing files:', removeError);
+        // Continue anyway, we'll try to overwrite
+      } else {
+        console.log('Successfully removed existing files');
+      }
     }
 
     // Upload the file with upsert: true to replace existing files
@@ -249,19 +270,25 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
 
     console.log('Generated public URL:', publicUrl);
     
+    // Add a cache buster to the URL to prevent browser caching
+    const cacheBuster = `?t=${new Date().getTime()}`;
+    const finalUrl = publicUrl + cacheBuster;
+    
+    console.log('Final URL with cache buster:', finalUrl);
+    
     // Test URL accessibility
     try {
-      const response = await fetch(publicUrl, { method: 'HEAD' });
+      const response = await fetch(finalUrl, { method: 'HEAD' });
       if (!response.ok) {
         console.warn(`URL check returned status ${response.status}`);
       } else {
-        console.log('URL is accessible:', publicUrl);
+        console.log('URL is accessible:', finalUrl);
       }
     } catch (checkError) {
       console.warn('Could not verify URL accessibility:', checkError);
     }
     
-    return publicUrl;
+    return finalUrl;
   } catch (error) {
     console.error('Error uploading profile photo:', error);
     throw error;

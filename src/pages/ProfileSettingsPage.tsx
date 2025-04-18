@@ -22,6 +22,7 @@ const ProfileSettingsPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Load user data
   useEffect(() => {
@@ -32,7 +33,11 @@ const ProfileSettingsPage = () => {
       setLocation(currentUser.location || '');
       if (currentUser.avatar_url) {
         console.log('Setting avatar URL from user data:', currentUser.avatar_url);
-        setPreviewUrl(currentUser.avatar_url);
+        // Add cache buster to avatar URL to prevent browser caching
+        const cacheBuster = currentUser.avatar_url.includes('?') 
+          ? `&t=${new Date().getTime()}` 
+          : `?t=${new Date().getTime()}`;
+        setPreviewUrl(currentUser.avatar_url + cacheBuster);
       }
     }
   }, [currentUser]);
@@ -93,6 +98,7 @@ const ProfileSettingsPage = () => {
       let avatarUrl = currentUser.avatar_url || '';
       if (selectedFile) {
         console.log('Starting profile photo upload process...');
+        setIsUploading(true);
         
         try {
           avatarUrl = await uploadProfilePhoto(currentUser.id, selectedFile);
@@ -101,13 +107,15 @@ const ProfileSettingsPage = () => {
           // Test if the URL is accessible
           const testImg = new Image();
           testImg.onload = () => console.log('Image URL is valid and accessible');
-          testImg.onerror = () => console.error('Image URL cannot be loaded');
+          testImg.onerror = (e) => console.error('Image URL cannot be loaded:', e);
           testImg.src = avatarUrl;
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error uploading profile photo:', error);
-          setUploadError('Failed to upload profile photo. Please try again.');
-          toast.error('Failed to upload profile photo. Please try again.');
+          setUploadError(error.message || 'Failed to upload profile photo. Please try again.');
+          toast.error(error.message || 'Failed to upload profile photo. Please try again.');
           // Continue with the profile update even if the photo upload fails
+        } finally {
+          setIsUploading(false);
         }
       }
 
@@ -136,9 +144,9 @@ const ProfileSettingsPage = () => {
           : `${avatarUrl}?_=${timestamp}`;
         setPreviewUrl(refreshedUrl);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile update error:', error);
-      toast.error('Failed to update profile');
+      toast.error(error.message || 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
     }
@@ -165,7 +173,10 @@ const ProfileSettingsPage = () => {
             <AvatarImage 
               src={previewUrl || undefined} 
               alt="Profile photo" 
-              onError={() => console.error('Error loading avatar image from URL:', previewUrl)}
+              onError={(e) => {
+                console.error('Error loading avatar image from URL:', previewUrl);
+                e.currentTarget.src = ''; // Clear src on error
+              }}
             />
             <AvatarFallback>{currentUser?.fullName?.charAt(0) || '?'}</AvatarFallback>
           </Avatar>
@@ -174,8 +185,9 @@ const ProfileSettingsPage = () => {
             size="icon" 
             className="absolute bottom-0 right-0 h-8 w-8 rounded-full" 
             onClick={triggerFileInput}
+            disabled={isUploading}
           >
-            ✏️
+            {isUploading ? '⏳' : '✏️'}
           </Button>
         </div>
       </div>
@@ -215,7 +227,7 @@ const ProfileSettingsPage = () => {
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={isSubmitting}
+          disabled={isSubmitting || isUploading}
         >
           {isSubmitting ? 'Updating...' : 'Update Profile'}
         </Button>
