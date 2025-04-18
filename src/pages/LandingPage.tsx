@@ -1,18 +1,11 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-
 const LandingPage = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white flex flex-col">
+  return <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white flex flex-col">
       <header className="container mx-auto px-4 py-6 flex justify-between items-center">
-        <img 
-          src="/lovable-uploads/29aac53d-4e8a-4190-8ceb-8d4edb8e6a1c.png" 
-          alt="DayDream Ventures" 
-          className="h-10 w-auto"
-        />
+        <img alt="DayDream Ventures" className="h-10 w-auto" src="/lovable-uploads/39b2d710-6a4c-4f9f-ad95-a8a28ece6867.png" />
         <Link to="/login">
           <Button variant="ghost" className="text-white hover:text-white hover:bg-white/10">
             Login
@@ -22,12 +15,15 @@ const LandingPage = () => {
 
       <main className="flex-grow flex items-center justify-center">
         <div className="container mx-auto px-4 flex flex-col items-center text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="max-w-3xl"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.8
+        }} className="max-w-3xl">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
               DayDream Ventures Founder Portal
             </h1>
@@ -50,8 +46,6 @@ const LandingPage = () => {
       </footer>
 
       <div className="absolute inset-0 -z-10 dots-bg opacity-10 pointer-events-none"></div>
-    </div>
-  );
+    </div>;
 };
-
 export default LandingPage;
