@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -208,17 +209,24 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     // Generate a simple filename with timestamp
     const timestamp = new Date().getTime();
     const fileExtension = file.name.split('.').pop();
-    const filePath = `${timestamp}.${fileExtension}`;
+    const fileName = `${timestamp}.${fileExtension}`;
     
-    console.log(`Uploading file ${filePath} to bucket ${bucketName}`);
+    // The path must start with the user ID to comply with RLS policies
+    // Format: userId/filename.ext
+    const filePath = `${userId}/${fileName}`;
+    
+    console.log(`Uploading file to ${bucketName}/${filePath}`);
     
     // Remove old files to avoid accumulation
     try {
-      const { data: existingFiles } = await supabase.storage
+      const { data: existingFiles, error: listError } = await supabase.storage
         .from(bucketName)
         .list(userId);
         
-      if (existingFiles && existingFiles.length > 0) {
+      if (listError) {
+        console.warn('Error listing existing files:', listError);
+        // Continue with upload even if we can't list files
+      } else if (existingFiles && existingFiles.length > 0) {
         console.log('Found existing files to remove:', existingFiles);
         
         const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
@@ -237,11 +245,10 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
       // Continue with upload even if cleanup fails
     }
     
-    // Upload the file to a folder named with the userId
-    const fullPath = `${userId}/${filePath}`;
+    // Upload the file
     const { data, error: uploadError } = await supabase.storage
       .from(bucketName)
-      .upload(fullPath, file, { 
+      .upload(filePath, file, { 
         cacheControl: '3600',
         upsert: true 
       });
@@ -260,7 +267,7 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     // Get public URL
     const { data: urlData } = supabase.storage
       .from(bucketName)
-      .getPublicUrl(fullPath);
+      .getPublicUrl(filePath);
       
     if (!urlData?.publicUrl) {
       throw new Error('Could not get public URL for uploaded file');
