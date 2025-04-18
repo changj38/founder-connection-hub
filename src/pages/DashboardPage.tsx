@@ -5,30 +5,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  HelpCircle, 
-  Users, 
-  Building2, 
-  MessageSquare, 
-  ClipboardList,
-  MessageCircle
-} from 'lucide-react';
+import { HelpCircle, Users, Building2, MessageSquare, ClipboardList, MessageCircle } from 'lucide-react';
 import { fetchUserRequests, Request } from '../utils/requestsApi';
-
 const DashboardPage = () => {
-  const { currentUser } = useAuth();
-  
+  const {
+    currentUser
+  } = useAuth();
+
   // Use React Query to fetch user requests
-  const { data: requestData = [], isLoading, error, refetch } = useQuery({
+  const {
+    data: requestData = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
     queryKey: ['userRequests'],
     queryFn: fetchUserRequests
   });
-  
+
   // Effect to log request data for debugging
   useEffect(() => {
     console.log('Request data received in component:', requestData);
   }, [requestData]);
-  
   const formatDate = (date?: Date | string) => {
     if (!date) return 'N/A';
     return new Intl.DateTimeFormat('en-US', {
@@ -37,15 +35,16 @@ const DashboardPage = () => {
       timeZone: 'GMT'
     }).format(new Date(date));
   };
-
   const getRequestTypeLabel = (type: string) => {
     switch (type) {
-      case 'intro': return 'Introduction Request';
-      case 'portfolio': return 'Portfolio Ask';
-      default: return 'Request';
+      case 'intro':
+        return 'Introduction Request';
+      case 'portfolio':
+        return 'Portfolio Ask';
+      default:
+        return 'Request';
     }
   };
-
   const filteredPortfolioRequests = requestData.filter(request => request.type === 'portfolio');
   const filteredIntroRequests = requestData.filter(request => request.type === 'intro');
 
@@ -53,47 +52,35 @@ const DashboardPage = () => {
   const getStatusDisplay = (status: string) => {
     switch (status) {
       case 'completed':
-        return (
-          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
             Completed
-          </span>
-        );
+          </span>;
       case 'rejected':
-        return (
-          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
             Declined
-          </span>
-        );
+          </span>;
       case 'pending':
       default:
-        return (
-          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+        return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
             Pending
-          </span>
-        );
+          </span>;
     }
   };
 
   // Format request details display
   const formatRequestDetails = (request: Request) => {
-    return (
-      <div>
+    return <div>
         <div className="text-sm text-gray-600">{request.details}</div>
-        {request.resolution_notes && (
-          <div className="mt-2 pt-2 border-t border-gray-100">
+        {request.resolution_notes && <div className="mt-2 pt-2 border-t border-gray-100">
             <div className="flex items-center text-sm text-gray-600 mb-1">
               <MessageCircle className="h-4 w-4 mr-1 text-indigo-500" />
               <span className="font-medium">Admin response:</span>
             </div>
             <div className="text-sm text-gray-700 pl-5">{request.resolution_notes}</div>
-          </div>
-        )}
-      </div>
-    );
+          </div>}
+      </div>;
   };
-
-  return (
-    <div className="space-y-8 animate-fade-in">
+  return <div className="space-y-8 animate-fade-in">
       <div>
         <h1 className="text-4xl font-bold tracking-tight">Welcome back, <span className="text-daydream-blue">{currentUser?.fullName}</span></h1>
         <p className="text-gray-500 mt-1 flex items-center">
@@ -110,9 +97,7 @@ const DashboardPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col flex-grow">
-            <p className="text-gray-600 mb-4 flex-grow">
-              Have questions about our portfolio companies? Ask for information or request introductions.
-            </p>
+            <p className="text-gray-600 mb-4 flex-grow">Have a question to ask our DayDream Team? Ask Here!</p>
             <div className="mt-auto pb-3">
               <Link to="/help" className="block">
                 <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
@@ -211,16 +196,11 @@ const DashboardPage = () => {
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
-              {isLoading ? (
-                <div className="text-center py-10 border rounded-md">
+              {isLoading ? <div className="text-center py-10 border rounded-md">
                   <p className="text-gray-500">Loading requests...</p>
-                </div>
-              ) : error ? (
-                <div className="text-center py-10 border rounded-md">
+                </div> : error ? <div className="text-center py-10 border rounded-md">
                   <p className="text-red-500">Failed to load requests</p>
-                </div>
-              ) : requestData.length > 0 ? (
-                <div className="border rounded-md overflow-hidden">
+                </div> : requestData.length > 0 ? <div className="border rounded-md overflow-hidden">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -231,8 +211,7 @@ const DashboardPage = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {requestData.map((request) => (
-                        <tr key={request.id}>
+                      {requestData.map(request => <tr key={request.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatDate(request.date)}
                           </td>
@@ -245,29 +224,20 @@ const DashboardPage = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {getStatusDisplay(request.status)}
                           </td>
-                        </tr>
-                      ))}
+                        </tr>)}
                     </tbody>
                   </table>
-                </div>
-              ) : (
-                <div className="text-center py-10 border rounded-md">
+                </div> : <div className="text-center py-10 border rounded-md">
                   <p className="text-gray-500">No requests found</p>
-                </div>
-              )}
+                </div>}
             </TabsContent>
             
             <TabsContent value="portfolio" className="mt-0">
-              {isLoading ? (
-                <div className="text-center py-10 border rounded-md">
+              {isLoading ? <div className="text-center py-10 border rounded-md">
                   <p className="text-gray-500">Loading requests...</p>
-                </div>
-              ) : error ? (
-                <div className="text-center py-10 border rounded-md">
+                </div> : error ? <div className="text-center py-10 border rounded-md">
                   <p className="text-red-500">Failed to load requests</p>
-                </div>
-              ) : filteredPortfolioRequests.length > 0 ? (
-                <div className="border rounded-md overflow-hidden">
+                </div> : filteredPortfolioRequests.length > 0 ? <div className="border rounded-md overflow-hidden">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -277,8 +247,7 @@ const DashboardPage = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredPortfolioRequests.map((request) => (
-                        <tr key={request.id}>
+                      {filteredPortfolioRequests.map(request => <tr key={request.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatDate(request.date)}
                           </td>
@@ -288,29 +257,20 @@ const DashboardPage = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {getStatusDisplay(request.status)}
                           </td>
-                        </tr>
-                      ))}
+                        </tr>)}
                     </tbody>
                   </table>
-                </div>
-              ) : (
-                <div className="text-center py-10 border rounded-md">
+                </div> : <div className="text-center py-10 border rounded-md">
                   <p className="text-gray-500">No portfolio asks found</p>
-                </div>
-              )}
+                </div>}
             </TabsContent>
             
             <TabsContent value="intro" className="mt-0">
-              {isLoading ? (
-                <div className="text-center py-10 border rounded-md">
+              {isLoading ? <div className="text-center py-10 border rounded-md">
                   <p className="text-gray-500">Loading requests...</p>
-                </div>
-              ) : error ? (
-                <div className="text-center py-10 border rounded-md">
+                </div> : error ? <div className="text-center py-10 border rounded-md">
                   <p className="text-red-500">Failed to load requests</p>
-                </div>
-              ) : filteredIntroRequests.length > 0 ? (
-                <div className="border rounded-md overflow-hidden">
+                </div> : filteredIntroRequests.length > 0 ? <div className="border rounded-md overflow-hidden">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -320,44 +280,35 @@ const DashboardPage = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredIntroRequests.map((request) => (
-                        <tr key={request.id}>
+                      {filteredIntroRequests.map(request => <tr key={request.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatDate(request.date)}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
                             <div>
                               <div className="text-sm text-gray-600">{request.company}</div>
-                              {request.resolution_notes && (
-                                <div className="mt-2 pt-2 border-t border-gray-100">
+                              {request.resolution_notes && <div className="mt-2 pt-2 border-t border-gray-100">
                                   <div className="flex items-center text-sm text-gray-600 mb-1">
                                     <MessageCircle className="h-4 w-4 mr-1 text-indigo-500" />
                                     <span className="font-medium">Admin response:</span>
                                   </div>
                                   <div className="text-sm text-gray-700 pl-5">{request.resolution_notes}</div>
-                                </div>
-                              )}
+                                </div>}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {getStatusDisplay(request.status)}
                           </td>
-                        </tr>
-                      ))}
+                        </tr>)}
                     </tbody>
                   </table>
-                </div>
-              ) : (
-                <div className="text-center py-10 border rounded-md">
+                </div> : <div className="text-center py-10 border rounded-md">
                   <p className="text-gray-500">No intro requests found</p>
-                </div>
-              )}
+                </div>}
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default DashboardPage;
