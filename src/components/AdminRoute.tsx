@@ -14,13 +14,15 @@ const AdminRoute = () => {
     );
   }
 
+  console.log('AdminRoute - Current user:', currentUser);
+  console.log('AdminRoute - Is admin check:', isAdmin());
+  
   if (!currentUser || !isAdmin()) {
-    console.log('Access denied: User is not admin. Current user:', currentUser);
-    console.log('Admin check result:', isAdmin());
+    console.log('Access denied: User is not admin or not authenticated');
     return <Navigate to="/login" replace />;
   }
 
-  console.log('Admin access granted for user:', currentUser);
+  console.log('Admin access granted for user:', currentUser.email);
   return (
     <AdminLayout>
       <Outlet />
