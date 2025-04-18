@@ -1,13 +1,29 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Menu, X, Home, Users, Building, MessageSquare, HelpCircle, LogOut } from 'lucide-react';
+import { 
+  User, 
+  Menu, 
+  X, 
+  Home, 
+  Users, 
+  Building, 
+  MessageSquare, 
+  HelpCircle, 
+  LogOut,
+  UserRound,
+  MapPin
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -32,7 +48,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            <div className="flex items-center gap-8">
               <Link to="/dashboard" className="flex items-center">
                 <img 
                   src="/lovable-uploads/29aac53d-4e8a-4190-8ceb-8d4edb8e6a1c.png" 
@@ -40,65 +56,83 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   className="h-8 w-auto"
                 />
               </Link>
-            </div>
-            
-            {/* Desktop nav */}
-            <div className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                    location.pathname === item.path
-                      ? 'bg-indigo-50 text-indigo-600'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
-                  }`}
-                >
-                  {item.icon}
-                  {item.label}
-                </Link>
-              ))}
+              
+              {/* Desktop nav - Shifted left */}
+              <div className="hidden md:flex items-center space-x-1">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      location.pathname === item.path
+                        ? 'bg-indigo-50 text-indigo-600'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
+                    }`}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
             
             <div className="flex items-center gap-4">
-              <Link
-                to="/profile/settings"
-                className={`hidden md:flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  location.pathname === '/profile/settings'
-                    ? 'bg-indigo-50 text-indigo-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
-                }`}
-              >
-                <User className="w-5 h-5" />
-                Profile Settings
-              </Link>
-              
-              <div className="hidden md:flex items-center">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={currentUser?.avatar_url} />
-                  <AvatarFallback className="bg-indigo-600 text-white">
-                    {currentUser?.fullName?.charAt(0) || currentUser?.email?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+              {/* Profile Menu */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={currentUser?.avatar_url} alt={currentUser?.fullName} />
+                      <AvatarFallback className="bg-indigo-600 text-white">
+                        {currentUser?.fullName?.charAt(0) || currentUser?.email?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56" align="end">
+                  <div className="flex items-center gap-2 p-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={currentUser?.avatar_url} />
+                      <AvatarFallback className="bg-indigo-600 text-white">
+                        {currentUser?.fullName?.charAt(0) || currentUser?.email?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{currentUser?.fullName}</span>
+                      <span className="text-xs text-gray-500">{currentUser?.email}</span>
+                    </div>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex flex-col space-y-1">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => navigate('/profile/settings')}
+                    >
+                      <UserRound className="mr-2 h-4 w-4" />
+                      Update Profile
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Mobile menu button */}
+              <div className="md:hidden">
+                <button
+                  className="p-2 rounded-md text-gray-500 hover:text-gray-700 focus:outline-none"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                  {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
               </div>
-              
-              <button
-                onClick={handleLogout}
-                className="hidden md:flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                Logout
-              </button>
-            </div>
-            
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button
-                className="p-2 rounded-md text-gray-500 hover:text-gray-700 focus:outline-none"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
             </div>
           </div>
         </div>
