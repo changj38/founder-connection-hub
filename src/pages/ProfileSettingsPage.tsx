@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { updateUserProfile, uploadProfilePhoto } from '@/utils/supabaseUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProfileSettingsPage = () => {
   const { currentUser, refreshUserData } = useAuth();
@@ -21,6 +23,22 @@ const ProfileSettingsPage = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('No session found, redirecting to login');
+        toast.error('Please log in to access profile settings');
+        navigate('/login');
+      } else {
+        console.log('Session found in ProfileSettingsPage:', session.user.id);
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   // Load user data
   useEffect(() => {
@@ -87,6 +105,15 @@ const ProfileSettingsPage = () => {
     
     if (!currentUser) {
       toast.error('You must be logged in to update your profile');
+      navigate('/login');
+      return;
+    }
+    
+    // Check session before proceeding
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error('Your session has expired. Please log in again.');
+      navigate('/login');
       return;
     }
     

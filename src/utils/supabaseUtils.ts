@@ -52,13 +52,22 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     // Generate a simple filename with timestamp
     const timestamp = new Date().getTime();
     const fileExtension = file.name.split('.').pop();
-    const fileName = `${timestamp}.${fileExtension}`;
+    const fileName = `avatar-${timestamp}.${fileExtension}`;
     
     // The path must start with the user ID to comply with RLS policies
     // Format: userId/filename.ext
     const filePath = `${userId}/${fileName}`;
     
     console.log(`Attempting to upload file to ${bucketName}/${filePath}`);
+    
+    // Check if session exists
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('No active session found');
+      throw new Error('You must be logged in to upload a profile photo');
+    }
+    
+    console.log('Active session found, proceeding with upload');
     
     // Upload the file
     const { data, error: uploadError } = await supabase.storage
