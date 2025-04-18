@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -197,38 +198,58 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
       fileType: file.type
     });
 
-    // Validate bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets();
+    // Check if profile-photos bucket exists, if not we'll log it
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    
+    if (bucketsError) {
+      console.error('Error listing buckets:', bucketsError);
+      throw new Error(`Failed to list storage buckets: ${bucketsError.message}`);
+    }
+    
     console.log('Available buckets:', buckets?.map(b => b.name));
     
     if (!buckets?.some(b => b.name === 'profile-photos')) {
-      throw new Error('Storage bucket not found');
+      console.error('Storage bucket "profile-photos" not found');
+      throw new Error('Storage bucket "profile-photos" not found');
     }
 
-    // Create folder structure with user ID
-    const filePath = `${userId}/profile.${file.name.split('.').pop()}`;
+    // Create a unique filename including timestamp to prevent conflicts
+    const timestamp = new Date().getTime();
+    const fileExtension = file.name.split('.').pop();
+    const filePath = `${userId}/profile-${timestamp}.${fileExtension}`;
     console.log('Uploading to path:', filePath);
 
-    // Check if file already exists and remove it
-    const { data: existingFiles } = await supabase.storage
+    // First check if folder exists
+    const { data: existingFiles, error: listError } = await supabase.storage
       .from('profile-photos')
       .list(userId);
       
-    console.log('Existing files:', existingFiles);
-    
-    if (existingFiles && existingFiles.length > 0) {
-      console.log('Removing existing files:', existingFiles);
-      const { error: removeError } = await supabase.storage
-        .from('profile-photos')
-        .remove(existingFiles.map(file => `${userId}/${file.name}`));
-        
-      if (removeError) {
-        console.error('Error removing existing files:', removeError);
+    if (listError) {
+      console.error('Error listing existing files:', listError);
+      // Continue anyway - folder might not exist yet
+    } else {
+      console.log('Existing files in folder:', existingFiles);
+      
+      // Remove existing profile photos to save storage space
+      if (existingFiles && existingFiles.length > 0) {
+        console.log('Removing existing files:', existingFiles);
+        const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
+        const { error: removeError } = await supabase.storage
+          .from('profile-photos')
+          .remove(filesToRemove);
+          
+        if (removeError) {
+          console.error('Error removing existing files:', removeError);
+          // Continue anyway - this isn't critical
+        } else {
+          console.log('Successfully removed old files');
+        }
       }
     }
 
-    // Upload new file
-    const { data, error: uploadError } = await supabase.storage
+    // Upload the new file
+    console.log('Starting file upload to', filePath);
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('profile-photos')
       .upload(filePath, file, { 
         upsert: true,
@@ -237,20 +258,20 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      throw uploadError;
+      throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
-    console.log('Upload successful:', data);
+    console.log('Upload successful, data:', uploadData);
 
-    // Get public URL
+    // Get public URL with cache busting
     const { data: { publicUrl } } = supabase.storage
       .from('profile-photos')
       .getPublicUrl(filePath);
 
     console.log('Generated public URL:', publicUrl);
     
-    // Add cache buster
-    const finalUrl = `${publicUrl}?t=${new Date().getTime()}`;
+    // Add cache buster to prevent browser caching
+    const finalUrl = `${publicUrl}?t=${timestamp}`;
     console.log('Final URL with cache buster:', finalUrl);
     
     // Test URL accessibility
@@ -261,13 +282,19 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
         ok: response.ok,
         contentType: response.headers.get('content-type')
       });
+      
+      if (!response.ok) {
+        console.warn('URL may not be accessible, status:', response.status);
+      }
     } catch (checkError) {
       console.warn('Could not verify URL accessibility:', checkError);
+      // Continue anyway - this is just a validation check
     }
     
     return finalUrl;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Profile photo upload failed:', error);
+    toast.error(`Upload failed: ${error.message || 'Unknown error'}`);
     throw error;
   }
 };
@@ -295,6 +322,7 @@ export const updateUserProfile = async (
     }
     
     console.log('Profile updated successfully');
+    return true;
   } catch (error) {
     console.error('Error updating profile:', error);
     throw error;

@@ -31,13 +31,15 @@ const ProfileSettingsPage = () => {
       setFullName(currentUser.fullName || '');
       setCompany(currentUser.company || '');
       setLocation(currentUser.location || '');
+      
       if (currentUser.avatar_url) {
         console.log('Setting avatar URL from user data:', currentUser.avatar_url);
         // Add cache buster to avatar URL to prevent browser caching
-        const cacheBuster = currentUser.avatar_url.includes('?') 
-          ? `&t=${new Date().getTime()}` 
-          : `?t=${new Date().getTime()}`;
-        setPreviewUrl(currentUser.avatar_url + cacheBuster);
+        const cacheBuster = `t=${new Date().getTime()}`;
+        const avatarUrl = currentUser.avatar_url.includes('?') 
+          ? `${currentUser.avatar_url}&${cacheBuster}` 
+          : `${currentUser.avatar_url}?${cacheBuster}`;
+        setPreviewUrl(avatarUrl);
       }
     }
   }, [currentUser]);
@@ -99,16 +101,12 @@ const ProfileSettingsPage = () => {
       if (selectedFile) {
         console.log('Starting profile photo upload process...');
         setIsUploading(true);
+        toast.info('Uploading photo...');
         
         try {
           avatarUrl = await uploadProfilePhoto(currentUser.id, selectedFile);
           console.log('Upload successful, new avatar URL:', avatarUrl);
-          
-          // Test if the URL is accessible
-          const testImg = new Image();
-          testImg.onload = () => console.log('Image URL is valid and accessible');
-          testImg.onerror = (e) => console.error('Image URL cannot be loaded:', e);
-          testImg.src = avatarUrl;
+          toast.success('Photo uploaded successfully');
         } catch (error: any) {
           console.error('Error uploading profile photo:', error);
           setUploadError(error.message || 'Failed to upload profile photo. Please try again.');
@@ -131,19 +129,10 @@ const ProfileSettingsPage = () => {
       await updateUserProfile(currentUser.id, profileData);
       
       // Refresh the user data in the auth context
-      const updatedUser = await refreshUserData();
-      console.log('Profile refreshed, updated user data:', updatedUser);
+      await refreshUserData();
+      console.log('Profile refreshed');
 
       toast.success('Profile updated successfully');
-      
-      // Force reload the avatar image if it exists
-      if (avatarUrl) {
-        const timestamp = new Date().getTime();
-        const refreshedUrl = avatarUrl.includes('?') 
-          ? `${avatarUrl}&_=${timestamp}` 
-          : `${avatarUrl}?_=${timestamp}`;
-        setPreviewUrl(refreshedUrl);
-      }
     } catch (error: any) {
       console.error('Profile update error:', error);
       toast.error(error.message || 'Failed to update profile');
