@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { updateUserProfile, uploadProfilePhoto } from '@/utils/supabaseUtils';
 
 const ProfileSettingsPage = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUserData } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,7 +60,7 @@ const ProfileSettingsPage = () => {
 
     try {
       // Upload profile photo if selected
-      let avatarUrl = currentUser.avatar_url;
+      let avatarUrl = currentUser.avatar_url || '';
       if (selectedFile) {
         console.log('Uploading profile photo...');
         
@@ -75,12 +75,17 @@ const ProfileSettingsPage = () => {
       }
 
       // Update profile
-      await updateUserProfile(currentUser.id, {
+      const profileData = {
         full_name: fullName,
         company,
         location,
         avatar_url: avatarUrl
-      });
+      };
+      
+      await updateUserProfile(currentUser.id, profileData);
+      
+      // Refresh the user data in the auth context
+      await refreshUserData();
 
       toast.success('Profile updated successfully');
       navigate('/dashboard');

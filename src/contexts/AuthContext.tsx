@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
@@ -13,6 +14,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   isAdmin: () => boolean;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +31,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Function to refresh user data
+  const refreshUserData = async () => {
+    console.log('Refreshing user data...');
+    if (session) {
+      try {
+        const user = await getCurrentUser();
+        console.log('Refreshed user data:', user);
+        setCurrentUser(user);
+        return user;
+      } catch (err) {
+        console.error('Error refreshing user data:', err);
+      }
+    }
+    return null;
+  };
 
   useEffect(() => {
     console.log('Initializing auth system...');
@@ -158,7 +176,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     forgotPassword,
     resetPassword,
-    isAdmin
+    isAdmin,
+    refreshUserData
   };
 
   return (
