@@ -62,11 +62,11 @@ const ProfileSettingsPage = () => {
       // Upload profile photo if selected
       let avatarUrl = currentUser.avatar_url || '';
       if (selectedFile) {
-        console.log('Uploading profile photo...');
+        console.log('Starting profile photo upload process...');
         
         try {
           avatarUrl = await uploadProfilePhoto(currentUser.id, selectedFile);
-          console.log('Upload successful, avatar URL:', avatarUrl);
+          console.log('Upload successful, new avatar URL:', avatarUrl);
         } catch (error) {
           console.error('Error uploading profile photo:', error);
           toast.error('Failed to upload profile photo. Please try again.');
@@ -82,10 +82,12 @@ const ProfileSettingsPage = () => {
         avatar_url: avatarUrl
       };
       
+      console.log('Updating profile with data:', profileData);
       await updateUserProfile(currentUser.id, profileData);
       
       // Refresh the user data in the auth context
-      await refreshUserData();
+      const updatedUser = await refreshUserData();
+      console.log('Profile refreshed, updated user data:', updatedUser);
 
       toast.success('Profile updated successfully');
       navigate('/dashboard');
