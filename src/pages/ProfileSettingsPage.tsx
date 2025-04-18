@@ -110,8 +110,6 @@ const ProfileSettingsPage = () => {
       };
       
       // Step 2: Handle file upload separately if needed
-      let avatarUrl = currentUser.avatar_url || '';
-      
       if (selectedFile) {
         console.log('Starting profile photo upload...');
         setIsUploading(true);
@@ -121,11 +119,9 @@ const ProfileSettingsPage = () => {
           console.log('Photo upload result:', uploadResult);
           
           if (uploadResult && typeof uploadResult === 'string') {
-            avatarUrl = uploadResult;
-            console.log('Photo upload successful, URL:', avatarUrl);
-            
             // Update profile data with new avatar URL
-            profileData.avatar_url = avatarUrl;
+            profileData.avatar_url = uploadResult;
+            console.log('Photo upload successful, URL:', uploadResult);
           } else {
             throw new Error('Invalid upload result');
           }

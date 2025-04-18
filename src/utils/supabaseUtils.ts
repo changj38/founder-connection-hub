@@ -314,6 +314,11 @@ export const updateUserProfile = async (
   try {
     console.log(`Updating profile for user ${userId} with data:`, profileData);
     
+    if (!userId) {
+      console.error('Cannot update profile: userId is empty or undefined');
+      throw new Error('User ID is required to update profile');
+    }
+    
     const { data, error } = await supabase
       .from('profiles')
       .update(profileData)
@@ -329,6 +334,6 @@ export const updateUserProfile = async (
     return data || true;
   } catch (error: any) {
     console.error('Error updating profile:', error);
-    throw new Error(error.message || 'Failed to update profile');
+    throw error; // Re-throw to handle in the component
   }
 };
