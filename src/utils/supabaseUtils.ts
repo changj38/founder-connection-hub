@@ -72,58 +72,6 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     console.log('Session status:', session ? 'Active' : 'None');
     console.log('User ID in session:', session?.user?.id);
     
-    // Add a small delay to ensure bucket is fully created and ready
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if bucket exists before attempting upload with retry
-    let bucketExists2 = false;
-    let retryCount = 0;
-    const maxRetries = 3;
-    
-    while (!bucketExists2 && retryCount < maxRetries) {
-      console.log(`Checking bucket existence (attempt ${retryCount + 1}/${maxRetries})...`);
-      
-      const { data: buckets2, error: bucketsError2 } = await supabase.storage.listBuckets();
-      
-      if (bucketsError2) {
-        console.error('Error fetching buckets:', bucketsError2);
-        retryCount++;
-        
-        if (retryCount >= maxRetries) {
-          throw new Error('Could not verify storage buckets after multiple attempts');
-        }
-        
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        continue;
-      }
-      
-      bucketExists2 = buckets2?.some(bucket => bucket.id === bucketName);
-      console.log('Buckets found:', buckets2?.map(b => b.id));
-      console.log(`Bucket '${bucketName}' exists:`, bucketExists2);
-      
-      if (!bucketExists2) {
-        retryCount++;
-        
-        if (retryCount >= maxRetries) {
-          throw new Error(`Storage bucket '${bucketName}' does not exist after multiple checks`);
-        }
-        
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-    
-    // Try getting supabase auth user directly before upload
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      console.error('Error getting user:', userError);
-      throw new Error('Could not verify user authentication');
-    }
-    
-    console.log('Authenticated user from getUser():', user.id);
-    
     // Upload the file
     const { data, error: uploadError } = await supabase.storage
       .from(bucketName)
