@@ -40,7 +40,7 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
     
     const bucketName = 'profile-photos';
     
-    // More verbose logging for bucket existence
+    // Enhanced bucket existence check with more detailed logging
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
