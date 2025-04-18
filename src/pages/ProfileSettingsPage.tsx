@@ -98,7 +98,12 @@ const ProfileSettingsPage = () => {
       toast.info('Updating your profile...');
       
       // Step 1: Prepare profile data
-      const profileData = {
+      const profileData: {
+        full_name: string;
+        company: string;
+        location: string;
+        avatar_url?: string;
+      } = {
         full_name: fullName,
         company,
         location
