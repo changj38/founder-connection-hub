@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Heart, MessageSquare, RefreshCcw, Send } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -460,9 +460,16 @@ const ForumPage = () => {
                         <div key={comment.id} className="border-b pb-4 last:border-b-0">
                           <div className="flex items-start gap-3">
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-[#ff6600] text-white text-xs">
-                                {getInitials(comment.author_name || 'Anonymous User')}
-                              </AvatarFallback>
+                              {comment.author_avatar ? (
+                                <AvatarImage 
+                                  src={comment.author_avatar} 
+                                  alt={comment.author_name || 'User'} 
+                                />
+                              ) : (
+                                <AvatarFallback className="bg-[#ff6600] text-white text-xs">
+                                  {getInitials(comment.author_name || 'Anonymous User')}
+                                </AvatarFallback>
+                              )}
                             </Avatar>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">

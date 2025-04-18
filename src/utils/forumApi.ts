@@ -29,6 +29,7 @@ export interface ForumComment {
   is_hearted?: boolean;
   author_name?: string;
   author_company?: string;
+  author_avatar?: string;
 }
 
 export const fetchForumPosts = async (): Promise<ForumPost[]> => {
@@ -180,7 +181,11 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
     const enrichedComments: ForumComment[] = [];
     
     for (const comment of comments || []) {
-      const authorInfo = userMap[comment.user_id] || { name: 'Anonymous User', company: '' };
+      const authorInfo = userMap[comment.user_id] || { 
+        name: 'Anonymous User', 
+        company: '', 
+        avatarUrl: '' 
+      };
       
       let isHearted = false;
       if (userId) {
@@ -198,6 +203,7 @@ export const fetchPostWithComments = async (postId: string): Promise<{ post: For
         ...comment,
         author_name: authorInfo.name,
         author_company: authorInfo.company,
+        author_avatar: authorInfo.avatarUrl,
         is_hearted: isHearted
       });
     }
