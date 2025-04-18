@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -203,77 +204,95 @@ export const uploadProfilePhoto = async (userId: string, file: File) => {
       throw new Error('Invalid file type. Please upload a JPG, PNG, GIF, or WEBP image');
     }
     
-    // Create a simple filename with timestamp
-    const timestamp = new Date().getTime();
-    const fileExtension = file.name.split('.').pop();
-    const filePath = `${userId}/${timestamp}.${fileExtension}`;
+    // Check if bucket exists first and create it if it doesn't
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
-    console.log('Uploading to path:', filePath);
-    
-    // Create the bucket if it doesn't exist (this is redundant but important for safety)
-    try {
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(b => b.name === 'profile-photos');
-      
-      if (!bucketExists) {
-        console.log('Attempting to create profile-photos bucket');
-        await supabase.storage.createBucket('profile-photos', {
-          public: true,
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-        });
-      }
-    } catch (error) {
-      console.warn('Note: Could not check/create bucket, will try upload anyway:', error);
+    if (bucketsError) {
+      console.error('Error checking buckets:', bucketsError);
+      throw new Error(`Could not check storage buckets: ${bucketsError.message}`);
     }
     
-    // Try to clean up old files first
+    const bucketName = 'profile-photos';
+    const bucketExists = buckets?.some(b => b.name === bucketName);
+    
+    if (!bucketExists) {
+      console.log('Bucket does not exist, creating it now');
+      const { error: createError } = await supabase.storage.createBucket(bucketName, {
+        public: true
+      });
+      
+      if (createError) {
+        console.error('Error creating bucket:', createError);
+        throw new Error(`Could not create bucket: ${createError.message}`);
+      }
+      
+      console.log('Bucket created successfully');
+    }
+    
+    // Generate a simple filename with timestamp
+    const timestamp = new Date().getTime();
+    const fileExtension = file.name.split('.').pop();
+    const filePath = `${timestamp}.${fileExtension}`;
+    
+    console.log(`Uploading file ${filePath} to bucket ${bucketName}`);
+    
+    // Remove old files to avoid accumulation
     try {
       const { data: existingFiles } = await supabase.storage
-        .from('profile-photos')
+        .from(bucketName)
         .list(userId);
         
       if (existingFiles && existingFiles.length > 0) {
+        console.log('Found existing files to remove:', existingFiles);
+        
         const filesToRemove = existingFiles.map(file => `${userId}/${file.name}`);
-        await supabase.storage
-          .from('profile-photos')
+        const { error: removeError } = await supabase.storage
+          .from(bucketName)
           .remove(filesToRemove);
+          
+        if (removeError) {
+          console.warn('Could not remove old files:', removeError);
+        } else {
+          console.log('Successfully removed old files');
+        }
       }
     } catch (error) {
-      console.warn('Note: Could not remove old files:', error);
-      // Continue with upload
+      console.warn('Error checking existing files:', error);
+      // Continue with upload even if cleanup fails
     }
     
-    // Direct upload approach
-    const { data, error } = await supabase.storage
-      .from('profile-photos')
-      .upload(filePath, file, { 
-        cacheControl: 'no-cache',
+    // Upload the file to a folder named with the userId
+    const fullPath = `${userId}/${filePath}`;
+    const { data, error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(fullPath, file, { 
+        cacheControl: '3600',
         upsert: true 
       });
       
-    if (error) {
-      console.error('Upload error details:', error);
-      throw new Error(`Could not upload image: ${error.message}`);
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error(`Upload failed: ${uploadError.message}`);
     }
     
     if (!data) {
       throw new Error('Upload failed: No data returned');
     }
     
-    console.log('Upload successful:', data);
+    console.log('File uploaded successfully:', data);
     
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('profile-photos')
-      .getPublicUrl(filePath);
+      .from(bucketName)
+      .getPublicUrl(fullPath);
       
     if (!urlData?.publicUrl) {
       throw new Error('Could not get public URL for uploaded file');
     }
     
-    // Add cache buster
+    // Add cache buster to URL
     const publicUrl = `${urlData.publicUrl}?t=${timestamp}`;
-    console.log('Public URL with cache buster:', publicUrl);
+    console.log('Public URL:', publicUrl);
     
     return publicUrl;
   } catch (error: any) {
@@ -295,20 +314,21 @@ export const updateUserProfile = async (
   try {
     console.log(`Updating profile for user ${userId} with data:`, profileData);
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .update(profileData)
-      .eq('id', userId);
+      .eq('id', userId)
+      .select();
 
     if (error) {
       console.error('Error updating profile:', error);
-      throw error;
+      throw new Error(`Profile update failed: ${error.message}`);
     }
     
-    console.log('Profile updated successfully');
-    return true;
-  } catch (error) {
+    console.log('Profile updated successfully:', data);
+    return data || true;
+  } catch (error: any) {
     console.error('Error updating profile:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to update profile');
   }
 };

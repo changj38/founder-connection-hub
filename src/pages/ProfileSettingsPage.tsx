@@ -97,7 +97,14 @@ const ProfileSettingsPage = () => {
     try {
       toast.info('Updating your profile...');
       
-      // Step 1: Upload profile photo if one is selected
+      // Step 1: Prepare profile data
+      const profileData = {
+        full_name: fullName,
+        company,
+        location
+      };
+      
+      // Step 2: Handle file upload separately if needed
       let avatarUrl = currentUser.avatar_url || '';
       
       if (selectedFile) {
@@ -105,29 +112,39 @@ const ProfileSettingsPage = () => {
         setIsUploading(true);
         
         try {
-          avatarUrl = await uploadProfilePhoto(currentUser.id, selectedFile);
-          console.log('Photo upload successful, URL:', avatarUrl);
+          const uploadResult = await uploadProfilePhoto(currentUser.id, selectedFile);
+          console.log('Photo upload result:', uploadResult);
+          
+          if (uploadResult && typeof uploadResult === 'string') {
+            avatarUrl = uploadResult;
+            console.log('Photo upload successful, URL:', avatarUrl);
+            
+            // Update profile data with new avatar URL
+            profileData.avatar_url = avatarUrl;
+          } else {
+            throw new Error('Invalid upload result');
+          }
         } catch (error: any) {
           console.error('Photo upload error:', error);
           setUploadError(error.message || 'Failed to upload photo');
-          // Continue with profile update even if photo upload fails
+          toast.error(`Upload failed: ${error.message || 'Unknown error'}`);
+          setIsSubmitting(false);
+          setIsUploading(false);
+          return; // Stop the submission if photo upload fails
         } finally {
           setIsUploading(false);
         }
       }
       
-      // Step 2: Update profile data
-      const profileData = {
-        full_name: fullName,
-        company,
-        location,
-        avatar_url: avatarUrl
-      };
-      
+      // Step 3: Update profile in database
       console.log('Updating profile with data:', profileData);
-      await updateUserProfile(currentUser.id, profileData);
+      const updateResult = await updateUserProfile(currentUser.id, profileData);
       
-      // Step 3: Refresh user data in context
+      if (!updateResult) {
+        throw new Error('Profile update failed');
+      }
+      
+      // Step 4: Refresh user data in context
       await refreshUserData();
       
       toast.success('Profile updated successfully');
@@ -157,7 +174,7 @@ const ProfileSettingsPage = () => {
           className="hidden" 
         />
         <div className="relative">
-          <Avatar className="h-24 w-24">
+          <Avatar className="h-24 w-24 border">
             <AvatarImage 
               src={previewUrl || undefined} 
               alt="Profile photo" 
@@ -190,7 +207,8 @@ const ProfileSettingsPage = () => {
           <Input 
             value={fullName} 
             onChange={(e) => setFullName(e.target.value)} 
-            placeholder="Your full name" 
+            placeholder="Your full name"
+            disabled={isSubmitting}
           />
         </div>
 
@@ -199,7 +217,8 @@ const ProfileSettingsPage = () => {
           <Input 
             value={company} 
             onChange={(e) => setCompany(e.target.value)} 
-            placeholder="Your company" 
+            placeholder="Your company"
+            disabled={isSubmitting}
           />
         </div>
 
@@ -208,14 +227,15 @@ const ProfileSettingsPage = () => {
           <Input 
             value={location} 
             onChange={(e) => setLocation(e.target.value)} 
-            placeholder="City, Country" 
+            placeholder="City, Country"
+            disabled={isSubmitting}
           />
         </div>
 
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={isSubmitting || isUploading}
+          disabled={isSubmitting}
         >
           {isSubmitting ? 'Updating...' : 'Update Profile'}
         </Button>
