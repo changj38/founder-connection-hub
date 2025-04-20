@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle, Loader2, Trash2 } from 'lucide-react';
+import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle, Loader2, Trash2, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { fetchPortfolioCompanies, addPortfolioCompany } from '../utils/adminApi';
@@ -32,6 +31,16 @@ const AdminPortfolioTab = () => {
   });
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<null | {
+    id: string;
+    name: string;
+    description?: string;
+    industry?: string;
+    founded_year?: string;
+    investment_year?: string;
+    website?: string;
+  }>(null);
 
   const { data: portfolioCompanies = [], isLoading, error: fetchError } = useQuery({
     queryKey: ['portfolioCompanies'],
@@ -148,6 +157,51 @@ const AdminPortfolioTab = () => {
     }
   };
 
+  const handleEditCompany = async () => {
+    if (!editingCompany) return;
+    
+    try {
+      const { error } = await supabase
+        .from('portfolio_companies')
+        .update({
+          name: editingCompany.name,
+          description: editingCompany.description,
+          industry: editingCompany.industry,
+          founded_year: editingCompany.founded_year ? parseInt(editingCompany.founded_year) : null,
+          investment_year: editingCompany.investment_year ? parseInt(editingCompany.investment_year) : null,
+          website: editingCompany.website
+        })
+        .eq('id', editingCompany.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Company updated successfully",
+      });
+      
+      setIsEditDialogOpen(false);
+      setEditingCompany(null);
+      queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
+    } catch (error) {
+      console.error('Error updating company:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update company",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditClick = (company: any) => {
+    setEditingCompany({
+      ...company,
+      founded_year: company.founded_year?.toString() || '',
+      investment_year: company.investment_year?.toString() || ''
+    });
+    setIsEditDialogOpen(true);
+  };
+
   const closeDialog = () => {
     if (!isSubmitting) {
       resetForm();
@@ -241,6 +295,15 @@ const AdminPortfolioTab = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                              onClick={() => handleEditClick(company)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Edit company</span>
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button 
@@ -393,6 +456,99 @@ const AdminPortfolioTab = () => {
                   Adding...
                 </>
               ) : 'Add Company'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Portfolio Company</DialogTitle>
+            <DialogDescription>
+              Update the company details below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="edit-name" className="flex items-center">
+                <Building className="h-4 w-4 mr-2 text-gray-500" />
+                Company Name *
+              </Label>
+              <Input
+                id="edit-name"
+                value={editingCompany?.name || ''}
+                onChange={(e) => setEditingCompany(prev => prev ? {...prev, name: e.target.value} : null)}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editingCompany?.description || ''}
+                onChange={(e) => setEditingCompany(prev => prev ? {...prev, description: e.target.value} : null)}
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-industry" className="flex items-center">
+                  <Tag className="h-4 w-4 mr-2 text-gray-500" />
+                  Industry
+                </Label>
+                <Input
+                  id="edit-industry"
+                  value={editingCompany?.industry || ''}
+                  onChange={(e) => setEditingCompany(prev => prev ? {...prev, industry: e.target.value} : null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-website" className="flex items-center">
+                  <Globe className="h-4 w-4 mr-2 text-gray-500" />
+                  Website
+                </Label>
+                <Input
+                  id="edit-website"
+                  value={editingCompany?.website || ''}
+                  onChange={(e) => setEditingCompany(prev => prev ? {...prev, website: e.target.value} : null)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-founded-year" className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  Founded Year
+                </Label>
+                <Input
+                  id="edit-founded-year"
+                  type="number"
+                  value={editingCompany?.founded_year || ''}
+                  onChange={(e) => setEditingCompany(prev => prev ? {...prev, founded_year: e.target.value} : null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-investment-year" className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  Investment Year
+                </Label>
+                <Input
+                  id="edit-investment-year"
+                  type="number"
+                  value={editingCompany?.investment_year || ''}
+                  onChange={(e) => setEditingCompany(prev => prev ? {...prev, investment_year: e.target.value} : null)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditCompany}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
