@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,12 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { fetchPortfolioCompanies, addPortfolioCompany } from '../utils/adminApi';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminPortfolioTab = () => {
   const { toast } = useToast();
