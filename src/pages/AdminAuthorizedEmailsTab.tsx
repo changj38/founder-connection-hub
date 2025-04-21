@@ -38,9 +38,11 @@ const AdminAuthorizedEmailsTab = () => {
     queryFn: fetchAuthorizedEmails,
     enabled: isAdmin,
     retry: 1, // Only retry once to avoid excessive error messages
-    onError: (error: Error) => {
-      console.error('Error fetching authorized emails:', error);
-      toast.error(`Failed to fetch authorized emails: ${error.message}`);
+    onSettled: (data, error) => {
+      if (error) {
+        console.error('Error fetching authorized emails:', error);
+        toast.error(`Failed to fetch authorized emails: ${(error as Error).message}`);
+      }
     }
   });
 
