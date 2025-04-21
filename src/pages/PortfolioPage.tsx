@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,7 +21,6 @@ const PortfolioPage = () => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
 
-  // Fetch portfolio companies from Supabase
   const { data: portfolioCompanies = [], isLoading, error } = useQuery({
     queryKey: ['portfolioCompanies'],
     queryFn: fetchPortfolioCompanies
@@ -39,7 +37,6 @@ const PortfolioPage = () => {
     }
 
     try {
-      // @ts-ignore - Ignoring type checking for database schema
       const { error } = await supabase
         .from('help_requests')
         .insert({
@@ -83,7 +80,6 @@ const PortfolioPage = () => {
     (company.industry && company.industry.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -92,7 +88,6 @@ const PortfolioPage = () => {
     );
   }
 
-  // Handle error state
   if (error) {
     return (
       <div className="text-center p-6 text-red-500">
@@ -140,8 +135,25 @@ const PortfolioPage = () => {
             <Card key={company.id} className="overflow-hidden border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4 mb-4">
-                  <div className="bg-purple-100 p-3 rounded-lg">
-                    <Building className="h-8 w-8 text-purple-600" />
+                  <div
+                    className="flex justify-center items-center bg-purple-100 rounded-lg"
+                    style={{ width: 120, height: 146, minWidth: 120, minHeight: 146 }}
+                  >
+                    {company.logo_url ? (
+                      <img
+                        src={company.logo_url}
+                        alt={`${company.name} logo`}
+                        className="object-contain"
+                        style={{
+                          width: 120,
+                          height: 146,
+                          borderRadius: '0.5rem',
+                          background: '#F4EBFF'
+                        }}
+                      />
+                    ) : (
+                      <Building className="h-8 w-8 text-purple-600" />
+                    )}
                   </div>
                   <div>
                     <h3 className="font-semibold text-xl mb-1">{company.name}</h3>
@@ -195,7 +207,6 @@ const PortfolioPage = () => {
         </div>
       )}
 
-      {/* Company Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="sm:max-w-[600px]">
           {selectedCompany && (
@@ -259,7 +270,6 @@ const PortfolioPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Introduction Request Dialog */}
       <Dialog open={introDialogOpen} onOpenChange={setIntroDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           {selectedCompany && (
