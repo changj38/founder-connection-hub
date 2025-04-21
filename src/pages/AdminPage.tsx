@@ -19,6 +19,7 @@ import AdminHelpRequestsTab from './AdminHelpRequestsTab';
 import AdminNetworkTab from './AdminNetworkTab';
 import AdminPortfolioTab from './AdminPortfolioTab';
 import AdminForumTab from './AdminForumTab';
+import AdminAuthorizedEmailsTab from './AdminAuthorizedEmailsTab';
 import { useQuery } from '@tanstack/react-query';
 import { fetchNetworkContacts, fetchPortfolioCompanies, fetchHelpRequests, getHelpRequestStats } from '../utils/adminApi';
 
@@ -87,6 +88,7 @@ const AdminPage = () => {
           <TabsTrigger value="portfolio">Portfolio Companies</TabsTrigger>
           <TabsTrigger value="requests">Help Requests</TabsTrigger>
           <TabsTrigger value="forum">Forum Management</TabsTrigger>
+          <TabsTrigger value="authorized">Authorized Emails</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
@@ -271,6 +273,10 @@ const AdminPage = () => {
         
         <TabsContent value="forum">
           <AdminForumTab />
+        </TabsContent>
+        
+        <TabsContent value="authorized">
+          <AdminAuthorizedEmailsTab />
         </TabsContent>
         
         <TabsContent value="settings">

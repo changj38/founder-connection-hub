@@ -40,6 +40,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { path: '/admin/portfolio', label: 'Manage Portfolio', icon: <Building className="w-5 h-5" />, tab: 'portfolio' },
     { path: '/admin/forum', label: 'Manage Forum', icon: <MessagesSquare className="w-5 h-5" />, tab: 'forum' },
     { path: '/admin/help', label: 'Help Requests', icon: <HelpCircle className="w-5 h-5" />, tab: 'requests' },
+    { path: '/admin/authorized', label: 'Authorized Emails', icon: <Mail className="w-5 h-5" />, tab: 'authorized' },
     { path: '/admin/settings', label: 'Settings', icon: <Settings className="w-5 h-5" />, tab: 'settings' },
   ];
 
