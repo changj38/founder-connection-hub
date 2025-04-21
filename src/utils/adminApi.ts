@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -71,6 +72,52 @@ interface HelpRequestStats {
     other: number;
   };
 }
+
+// Authorized email interface
+interface AuthorizedEmail {
+  id: string;
+  email: string;
+  created_at: string;
+  created_by?: string;
+}
+
+// Authorized emails functions
+export const fetchAuthorizedEmails = async (): Promise<AuthorizedEmail[]> => {
+  const { data, error } = await supabase
+    .from('authorized_emails')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching authorized emails:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const addAuthorizedEmail = async (email: string): Promise<void> => {
+  const { error } = await supabase
+    .from('authorized_emails')
+    .insert([{ email: email.toLowerCase() }]);
+  
+  if (error) {
+    console.error('Error adding authorized email:', error);
+    throw error;
+  }
+};
+
+export const removeAuthorizedEmail = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('authorized_emails')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error removing authorized email:', error);
+    throw error;
+  }
+};
 
 // Network contacts functions
 export const fetchNetworkContacts = async (): Promise<NetworkContact[]> => {

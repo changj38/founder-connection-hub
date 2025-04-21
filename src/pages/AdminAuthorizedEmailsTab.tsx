@@ -17,6 +17,7 @@ import { Mail, Plus, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { checkIsAdmin } from '@/integrations/supabase/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthorizedEmail {
   id: string;
@@ -26,29 +27,31 @@ interface AuthorizedEmail {
 
 const AdminAuthorizedEmailsTab = () => {
   const [newEmail, setNewEmail] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { currentUser, refreshUserData } = useAuth();
   const queryClient = useQueryClient();
 
-  // Check if user is admin
+  // Use isAdmin value from auth context
+  const isAdmin = currentUser?.role === 'admin';
+  
+  // Effect to ensure user data is fully loaded with current role
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const loadUserData = async () => {
       try {
-        const isAdminUser = await checkIsAdmin();
-        setIsAdmin(isAdminUser);
-        console.log('Admin status:', isAdminUser);
+        await refreshUserData();
+        console.log('User data refreshed, admin status:', currentUser?.role === 'admin');
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error('Error refreshing user data:', error);
       }
     };
     
-    checkAdminStatus();
-  }, []);
+    loadUserData();
+  }, [refreshUserData]);
 
   // Fetch authorized emails
   const { data: authorizedEmails = [], isLoading, error, refetch } = useQuery({
     queryKey: ['authorizedEmails'],
     queryFn: async () => {
-      console.log('Fetching authorized emails...');
+      console.log('Fetching authorized emails, admin status:', isAdmin);
       
       // Check if user is admin before proceeding
       if (!isAdmin) {
@@ -71,11 +74,6 @@ const AdminAuthorizedEmailsTab = () => {
     },
     enabled: isAdmin // Only run query if user is admin
   });
-
-  // Effect to log when data is loaded
-  useEffect(() => {
-    console.log('Current authorized emails data:', authorizedEmails);
-  }, [authorizedEmails]);
 
   // Add new authorized email
   const addEmailMutation = useMutation({
@@ -156,6 +154,11 @@ const AdminAuthorizedEmailsTab = () => {
   const errorMessage = error ? (error as Error).message : '';
   const permissionError = errorMessage.includes('permission denied') || errorMessage.includes('Permission denied');
 
+  const handleRefresh = async () => {
+    await refreshUserData();
+    refetch();
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -172,6 +175,16 @@ const AdminAuthorizedEmailsTab = () => {
               <AlertTitle>Access Denied</AlertTitle>
               <AlertDescription>
                 You do not have admin permissions required to manage authorized emails.
+                {currentUser ? (
+                  <div className="mt-2">
+                    <Button variant="outline" onClick={handleRefresh}>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Refresh Status
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-2">Please log in with an admin account.</div>
+                )}
               </AlertDescription>
             </Alert>
           ) : (
@@ -194,7 +207,7 @@ const AdminAuthorizedEmailsTab = () => {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => refetch()}
+                  onClick={handleRefresh}
                   title="Refresh email list"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -209,6 +222,16 @@ const AdminAuthorizedEmailsTab = () => {
                     {permissionError 
                       ? 'You do not have permission to view authorized emails. This may be a database configuration issue.'
                       : errorMessage || 'Error loading emails. Please try refreshing.'}
+                    <div className="mt-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleRefresh}
+                        className="mr-2"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Try Again
+                      </Button>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
@@ -219,7 +242,7 @@ const AdminAuthorizedEmailsTab = () => {
                 <div className="text-center py-4">
                   <Button 
                     variant="outline" 
-                    onClick={() => refetch()}
+                    onClick={handleRefresh}
                     className="mx-auto"
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
