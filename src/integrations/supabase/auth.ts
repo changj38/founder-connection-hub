@@ -1,3 +1,4 @@
+
 import { supabase } from './client';
 import { toast } from 'sonner';
 
@@ -60,7 +61,7 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
     const normalizedEmail = email.trim().toLowerCase();
     console.log('Normalized email for authorization check:', normalizedEmail);
     
-    // Check for the specific email in authorized_emails table only
+    // Check for the specific email in authorized_emails table
     const { data, error } = await supabase
       .from('authorized_emails')
       .select('id, email')

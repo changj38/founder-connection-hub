@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,9 +15,8 @@ import { toast } from 'sonner';
 import { Mail, Plus, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { checkIsAdmin } from '@/integrations/supabase/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import { addAuthorizedEmail, fetchAuthorizedEmails, removeAuthorizedEmail } from '@/utils/adminApi';
+import { fetchAuthorizedEmails, addAuthorizedEmail, removeAuthorizedEmail } from '@/utils/adminApi';
 
 interface AuthorizedEmail {
   id: string;
@@ -68,7 +67,8 @@ const AdminAuthorizedEmailsTab = () => {
         throw new Error(`Failed to fetch emails: ${err instanceof Error ? err.message : String(err)}`);
       }
     },
-    enabled: isAdmin // Only run query if user is admin
+    enabled: isAdmin, // Only run query if user is admin
+    refetchOnWindowFocus: false
   });
 
   // Add new authorized email
