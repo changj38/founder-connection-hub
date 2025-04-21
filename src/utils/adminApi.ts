@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -98,17 +99,39 @@ export const fetchAuthorizedEmails = async (): Promise<AuthorizedEmail[]> => {
 };
 
 export const addAuthorizedEmail = async (email: string): Promise<void> => {
-  console.log('Adding authorized email:', email);
+  if (!email) {
+    throw new Error('Email cannot be empty');
+  }
+  
+  const normalizedEmail = email.trim().toLowerCase();
+  console.log('Adding authorized email:', normalizedEmail);
+  
+  // Check if email already exists to avoid duplicates
+  const { data: existingEmails, error: checkError } = await supabase
+    .from('authorized_emails')
+    .select('id')
+    .eq('email', normalizedEmail);
+    
+  if (checkError) {
+    console.error('Error checking for existing email:', checkError);
+    throw new Error(`Failed to check for existing email: ${checkError.message}`);
+  }
+  
+  if (existingEmails && existingEmails.length > 0) {
+    console.log('Email already authorized:', normalizedEmail);
+    throw new Error('This email is already authorized');
+  }
+  
   const { error } = await supabase
     .from('authorized_emails')
-    .insert([{ email: email.toLowerCase().trim() }]);
+    .insert([{ email: normalizedEmail }]);
   
   if (error) {
     console.error('Error adding authorized email:', error);
     throw error;
   }
   
-  console.log('Successfully added authorized email:', email);
+  console.log('Successfully added authorized email:', normalizedEmail);
 };
 
 export const removeAuthorizedEmail = async (id: string): Promise<void> => {

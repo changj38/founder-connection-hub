@@ -1,3 +1,4 @@
+
 import { supabase } from './client';
 import { toast } from 'sonner';
 
@@ -60,6 +61,19 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
   console.log('Normalized email for authorization check:', normalizedEmail);
   
   try {
+    // Fetch all authorized emails for debugging
+    const { data: allEmails, error: allEmailsError } = await supabase
+      .from('authorized_emails')
+      .select('email')
+      .order('email');
+      
+    if (allEmailsError) {
+      console.error('Error fetching all authorized emails:', allEmailsError);
+    } else {
+      console.log('All authorized emails in database:', allEmails.map(e => e.email));
+    }
+    
+    // Check for the specific email
     const { data, error } = await supabase
       .from('authorized_emails')
       .select('id, email')
@@ -80,6 +94,16 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
       console.log('Matched authorized email in database:', data[0].email);
     } else {
       console.log('No matching authorized email found in database');
+      
+      // Debug: Check if there's a non-exact match (case or whitespace differences)
+      if (allEmails) {
+        const possibleMatches = allEmails.filter(e => 
+          e.email.toLowerCase().replace(/\s+/g, '') === normalizedEmail.replace(/\s+/g, '')
+        );
+        if (possibleMatches.length > 0) {
+          console.log('Possible matches with different case/whitespace:', possibleMatches);
+        }
+      }
     }
     
     return isAuthorized;

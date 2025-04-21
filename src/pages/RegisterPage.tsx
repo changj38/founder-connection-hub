@@ -44,8 +44,10 @@ const RegisterPage = () => {
     setIsSubmitting(true);
 
     try {
-      console.log('Submitting registration form for:', email);
-      await register(name, email, password, company);
+      // Normalize email before submitting
+      const normalizedEmail = email.trim().toLowerCase();
+      console.log('Submitting registration form for:', normalizedEmail);
+      await register(name, normalizedEmail, password, company);
       // Navigate to dashboard will happen automatically via auth state change
     } catch (err) {
       console.error('Registration error:', err);
