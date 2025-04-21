@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,7 +14,6 @@ import { fetchPortfolioCompanies, addPortfolioCompany } from '../utils/adminApi'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 
-// Helper: Returns logo URL or placeholder
 const getLogoUrl = (company: any) =>
   company.logo_url
     ? company.logo_url
@@ -53,6 +51,7 @@ const AdminPortfolioTab = () => {
   }>(null);
   const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
   const [editPreviewUrl, setEditPreviewUrl] = useState<string | null>(null);
+  const [bucketExists, setBucketExists] = useState(true);
 
   const { data: portfolioCompanies = [], isLoading, error: fetchError } = useQuery({
     queryKey: ['portfolioCompanies'],
@@ -80,6 +79,60 @@ const AdminPortfolioTab = () => {
     }
   });
 
+  useEffect(() => {
+    const checkBucket = async () => {
+      try {
+        const { data, error } = await supabase.storage.getBucket('portfolio-logos');
+        if (error) {
+          console.error('Error checking bucket:', error);
+          setBucketExists(false);
+        } else {
+          setBucketExists(true);
+        }
+      } catch (err) {
+        console.error('Error in bucket check:', err);
+        setBucketExists(false);
+      }
+    };
+    
+    checkBucket();
+  }, []);
+
+  const createBucket = async () => {
+    try {
+      const { data, error } = await supabase.storage.createBucket('portfolio-logos', {
+        public: true,
+        fileSizeLimit: 5 * 1024 * 1024 // 5MB limit
+      });
+      
+      if (error) {
+        console.error('Failed to create bucket:', error);
+        toast({
+          title: "Error",
+          description: `Failed to create storage bucket: ${error.message}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      toast({
+        title: "Success",
+        description: "Storage bucket created successfully",
+      });
+      
+      setBucketExists(true);
+      return true;
+    } catch (err: any) {
+      console.error('Exception creating bucket:', err);
+      toast({
+        title: "Error",
+        description: `Exception creating bucket: ${err.message || "Unknown error"}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const filteredCompanies = portfolioCompanies.filter(company => 
     company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (company.industry && company.industry.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -90,14 +143,12 @@ const AdminPortfolioTab = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // Logo upload handling for add
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setLogoFile(file);
     setPreviewUrl(file ? URL.createObjectURL(file) : null);
   };
 
-  // For edit dialog
   const handleEditLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setEditLogoFile(file);
@@ -132,34 +183,56 @@ const AdminPortfolioTab = () => {
     }
     setIsSubmitting(true);
     let logo_url: string | undefined = undefined;
+    
     try {
-      // If logo selected, upload to Supabase storage
-      if (logoFile) {
-        const { data: user } = await supabase.auth.getUser();
-        const ext = logoFile.name.split('.').pop();
-        const safeName = formData.name.replace(/[^\w\d-]/g, '_').toLowerCase();
-        const filePath = `${user?.user?.id || "admin"}/${safeName}-${Date.now()}.${ext}`;
-        const { data, error: uploadError } = await supabase
-          .storage
-          .from('portfolio-logos')
-          .upload(filePath, logoFile, { upsert: true });
-        if (uploadError) throw uploadError;
-        // Get public URL
-        const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
-        logo_url = urlData?.publicUrl || undefined;
+      if (!bucketExists) {
+        const created = await createBucket();
+        if (!created) {
+          setIsSubmitting(false);
+          return;
+        }
       }
-      // Call mutation with logo_url if uploaded
+      
+      if (logoFile) {
+        try {
+          const { data: user } = await supabase.auth.getUser();
+          const ext = logoFile.name.split('.').pop();
+          const safeName = formData.name.replace(/[^\w\d-]/g, '_').toLowerCase();
+          const filePath = `${user?.user?.id || "admin"}/${safeName}-${Date.now()}.${ext}`;
+          
+          const { data, error: uploadError } = await supabase
+            .storage
+            .from('portfolio-logos')
+            .upload(filePath, logoFile, { upsert: true });
+            
+          if (uploadError) {
+            console.error('Logo upload error:', uploadError);
+            throw new Error(`Logo upload failed: ${uploadError.message}`);
+          }
+          
+          const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
+          logo_url = urlData?.publicUrl || undefined;
+        } catch (uploadErr: any) {
+          console.error('Error during file upload:', uploadErr);
+          toast({
+            title: "Warning",
+            description: `Could not upload logo: ${uploadErr.message}. Continuing without logo.`,
+            variant: "destructive",
+          });
+        }
+      }
+      
       addCompanyMutation.mutate({ 
         ...formData, 
         founded_year: formData.founded_year ? parseInt(formData.founded_year) : undefined,
         investment_year: formData.investment_year ? parseInt(formData.investment_year) : undefined,
         logo_url 
       });
-    } catch (error) {
+    } catch (error: any) {
       setError(error.message || "Failed to upload logo");
       toast({
         title: "Error",
-        description: `Error uploading logo: ${error.message || "Unknown"}`,
+        description: `Error: ${error.message || "Unknown"}`,
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -193,24 +266,45 @@ const AdminPortfolioTab = () => {
     if (!editingCompany) return;
     setIsSubmitting(true);
     let logo_url: string | undefined = editingCompany.logo_url;
+    
     try {
-      // If a new logo file was selected, upload it and get url
-      if (editLogoFile) {
-        const { data: user } = await supabase.auth.getUser();
-        const ext = editLogoFile.name.split('.').pop();
-        const safeName = (editingCompany.name || "company").replace(/[^\w\d-]/g, '_').toLowerCase();
-        const filePath = `${user?.user?.id || "admin"}/${safeName}-${Date.now()}.${ext}`;
-        const { data, error: uploadError } = await supabase
-          .storage
-          .from('portfolio-logos')
-          .upload(filePath, editLogoFile, { upsert: true });
-        if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
-        logo_url = urlData?.publicUrl || undefined;
+      if (!bucketExists && editLogoFile) {
+        const created = await createBucket();
+        if (!created) {
+          setIsSubmitting(false);
+          return;
+        }
       }
       
-      console.log('Updating company with data:', {
-        id: editingCompany.id,
+      if (editLogoFile) {
+        try {
+          const { data: user } = await supabase.auth.getUser();
+          const ext = editLogoFile.name.split('.').pop();
+          const safeName = (editingCompany.name || "company").replace(/[^\w\d-]/g, '_').toLowerCase();
+          const filePath = `${user?.user?.id || "admin"}/${safeName}-${Date.now()}.${ext}`;
+          
+          const { data, error: uploadError } = await supabase
+            .storage
+            .from('portfolio-logos')
+            .upload(filePath, editLogoFile, { upsert: true });
+            
+          if (uploadError) {
+            console.error('Edit logo upload error:', uploadError);
+            throw new Error(`Logo upload failed: ${uploadError.message}`);
+          }
+          
+          const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
+          logo_url = urlData?.publicUrl || undefined;
+        } catch (uploadErr: any) {
+          console.error('Error during file upload in edit mode:', uploadErr);
+          toast({
+            title: "Warning",
+            description: `Could not upload new logo: ${uploadErr.message}. Continuing with existing logo.`,
+          });
+        }
+      }
+      
+      const updateData = {
         name: editingCompany.name,
         description: editingCompany.description || null,
         industry: editingCompany.industry || null,
@@ -218,19 +312,13 @@ const AdminPortfolioTab = () => {
         investment_year: editingCompany.investment_year ? parseInt(editingCompany.investment_year) : null,
         website: editingCompany.website || null,
         logo_url: logo_url || null
-      });
+      };
+      
+      console.log('Updating company with data:', updateData);
       
       const { error } = await supabase
         .from('portfolio_companies')
-        .update({
-          name: editingCompany.name,
-          description: editingCompany.description || null,
-          industry: editingCompany.industry || null,
-          founded_year: editingCompany.founded_year ? parseInt(editingCompany.founded_year) : null,
-          investment_year: editingCompany.investment_year ? parseInt(editingCompany.investment_year) : null,
-          website: editingCompany.website || null,
-          logo_url: logo_url || null
-        })
+        .update(updateData)
         .eq('id', editingCompany.id);
 
       if (error) {
@@ -287,6 +375,24 @@ const AdminPortfolioTab = () => {
           Add Company
         </Button>
       </div>
+
+      {!bucketExists && (
+        <Alert variant="warning" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Storage Not Configured</AlertTitle>
+          <AlertDescription>
+            The storage bucket for company logos is not set up. Logo uploads won't work until fixed.
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="ml-2 mt-2" 
+              onClick={createBucket}
+            >
+              Create Storage Bucket
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card className="mb-6">
         <CardContent className="pt-6">
@@ -423,7 +529,6 @@ const AdminPortfolioTab = () => {
         </Card>
       )}
 
-      {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={closeDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -523,7 +628,6 @@ const AdminPortfolioTab = () => {
                 />
               </div>
             </div>
-            {/* Logo Upload */}
             <div className="grid grid-cols-1 gap-2">
               <Label htmlFor="logo" className="flex items-center">
                 <Image className="h-4 w-4 mr-2 text-gray-500" />
@@ -559,7 +663,6 @@ const AdminPortfolioTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -641,7 +744,6 @@ const AdminPortfolioTab = () => {
                 />
               </div>
             </div>
-            {/* Logo Upload for Edit */}
             <div className="grid grid-cols-1 gap-2">
               <Label htmlFor="edit-logo" className="flex items-center">
                 <Image className="h-4 w-4 mr-2 text-gray-500" />
@@ -681,7 +783,6 @@ const AdminPortfolioTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Success alert */}
       <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
