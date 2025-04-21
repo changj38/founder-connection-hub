@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { checkIsAdmin } from '@/integrations/supabase/auth';
 import { useAuth } from '@/contexts/AuthContext';
+import { addAuthorizedEmail, fetchAuthorizedEmails, removeAuthorizedEmail } from '@/utils/adminApi';
 
 interface AuthorizedEmail {
   id: string;
@@ -58,18 +59,14 @@ const AdminAuthorizedEmailsTab = () => {
         throw new Error('Permission denied: Only admins can view authorized emails');
       }
       
-      const { data, error } = await supabase
-        .from('authorized_emails')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching authorized emails:', error);
-        throw new Error(`Failed to fetch emails: ${error.message}`);
+      try {
+        const emails = await fetchAuthorizedEmails();
+        console.log('Fetched authorized emails:', emails);
+        return emails as AuthorizedEmail[];
+      } catch (err) {
+        console.error('Error fetching authorized emails:', err);
+        throw new Error(`Failed to fetch emails: ${err instanceof Error ? err.message : String(err)}`);
       }
-      
-      console.log('Fetched authorized emails:', data);
-      return data as AuthorizedEmail[];
     },
     enabled: isAdmin // Only run query if user is admin
   });
@@ -83,37 +80,13 @@ const AdminAuthorizedEmailsTab = () => {
         throw new Error('Permission denied: Only admins can add authorized emails');
       }
       
-      // Normalize email before storing
-      const normalizedEmail = email.trim().toLowerCase();
-      console.log('Normalized email for storage:', normalizedEmail);
-      
-      // Check if email already exists
-      const { data: existingEmails, error: checkError } = await supabase
-        .from('authorized_emails')
-        .select('id')
-        .eq('email', normalizedEmail);
-        
-      if (checkError) {
-        console.error('Error checking for existing email:', checkError);
-        throw new Error(`Failed to check for existing email: ${checkError.message}`);
+      try {
+        await addAuthorizedEmail(email);
+        return true;
+      } catch (err) {
+        console.error('Error adding email:', err);
+        throw err;
       }
-      
-      if (existingEmails && existingEmails.length > 0) {
-        console.log('Email already authorized:', normalizedEmail);
-        throw new Error('This email is already authorized');
-      }
-      
-      const { data, error } = await supabase
-        .from('authorized_emails')
-        .insert([{ email: normalizedEmail }]);
-      
-      if (error) {
-        console.error('Error adding email:', error);
-        throw new Error(`Failed to add email: ${error.message}`);
-      }
-      
-      console.log('Email added successfully:', normalizedEmail);
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['authorizedEmails'] });
@@ -140,17 +113,13 @@ const AdminAuthorizedEmailsTab = () => {
         throw new Error('Permission denied: Only admins can remove authorized emails');
       }
       
-      const { error } = await supabase
-        .from('authorized_emails')
-        .delete()
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error removing email:', error);
-        throw new Error(`Failed to remove email: ${error.message}`);
+      try {
+        await removeAuthorizedEmail(id);
+        return true;
+      } catch (err) {
+        console.error('Error removing email:', err);
+        throw new Error(`Failed to remove email: ${err instanceof Error ? err.message : String(err)}`);
       }
-      
-      console.log('Email removed successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['authorizedEmails'] });

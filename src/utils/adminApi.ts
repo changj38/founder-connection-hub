@@ -106,14 +106,15 @@ export const addAuthorizedEmail = async (email: string): Promise<void> => {
   const normalizedEmail = email.trim().toLowerCase();
   console.log('Adding authorized email:', normalizedEmail);
   
-  // Check if email already exists to avoid duplicates
+  // Check if email already exists to avoid duplicates directly in authorized_emails table
+  // This avoids permission issues with users table
   const { data: existingEmails, error: checkError } = await supabase
     .from('authorized_emails')
     .select('id')
     .eq('email', normalizedEmail);
     
   if (checkError) {
-    console.error('Error checking for existing email:', checkError);
+    console.error('Error checking for existing email in authorized_emails:', checkError);
     throw new Error(`Failed to check for existing email: ${checkError.message}`);
   }
   
