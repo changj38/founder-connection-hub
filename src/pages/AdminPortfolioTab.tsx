@@ -377,7 +377,7 @@ const AdminPortfolioTab = () => {
       </div>
 
       {!bucketExists && (
-        <Alert variant="warning" className="mb-6">
+        <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Storage Not Configured</AlertTitle>
           <AlertDescription>
