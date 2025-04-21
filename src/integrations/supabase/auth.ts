@@ -1,3 +1,4 @@
+
 import { supabase } from './client';
 import { toast } from 'sonner';
 
@@ -64,7 +65,9 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
       throw error;
     }
     
-    return data && data.length > 0;
+    const isAuthorized = data && data.length > 0;
+    console.log('Email authorization result:', isAuthorized, 'for', email);
+    return isAuthorized;
   } catch (err) {
     console.error('Failed to check email authorization:', err);
     return false;
@@ -77,13 +80,16 @@ export const signUp = async (
   fullName: string,
   company: string
 ) => {
+  console.log('Starting signup process for:', email);
   const isAuthorized = await checkEmailAuthorized(email);
   
   if (!isAuthorized) {
+    console.log('Email not authorized:', email);
     toast.error('This email is not authorized to register. Please contact the administrator.');
     throw new Error('Email not authorized');
   }
   
+  console.log('Email authorized, proceeding with signup');
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -96,10 +102,12 @@ export const signUp = async (
   });
   
   if (error) {
+    console.error('Signup error:', error);
     toast.error(error.message);
     throw error;
   }
   
+  console.log('Registration successful for:', email);
   toast.success('Registration successful! Please check your email to confirm your account.');
   return data;
 };
