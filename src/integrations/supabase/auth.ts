@@ -1,4 +1,3 @@
-
 import { supabase } from './client';
 import { toast } from 'sonner';
 
@@ -52,11 +51,19 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
   console.log('Checking if email is authorized:', email);
   
+  if (!email) {
+    console.error('Empty email provided to checkEmailAuthorized');
+    return false;
+  }
+  
+  const normalizedEmail = email.trim().toLowerCase();
+  console.log('Normalized email for authorization check:', normalizedEmail);
+  
   try {
     const { data, error } = await supabase
       .from('authorized_emails')
-      .select('id')
-      .eq('email', email.toLowerCase())
+      .select('id, email')
+      .eq('email', normalizedEmail)
       .limit(1);
     
     if (error) {
@@ -66,7 +73,15 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
     }
     
     const isAuthorized = data && data.length > 0;
-    console.log('Email authorization result:', isAuthorized, 'for', email);
+    
+    // Log the result along with the actual database values for debugging
+    console.log('Email authorization result:', isAuthorized, 'for', normalizedEmail);
+    if (data && data.length > 0) {
+      console.log('Matched authorized email in database:', data[0].email);
+    } else {
+      console.log('No matching authorized email found in database');
+    }
+    
     return isAuthorized;
   } catch (err) {
     console.error('Failed to check email authorization:', err);
@@ -81,17 +96,20 @@ export const signUp = async (
   company: string
 ) => {
   console.log('Starting signup process for:', email);
-  const isAuthorized = await checkEmailAuthorized(email);
+  
+  // Normalize the email before checking authorization
+  const normalizedEmail = email.trim().toLowerCase();
+  const isAuthorized = await checkEmailAuthorized(normalizedEmail);
   
   if (!isAuthorized) {
-    console.log('Email not authorized:', email);
+    console.log('Email not authorized:', normalizedEmail);
     toast.error('This email is not authorized to register. Please contact the administrator.');
     throw new Error('Email not authorized');
   }
   
   console.log('Email authorized, proceeding with signup');
   const { data, error } = await supabase.auth.signUp({
-    email,
+    email: normalizedEmail, // Use normalized email for consistency
     password,
     options: {
       data: {
@@ -107,7 +125,7 @@ export const signUp = async (
     throw error;
   }
   
-  console.log('Registration successful for:', email);
+  console.log('Registration successful for:', normalizedEmail);
   toast.success('Registration successful! Please check your email to confirm your account.');
   return data;
 };

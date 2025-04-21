@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -84,16 +83,36 @@ const AdminAuthorizedEmailsTab = () => {
         throw new Error('Permission denied: Only admins can add authorized emails');
       }
       
+      // Normalize email before storing
+      const normalizedEmail = email.trim().toLowerCase();
+      console.log('Normalized email for storage:', normalizedEmail);
+      
+      // Check if email already exists
+      const { data: existingEmails, error: checkError } = await supabase
+        .from('authorized_emails')
+        .select('id')
+        .eq('email', normalizedEmail);
+        
+      if (checkError) {
+        console.error('Error checking for existing email:', checkError);
+        throw new Error(`Failed to check for existing email: ${checkError.message}`);
+      }
+      
+      if (existingEmails && existingEmails.length > 0) {
+        console.log('Email already authorized:', normalizedEmail);
+        throw new Error('This email is already authorized');
+      }
+      
       const { data, error } = await supabase
         .from('authorized_emails')
-        .insert([{ email: email.toLowerCase() }]);
+        .insert([{ email: normalizedEmail }]);
       
       if (error) {
         console.error('Error adding email:', error);
         throw new Error(`Failed to add email: ${error.message}`);
       }
       
-      console.log('Email added successfully:', data);
+      console.log('Email added successfully:', normalizedEmail);
       return data;
     },
     onSuccess: () => {
@@ -103,7 +122,12 @@ const AdminAuthorizedEmailsTab = () => {
     },
     onError: (error: Error) => {
       console.error('Error adding email:', error);
-      toast.error(`Failed to add email: ${error.message}`);
+      
+      if (error.message.includes('already authorized')) {
+        toast.error('This email is already in the authorized list');
+      } else {
+        toast.error(`Failed to add email: ${error.message}`);
+      }
     }
   });
 
