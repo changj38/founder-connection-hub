@@ -51,22 +51,24 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
   console.log('Checking if email is authorized:', email);
   
-  const { data, error } = await supabase
-    .from('authorized_emails')
-    .select('*')
-    .eq('email', email.toLowerCase())
-    .single();
-  
-  if (error) {
-    console.error('Error checking authorized email:', error);
-    if (!error.message.includes('No rows found')) {
+  try {
+    const { data, error } = await supabase
+      .from('authorized_emails')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .limit(1);
+    
+    if (error) {
+      console.error('Error checking authorized email:', error);
       toast.error('Error checking email authorization');
       throw error;
     }
+    
+    return data && data.length > 0;
+  } catch (err) {
+    console.error('Failed to check email authorization:', err);
     return false;
   }
-  
-  return !!data;
 };
 
 export const signUp = async (
