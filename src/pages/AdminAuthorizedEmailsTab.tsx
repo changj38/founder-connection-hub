@@ -13,8 +13,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Mail, Plus, UserX, RefreshCw } from 'lucide-react';
+import { Mail, Plus, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface AuthorizedEmail {
   id: string;
@@ -38,7 +39,7 @@ const AdminAuthorizedEmailsTab = () => {
       
       if (error) {
         console.error('Error fetching authorized emails:', error);
-        throw error;
+        throw new Error(`Failed to fetch emails: ${error.message}`);
       }
       
       console.log('Fetched authorized emails:', data);
@@ -61,7 +62,7 @@ const AdminAuthorizedEmailsTab = () => {
       
       if (error) {
         console.error('Error adding email:', error);
-        throw error;
+        throw new Error(`Failed to add email: ${error.message}`);
       }
       
       console.log('Email added successfully:', data);
@@ -72,9 +73,9 @@ const AdminAuthorizedEmailsTab = () => {
       setNewEmail('');
       toast.success('Email added to authorized list');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error adding email:', error);
-      toast.error('Failed to add email to authorized list');
+      toast.error(`Failed to add email: ${error.message}`);
     }
   });
 
@@ -89,7 +90,7 @@ const AdminAuthorizedEmailsTab = () => {
       
       if (error) {
         console.error('Error removing email:', error);
-        throw error;
+        throw new Error(`Failed to remove email: ${error.message}`);
       }
       
       console.log('Email removed successfully');
@@ -98,9 +99,9 @@ const AdminAuthorizedEmailsTab = () => {
       queryClient.invalidateQueries({ queryKey: ['authorizedEmails'] });
       toast.success('Email removed from authorized list');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error removing email:', error);
-      toast.error('Failed to remove email from authorized list');
+      toast.error(`Failed to remove email: ${error.message}`);
     }
   });
 
@@ -116,6 +117,8 @@ const AdminAuthorizedEmailsTab = () => {
     
     addEmailMutation.mutate(newEmail);
   };
+
+  const errorMessage = error ? (error as Error).message : '';
 
   return (
     <div className="space-y-6">
@@ -152,11 +155,30 @@ const AdminAuthorizedEmailsTab = () => {
             </Button>
           </form>
 
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                {errorMessage.includes('permission denied') 
+                  ? 'You do not have permission to view authorized emails. Please contact your administrator.'
+                  : errorMessage || 'Error loading emails. Please try refreshing.'}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {isLoading ? (
             <div className="text-center py-4">Loading authorized emails...</div>
           ) : error ? (
             <div className="text-center py-4 text-red-500">
-              Error loading emails. Please try refreshing.
+              <Button 
+                variant="outline" 
+                onClick={() => refetch()}
+                className="mx-auto"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
             </div>
           ) : authorizedEmails.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
