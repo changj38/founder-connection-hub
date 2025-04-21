@@ -83,71 +83,86 @@ interface AuthorizedEmail {
 
 // Authorized emails functions
 export const fetchAuthorizedEmails = async (): Promise<AuthorizedEmail[]> => {
-  console.log('Fetching authorized emails list');
-  const { data, error } = await supabase
-    .from('authorized_emails')
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching authorized emails:', error);
+  try {
+    console.log('Fetching authorized emails list');
+    const { data, error } = await supabase
+      .from('authorized_emails')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching authorized emails:', error);
+      throw error;
+    }
+    
+    console.log('Fetched authorized emails:', data?.length || 0, 'emails');
+    return data || [];
+  } catch (error) {
+    console.error('Exception in fetchAuthorizedEmails:', error);
     throw error;
   }
-  
-  console.log('Fetched authorized emails:', data?.length || 0, 'emails');
-  return data || [];
 };
 
 export const addAuthorizedEmail = async (email: string): Promise<void> => {
-  if (!email) {
-    throw new Error('Email cannot be empty');
-  }
-  
-  const normalizedEmail = email.trim().toLowerCase();
-  console.log('Adding authorized email:', normalizedEmail);
-  
-  // Check if email already exists to avoid duplicates directly in authorized_emails table
-  // This avoids permission issues with users table
-  const { data: existingEmails, error: checkError } = await supabase
-    .from('authorized_emails')
-    .select('id')
-    .eq('email', normalizedEmail);
+  try {
+    if (!email) {
+      throw new Error('Email cannot be empty');
+    }
     
-  if (checkError) {
-    console.error('Error checking for existing email in authorized_emails:', checkError);
-    throw new Error(`Failed to check for existing email: ${checkError.message}`);
-  }
-  
-  if (existingEmails && existingEmails.length > 0) {
-    console.log('Email already authorized:', normalizedEmail);
-    throw new Error('This email is already authorized');
-  }
-  
-  const { error } = await supabase
-    .from('authorized_emails')
-    .insert([{ email: normalizedEmail }]);
-  
-  if (error) {
-    console.error('Error adding authorized email:', error);
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log('Adding authorized email:', normalizedEmail);
+    
+    // Check if email already exists in authorized_emails table only
+    // Do NOT check users table as it causes permission issues
+    const { data: existingEmails, error: checkError } = await supabase
+      .from('authorized_emails')
+      .select('id')
+      .eq('email', normalizedEmail);
+      
+    if (checkError) {
+      console.error('Error checking for existing email in authorized_emails:', checkError);
+      throw new Error(`Failed to check for existing email: ${checkError.message}`);
+    }
+    
+    if (existingEmails && existingEmails.length > 0) {
+      console.log('Email already authorized:', normalizedEmail);
+      throw new Error('This email is already authorized');
+    }
+    
+    const { error } = await supabase
+      .from('authorized_emails')
+      .insert([{ email: normalizedEmail }]);
+    
+    if (error) {
+      console.error('Error adding authorized email:', error);
+      throw error;
+    }
+    
+    console.log('Successfully added authorized email:', normalizedEmail);
+  } catch (error) {
+    console.error('Exception in addAuthorizedEmail:', error);
     throw error;
   }
-  
-  console.log('Successfully added authorized email:', normalizedEmail);
 };
 
 export const removeAuthorizedEmail = async (id: string): Promise<void> => {
-  console.log('Removing authorized email with id:', id);
-  const { error } = await supabase
-    .from('authorized_emails')
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error removing authorized email:', error);
+  try {
+    console.log('Removing authorized email with id:', id);
+    const { error } = await supabase
+      .from('authorized_emails')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error removing authorized email:', error);
+      throw error;
+    }
+    
+    console.log('Successfully removed authorized email with id:', id);
+  } catch (error) {
+    console.error('Exception in removeAuthorizedEmail:', error);
     throw error;
   }
-  
-  console.log('Successfully removed authorized email with id:', id);
 };
 
 // Network contacts functions
