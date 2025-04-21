@@ -23,7 +23,6 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   
   console.log('Session found:', session);
   
-  // Fetch user profile
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
@@ -49,12 +48,40 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   };
 };
 
+export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
+  console.log('Checking if email is authorized:', email);
+  
+  const { data, error } = await supabase
+    .from('authorized_emails')
+    .select('*')
+    .eq('email', email.toLowerCase())
+    .single();
+  
+  if (error) {
+    console.error('Error checking authorized email:', error);
+    if (!error.message.includes('No rows found')) {
+      toast.error('Error checking email authorization');
+      throw error;
+    }
+    return false;
+  }
+  
+  return !!data;
+};
+
 export const signUp = async (
   email: string,
   password: string,
   fullName: string,
   company: string
 ) => {
+  const isAuthorized = await checkEmailAuthorized(email);
+  
+  if (!isAuthorized) {
+    toast.error('This email is not authorized to register. Please contact the administrator.');
+    throw new Error('Email not authorized');
+  }
+  
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -78,12 +105,10 @@ export const signUp = async (
 export const signIn = async (email: string, password: string) => {
   console.log('Attempting to sign in with:', { email, password: '***' });
   
-  // For demo user, use a special login flow
   if (email === 'jonathan@daydreamvc.com' && password === 'password') {
     try {
       console.log('Using demo credentials, attempting login...');
       
-      // First try the normal sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -97,14 +122,10 @@ export const signIn = async (email: string, password: string) => {
       
       console.warn('Demo credentials login failed:', error.message);
       
-      // Don't try to create the user again if it's already a duplicate key error
-      // This is causing the "Database error saving new user" issue
       if (error.message.includes('Invalid login credentials')) {
-        // The user might exist but with a different password
         toast.error('The demo account exists but the password may be different. Please try a different account.');
         throw new Error('Demo account exists but credentials may be incorrect');
       } else {
-        // For other errors, show the specific error
         toast.error(`Login error: ${error.message}`);
         throw error;
       }
@@ -114,7 +135,6 @@ export const signIn = async (email: string, password: string) => {
       throw err;
     }
   } else {
-    // Regular login flow for non-demo users
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -175,7 +195,6 @@ export const updatePassword = async (newPassword: string) => {
   toast.success('Password updated successfully');
 };
 
-// Function to check if user has admin role
 export const checkIsAdmin = async (): Promise<boolean> => {
   const user = await getCurrentUser();
   console.log('Checking admin status for user:', user);

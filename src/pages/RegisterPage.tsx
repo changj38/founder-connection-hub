@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Info } from 'lucide-react';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -70,9 +70,16 @@ const RegisterPage = () => {
                 alt="DayDream Ventures" 
                 className="h-10 w-auto mx-auto mb-6"
               />
-              <h2 className="text-2xl font-bold text-gray-900">Request Access</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Invite-Only Access</h2>
               <p className="text-gray-600 mt-2">Create your account for the founder portal</p>
             </div>
+
+            <Alert className="mb-6 bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-700">
+                Registration is by invitation only. Only pre-authorized email addresses can register.
+              </AlertDescription>
+            </Alert>
 
             {error && (
               <Alert variant="destructive" className="mb-6">
