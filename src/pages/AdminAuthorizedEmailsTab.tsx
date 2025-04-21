@@ -37,6 +37,11 @@ const AdminAuthorizedEmailsTab = () => {
     queryKey: ['authorizedEmails'],
     queryFn: fetchAuthorizedEmails,
     enabled: isAdmin,
+    retry: 1, // Only retry once to avoid excessive error messages
+    onError: (error: Error) => {
+      console.error('Error fetching authorized emails:', error);
+      toast.error(`Failed to fetch authorized emails: ${error.message}`);
+    }
   });
 
   // Add new authorized email
@@ -48,6 +53,7 @@ const AdminAuthorizedEmailsTab = () => {
       toast.success('Email added to authorized list');
     },
     onError: (error: Error) => {
+      console.error('Error adding email:', error);
       toast.error(`Failed to add email: ${error.message}`);
     }
   });
@@ -60,6 +66,7 @@ const AdminAuthorizedEmailsTab = () => {
       toast.success('Email removed from authorized list');
     },
     onError: (error: Error) => {
+      console.error('Error removing email:', error);
       toast.error(`Failed to remove email: ${error.message}`);
     }
   });
