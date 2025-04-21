@@ -267,12 +267,13 @@ const AdminPortfolioTab = () => {
                     <TableHead>Founded</TableHead>
                     <TableHead>Investment Year</TableHead>
                     <TableHead>Website</TableHead>
+                    <TableHead className="w-24 text-right"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCompanies.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                         No companies found matching your search criteria.
                       </TableCell>
                     </TableRow>
@@ -293,33 +294,33 @@ const AdminPortfolioTab = () => {
                             "—"
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button 
-                              variant="ghost" 
+                        <TableCell className="text-right align-middle">
+                          <div className="flex justify-end items-center space-x-2">
+                            <Button
+                              variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
                               onClick={() => handleEditClick(company)}
+                              aria-label={`Edit ${company.name}`}
                             >
                               <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Edit company</span>
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  aria-label={`Delete ${company.name}`}
                                 >
                                   <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">Delete company</span>
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Delete Company</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to delete this company? This action cannot be undone.
+                                    Are you sure you want to delete the company <span className="font-semibold">{company.name}</span>? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
