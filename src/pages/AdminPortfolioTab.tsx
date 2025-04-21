@@ -208,20 +208,35 @@ const AdminPortfolioTab = () => {
         const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
         logo_url = urlData?.publicUrl || undefined;
       }
+      
+      console.log('Updating company with data:', {
+        id: editingCompany.id,
+        name: editingCompany.name,
+        description: editingCompany.description || null,
+        industry: editingCompany.industry || null,
+        founded_year: editingCompany.founded_year ? parseInt(editingCompany.founded_year) : null,
+        investment_year: editingCompany.investment_year ? parseInt(editingCompany.investment_year) : null,
+        website: editingCompany.website || null,
+        logo_url: logo_url || null
+      });
+      
       const { error } = await supabase
         .from('portfolio_companies')
         .update({
           name: editingCompany.name,
-          description: editingCompany.description,
-          industry: editingCompany.industry,
+          description: editingCompany.description || null,
+          industry: editingCompany.industry || null,
           founded_year: editingCompany.founded_year ? parseInt(editingCompany.founded_year) : null,
           investment_year: editingCompany.investment_year ? parseInt(editingCompany.investment_year) : null,
-          website: editingCompany.website,
-          logo_url
+          website: editingCompany.website || null,
+          logo_url: logo_url || null
         })
         .eq('id', editingCompany.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating company:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -233,10 +248,11 @@ const AdminPortfolioTab = () => {
       setEditLogoFile(null);
       setEditPreviewUrl(null);
       queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to update company:', error);
       toast({
         title: "Error",
-        description: "Failed to update company",
+        description: `Failed to update company: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
     } finally {
@@ -684,4 +700,3 @@ const AdminPortfolioTab = () => {
 };
 
 export default AdminPortfolioTab;
-
