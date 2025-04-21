@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, AlertCircle, Info } from 'lucide-react';
-import { toast } from 'sonner';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -44,22 +43,10 @@ const RegisterPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Normalize email before submitting
-      const normalizedEmail = email.trim().toLowerCase();
-      console.log('Submitting registration form for:', normalizedEmail);
-      await register(name, normalizedEmail, password, company);
+      await register(name, email, password, company);
       // Navigate to dashboard will happen automatically via auth state change
     } catch (err) {
-      console.error('Registration error:', err);
-      if (err instanceof Error) {
-        if (err.message.includes('Email not authorized')) {
-          setError('This email is not authorized to register. Please contact the administrator.');
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError('Failed to create account. Please try again.');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
