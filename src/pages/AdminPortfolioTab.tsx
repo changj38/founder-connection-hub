@@ -82,6 +82,7 @@ const AdminPortfolioTab = () => {
   useEffect(() => {
     const checkBucket = async () => {
       try {
+        // First check if the bucket exists in the list of buckets
         const { data: buckets, error } = await supabase.storage.listBuckets();
         
         if (error) {
@@ -93,6 +94,17 @@ const AdminPortfolioTab = () => {
         const exists = buckets?.some(bucket => bucket.name === 'portfolio-logos');
         setBucketExists(exists || false);
         
+        if (!exists) {
+          // If it doesn't exist in the list, try to get it directly
+          // This is a fallback in case the bucket exists but wasn't in the list
+          const { data: bucketData, error: getBucketError } = await supabase.storage.getBucket('portfolio-logos');
+          
+          if (!getBucketError && bucketData) {
+            setBucketExists(true);
+            return;
+          }
+        }
+        
         console.log('Bucket check result:', { exists, buckets });
       } catch (err) {
         console.error('Error in bucket check:', err);
@@ -103,50 +115,49 @@ const AdminPortfolioTab = () => {
     checkBucket();
   }, []);
 
-  const createBucket = async () => {
+  // Modified to work with the bucket that should now exist in Supabase
+  const handleFileUpload = async (file: File, companyName: string): Promise<string | undefined> => {
+    if (!file) return undefined;
+    
     try {
-      const { data: existingBucket, error: getBucketError } = await supabase.storage.getBucket('portfolio-logos');
-      
-      if (!getBucketError && existingBucket) {
-        console.log('Bucket already exists:', existingBucket);
-        setBucketExists(true);
-        toast({
-          title: "Success",
-          description: "Storage bucket is already configured",
-        });
-        return true;
+      const { data: session } = await supabase.auth.getSession();
+      if (!session || !session.session) {
+        throw new Error("Authentication required to upload files");
       }
       
-      const { data, error } = await supabase.storage.createBucket('portfolio-logos', {
-        public: true,
-        fileSizeLimit: 5 * 1024 * 1024 // 5MB limit
+      const user = session.session.user;
+      const ext = file.name.split('.').pop();
+      const safeName = companyName.replace(/[^\w\d-]/g, '_').toLowerCase();
+      const filePath = `${user?.id || "anonymous"}/${safeName}-${Date.now()}.${ext}`;
+      
+      console.log('Attempting to upload file:', { 
+        bucket: 'portfolio-logos',
+        path: filePath,
+        file: {
+          name: file.name,
+          type: file.type,
+          size: file.size
+        }
       });
       
-      if (error) {
-        console.error('Failed to create bucket:', error);
-        toast({
-          title: "Error",
-          description: `Failed to create storage bucket: ${error.message}`,
-          variant: "destructive",
-        });
-        return false;
+      // The bucket should exist now due to our SQL migration
+      const { data, error: uploadError } = await supabase
+        .storage
+        .from('portfolio-logos')
+        .upload(filePath, file, { upsert: true });
+        
+      if (uploadError) {
+        console.error('Logo upload error:', uploadError);
+        throw new Error(`Logo upload failed: ${uploadError.message}`);
       }
       
-      toast({
-        title: "Success",
-        description: "Storage bucket created successfully",
-      });
+      console.log('Upload succeeded:', data);
       
-      setBucketExists(true);
-      return true;
-    } catch (err: any) {
-      console.error('Exception creating bucket:', err);
-      toast({
-        title: "Error",
-        description: `Exception creating bucket: ${err.message || "Unknown error"}`,
-        variant: "destructive",
-      });
-      return false;
+      const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
+      return urlData?.publicUrl || undefined;
+    } catch (error: any) {
+      console.error('Error during file upload:', error);
+      throw error;
     }
   };
 
@@ -202,52 +213,9 @@ const AdminPortfolioTab = () => {
     let logo_url: string | undefined = undefined;
     
     try {
-      if (!bucketExists) {
-        const created = await createBucket();
-        if (!created) {
-          setIsSubmitting(false);
-          return;
-        }
-      }
-      
       if (logoFile) {
         try {
-          const { data: session } = await supabase.auth.getSession();
-          if (!session || !session.session) {
-            throw new Error("Authentication required to upload files");
-          }
-          
-          const user = session.session.user;
-          const ext = logoFile.name.split('.').pop();
-          const safeName = formData.name.replace(/[^\w\d-]/g, '_').toLowerCase();
-          const filePath = `${user?.id || "anonymous"}/${safeName}-${Date.now()}.${ext}`;
-          
-          console.log('Attempting to upload file:', { 
-            bucket: 'portfolio-logos',
-            path: filePath,
-            file: {
-              name: logoFile.name,
-              type: logoFile.type,
-              size: logoFile.size
-            }
-          });
-          
-          const { data, error: uploadError } = await supabase
-            .storage
-            .from('portfolio-logos')
-            .upload(filePath, logoFile, { upsert: true });
-            
-          if (uploadError) {
-            console.error('Logo upload error:', uploadError);
-            throw new Error(`Logo upload failed: ${uploadError.message}`);
-          }
-          
-          console.log('Upload succeeded:', data);
-          
-          const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
-          logo_url = urlData?.publicUrl || undefined;
-          
-          console.log('Generated public URL:', logo_url);
+          logo_url = await handleFileUpload(logoFile, formData.name);
         } catch (uploadErr: any) {
           console.error('Error during file upload:', uploadErr);
           toast({
@@ -304,52 +272,9 @@ const AdminPortfolioTab = () => {
     let logo_url: string | undefined = editingCompany.logo_url;
     
     try {
-      if (!bucketExists && editLogoFile) {
-        const created = await createBucket();
-        if (!created) {
-          setIsSubmitting(false);
-          return;
-        }
-      }
-      
       if (editLogoFile) {
         try {
-          const { data: session } = await supabase.auth.getSession();
-          if (!session || !session.session) {
-            throw new Error("Authentication required to upload files");
-          }
-          
-          const user = session.session.user;
-          const ext = editLogoFile.name.split('.').pop();
-          const safeName = (editingCompany.name || "company").replace(/[^\w\d-]/g, '_').toLowerCase();
-          const filePath = `${user?.id || "anonymous"}/${safeName}-${Date.now()}.${ext}`;
-          
-          console.log('Attempting to upload edit logo:', { 
-            bucket: 'portfolio-logos',
-            path: filePath,
-            file: {
-              name: editLogoFile.name,
-              type: editLogoFile.type,
-              size: editLogoFile.size
-            }
-          });
-          
-          const { data, error: uploadError } = await supabase
-            .storage
-            .from('portfolio-logos')
-            .upload(filePath, editLogoFile, { upsert: true });
-            
-          if (uploadError) {
-            console.error('Edit logo upload error:', uploadError);
-            throw new Error(`Logo upload failed: ${uploadError.message}`);
-          }
-          
-          console.log('Edit logo upload succeeded:', data);
-          
-          const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
-          logo_url = urlData?.publicUrl || undefined;
-          
-          console.log('Generated public URL for edit:', logo_url);
+          logo_url = await handleFileUpload(editLogoFile, editingCompany.name);
         } catch (uploadErr: any) {
           console.error('Error during file upload in edit mode:', uploadErr);
           toast({
@@ -437,14 +362,6 @@ const AdminPortfolioTab = () => {
           <AlertTitle>Storage Not Configured</AlertTitle>
           <AlertDescription>
             The storage bucket for company logos is not set up. Logo uploads won't work until fixed.
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="ml-2 mt-2" 
-              onClick={createBucket}
-            >
-              Create Storage Bucket
-            </Button>
           </AlertDescription>
         </Alert>
       )}
