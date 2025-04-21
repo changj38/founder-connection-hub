@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -7,12 +8,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle, Loader2, Trash2, Pencil } from 'lucide-react';
+import { PlusCircle, Building, Globe, Calendar, Tag, AlertCircle, Loader2, Trash2, Pencil, Upload, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { fetchPortfolioCompanies, addPortfolioCompany } from '../utils/adminApi';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+
+// Helper: Returns logo URL or placeholder
+const getLogoUrl = (company: any) =>
+  company.logo_url
+    ? company.logo_url
+    : 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=facearea&w=128&h=128';
 
 const AdminPortfolioTab = () => {
   const { toast } = useToast();
@@ -29,6 +36,8 @@ const AdminPortfolioTab = () => {
     investment_year: '',
     website: ''
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -40,7 +49,10 @@ const AdminPortfolioTab = () => {
     founded_year?: string;
     investment_year?: string;
     website?: string;
+    logo_url?: string;
   }>(null);
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+  const [editPreviewUrl, setEditPreviewUrl] = useState<string | null>(null);
 
   const { data: portfolioCompanies = [], isLoading, error: fetchError } = useQuery({
     queryKey: ['portfolioCompanies'],
@@ -50,7 +62,6 @@ const AdminPortfolioTab = () => {
   const addCompanyMutation = useMutation({
     mutationFn: (companyData: any) => addPortfolioCompany(companyData),
     onSuccess: (data) => {
-      console.log('Company added successfully:', data);
       setIsSubmitting(false);
       resetForm();
       setIsAddDialogOpen(false);
@@ -59,7 +70,6 @@ const AdminPortfolioTab = () => {
       queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
     },
     onError: (error: any) => {
-      console.error('Error in mutation:', error);
       setError(error.message || "Failed to add portfolio company");
       toast({
         title: "Error",
@@ -80,6 +90,20 @@ const AdminPortfolioTab = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  // Logo upload handling for add
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setLogoFile(file);
+    setPreviewUrl(file ? URL.createObjectURL(file) : null);
+  };
+
+  // For edit dialog
+  const handleEditLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setEditLogoFile(file);
+    setEditPreviewUrl(file ? URL.createObjectURL(file) : null);
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -89,44 +113,53 @@ const AdminPortfolioTab = () => {
       investment_year: '',
       website: ''
     });
+    setLogoFile(null);
+    setPreviewUrl(null);
     setError(null);
     setIsSubmitting(false);
   };
 
   const handleAddCompany = async () => {
-    try {
-      console.log('AdminPortfolioTab: handleAddCompany called');
-      setError(null);
-      
-      if (!formData.name.trim()) {
-        toast({
-          title: "Error",
-          description: "Company name is required",
-          variant: "destructive",
-        });
-        setError("Company name is required");
-        return;
-      }
-
-      setIsSubmitting(true);
-
-      const companyData = {
-        name: formData.name.trim(),
-        description: formData.description,
-        industry: formData.industry,
-        founded_year: formData.founded_year ? parseInt(formData.founded_year) : undefined,
-        investment_year: formData.investment_year ? parseInt(formData.investment_year) : undefined,
-        website: formData.website
-      };
-
-      console.log('AdminPortfolioTab: Submitting company data:', companyData);
-      addCompanyMutation.mutate(companyData);
-    } catch (error) {
-      console.error("AdminPortfolioTab: Error in handleAddCompany:", error);
-      setError(error.message || "Failed to add portfolio company");
+    setError(null);
+    if (!formData.name.trim()) {
       toast({
         title: "Error",
-        description: `Failed to add portfolio company: ${error.message || "Unknown error"}`,
+        description: "Company name is required",
+        variant: "destructive",
+      });
+      setError("Company name is required");
+      return;
+    }
+    setIsSubmitting(true);
+    let logo_url: string | undefined = undefined;
+    try {
+      // If logo selected, upload to Supabase storage
+      if (logoFile) {
+        const { data: user } = await supabase.auth.getUser();
+        const ext = logoFile.name.split('.').pop();
+        const safeName = formData.name.replace(/[^\w\d-]/g, '_').toLowerCase();
+        const filePath = `${user?.user?.id || "admin"}/${safeName}-${Date.now()}.${ext}`;
+        const { data, error: uploadError } = await supabase
+          .storage
+          .from('portfolio-logos')
+          .upload(filePath, logoFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        // Get public URL
+        const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
+        logo_url = urlData?.publicUrl || undefined;
+      }
+      // Call mutation with logo_url if uploaded
+      addCompanyMutation.mutate({ 
+        ...formData, 
+        founded_year: formData.founded_year ? parseInt(formData.founded_year) : undefined,
+        investment_year: formData.investment_year ? parseInt(formData.investment_year) : undefined,
+        logo_url 
+      });
+    } catch (error) {
+      setError(error.message || "Failed to upload logo");
+      toast({
+        title: "Error",
+        description: `Error uploading logo: ${error.message || "Unknown"}`,
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -148,7 +181,6 @@ const AdminPortfolioTab = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
     } catch (error) {
-      console.error('Error deleting company:', error);
       toast({
         title: "Error",
         description: "Failed to delete company",
@@ -159,8 +191,23 @@ const AdminPortfolioTab = () => {
 
   const handleEditCompany = async () => {
     if (!editingCompany) return;
-    
+    setIsSubmitting(true);
+    let logo_url: string | undefined = editingCompany.logo_url;
     try {
+      // If a new logo file was selected, upload it and get url
+      if (editLogoFile) {
+        const { data: user } = await supabase.auth.getUser();
+        const ext = editLogoFile.name.split('.').pop();
+        const safeName = (editingCompany.name || "company").replace(/[^\w\d-]/g, '_').toLowerCase();
+        const filePath = `${user?.user?.id || "admin"}/${safeName}-${Date.now()}.${ext}`;
+        const { data, error: uploadError } = await supabase
+          .storage
+          .from('portfolio-logos')
+          .upload(filePath, editLogoFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('portfolio-logos').getPublicUrl(filePath);
+        logo_url = urlData?.publicUrl || undefined;
+      }
       const { error } = await supabase
         .from('portfolio_companies')
         .update({
@@ -169,7 +216,8 @@ const AdminPortfolioTab = () => {
           industry: editingCompany.industry,
           founded_year: editingCompany.founded_year ? parseInt(editingCompany.founded_year) : null,
           investment_year: editingCompany.investment_year ? parseInt(editingCompany.investment_year) : null,
-          website: editingCompany.website
+          website: editingCompany.website,
+          logo_url
         })
         .eq('id', editingCompany.id);
 
@@ -179,17 +227,20 @@ const AdminPortfolioTab = () => {
         title: "Success",
         description: "Company updated successfully",
       });
-      
+
       setIsEditDialogOpen(false);
       setEditingCompany(null);
+      setEditLogoFile(null);
+      setEditPreviewUrl(null);
       queryClient.invalidateQueries({ queryKey: ['portfolioCompanies'] });
     } catch (error) {
-      console.error('Error updating company:', error);
       toast({
         title: "Error",
         description: "Failed to update company",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -199,6 +250,8 @@ const AdminPortfolioTab = () => {
       founded_year: company.founded_year?.toString() || '',
       investment_year: company.investment_year?.toString() || ''
     });
+    setEditLogoFile(null);
+    setEditPreviewUrl(null);
     setIsEditDialogOpen(true);
   };
 
@@ -267,13 +320,14 @@ const AdminPortfolioTab = () => {
                     <TableHead>Founded</TableHead>
                     <TableHead>Investment Year</TableHead>
                     <TableHead>Website</TableHead>
+                    <TableHead>Logo</TableHead>
                     <TableHead className="w-24 text-right"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCompanies.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                         No companies found matching your search criteria.
                       </TableCell>
                     </TableRow>
@@ -293,6 +347,13 @@ const AdminPortfolioTab = () => {
                           ) : (
                             "—"
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <img
+                            src={getLogoUrl(company)}
+                            alt={`${company.name} logo`}
+                            className="w-12 h-12 object-cover rounded-md border bg-gray-100"
+                          />
                         </TableCell>
                         <TableCell className="text-right align-middle">
                           <div className="flex justify-end items-center space-x-2">
@@ -346,6 +407,7 @@ const AdminPortfolioTab = () => {
         </Card>
       )}
 
+      {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={closeDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -445,6 +507,25 @@ const AdminPortfolioTab = () => {
                 />
               </div>
             </div>
+            {/* Logo Upload */}
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="logo" className="flex items-center">
+                <Image className="h-4 w-4 mr-2 text-gray-500" />
+                Company Logo (optional)
+              </Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="logo"
+                  name="logo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                />
+                {previewUrl && (
+                  <img src={previewUrl} alt="Preview" className="h-12 w-12 rounded-md object-cover border" />
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog} disabled={isSubmitting}>
@@ -462,6 +543,7 @@ const AdminPortfolioTab = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -543,18 +625,47 @@ const AdminPortfolioTab = () => {
                 />
               </div>
             </div>
+            {/* Logo Upload for Edit */}
+            <div className="grid grid-cols-1 gap-2">
+              <Label htmlFor="edit-logo" className="flex items-center">
+                <Image className="h-4 w-4 mr-2 text-gray-500" />
+                Company Logo
+              </Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="edit-logo"
+                  name="edit-logo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditLogoChange}
+                />
+                {(editPreviewUrl || editingCompany?.logo_url) && (
+                  <img
+                    src={editPreviewUrl || editingCompany?.logo_url}
+                    alt="Logo Preview"
+                    className="h-12 w-12 rounded-md object-cover border"
+                  />
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditCompany}>
-              Save Changes
+            <Button onClick={handleEditCompany} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Success alert */}
       <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -573,3 +684,4 @@ const AdminPortfolioTab = () => {
 };
 
 export default AdminPortfolioTab;
+
