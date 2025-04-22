@@ -14,8 +14,8 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   isAdmin: () => boolean;
-  refreshUserData: () => Promise<AuthUser | null>; // Updated return type to match implementation
-  checkEmailAuthorized: (email: string) => Promise<boolean>; // Added function to check if email is authorized
+  refreshUserData: () => Promise<AuthUser | null>; 
+  checkEmailAuthorized: (email: string) => Promise<boolean>; // Exposing this function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

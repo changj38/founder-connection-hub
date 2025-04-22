@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, AlertCircle, Info, Loader2 } from 'lucide-react';
+import { supabase } from '../integrations/supabase/client';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -18,7 +19,7 @@ const RegisterPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'unchecked' | 'checking' | 'authorized' | 'unauthorized'>('unchecked');
-  const { register, currentUser } = useAuth();
+  const { register, currentUser, checkEmailAuthorized } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already logged in
@@ -60,7 +61,6 @@ const RegisterPage = () => {
     }
   };
 
-  // We'll check the email authorization status when the email field loses focus
   const handleEmailBlur = async () => {
     if (!email || email.trim() === '' || !email.includes('@')) return;
     
@@ -68,10 +68,10 @@ const RegisterPage = () => {
       setIsCheckingEmail(true);
       setEmailStatus('checking');
       
-      // This will call the checkEmailAuthorized function internally
-      const isAuthorized = await import('../integrations/supabase/auth')
-        .then(module => module.checkEmailAuthorized(email));
+      // Direct call to the checkEmailAuthorized function from AuthContext
+      const isAuthorized = await checkEmailAuthorized(email);
       
+      console.log('Email authorization check result:', isAuthorized ? 'Authorized' : 'Not authorized');
       setEmailStatus(isAuthorized ? 'authorized' : 'unauthorized');
       
       if (!isAuthorized) {
@@ -85,6 +85,14 @@ const RegisterPage = () => {
     } finally {
       setIsCheckingEmail(false);
     }
+  };
+
+  // Check authorization on email change
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setEmailStatus('unchecked');
+    setError('');
   };
 
   return (
@@ -151,15 +159,17 @@ const RegisterPage = () => {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setEmailStatus('unchecked');
-                  }}
+                  onChange={handleEmailChange}
                   onBlur={handleEmailBlur}
                   placeholder="youremail@example.com"
                   required
                   className={emailStatus === 'authorized' ? 'border-green-500' : emailStatus === 'unauthorized' ? 'border-red-500' : ''}
                 />
+                {emailStatus === 'unauthorized' && (
+                  <p className="text-sm text-red-600 mt-1">
+                    This email is not authorized to register. Please contact the administrator.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
