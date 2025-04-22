@@ -59,11 +59,11 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
   console.log('Checking if email is authorized:', normalizedEmail);
   
   try {
+    console.log('Making database query to authorized_emails table');
     const { data, error } = await supabase
       .from('authorized_emails')
-      .select('id')
-      .eq('email', normalizedEmail)
-      .limit(1);
+      .select('*')
+      .eq('email', normalizedEmail);
     
     if (error) {
       console.error('Error checking authorized email:', error);
@@ -71,6 +71,7 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
       return false;
     }
     
+    console.log('Query results for authorized email check:', data);
     const isAuthorized = data && data.length > 0;
     console.log('Email authorization result:', isAuthorized ? 'Authorized' : 'Not authorized');
     

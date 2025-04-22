@@ -68,6 +68,7 @@ const RegisterPage = () => {
       setIsCheckingEmail(true);
       setEmailStatus('checking');
       
+      console.log('About to check email authorization for:', email);
       // Direct call to the checkEmailAuthorized function from AuthContext
       const isAuthorized = await checkEmailAuthorized(email);
       
@@ -75,8 +76,10 @@ const RegisterPage = () => {
       setEmailStatus(isAuthorized ? 'authorized' : 'unauthorized');
       
       if (!isAuthorized) {
+        console.log('Email not authorized, showing error message');
         setError('This email is not authorized to register. Please contact the administrator.');
       } else {
+        console.log('Email is authorized, clearing any previous errors');
         setError('');
       }
     } catch (err) {
@@ -94,6 +97,32 @@ const RegisterPage = () => {
     setEmailStatus('unchecked');
     setError('');
   };
+
+  // Let's add a debug effect to log when the component mounts
+  useEffect(() => {
+    console.log('RegisterPage mounted, checkEmailAuthorized function available:', !!checkEmailAuthorized);
+    
+    // Debug function to directly check the authorized_emails table
+    const debugCheckEmails = async () => {
+      try {
+        console.log('Directly querying authorized_emails table for debugging');
+        const { data, error } = await supabase
+          .from('authorized_emails')
+          .select('*')
+          .limit(10);
+        
+        if (error) {
+          console.error('Debug error fetching authorized emails:', error);
+        } else {
+          console.log('Debug result - authorized emails in database:', data);
+        }
+      } catch (err) {
+        console.error('Debug exception checking emails:', err);
+      }
+    };
+    
+    debugCheckEmails();
+  }, [checkEmailAuthorized]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
