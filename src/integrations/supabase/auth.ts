@@ -1,3 +1,4 @@
+
 import { supabase } from './client';
 import { toast } from 'sonner';
 
@@ -49,24 +50,34 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 };
 
 export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
-  console.log('Checking if email is authorized:', email);
+  if (!email) {
+    console.error('Email is required for authorization check');
+    return false;
+  }
+  
+  const normalizedEmail = email.toLowerCase().trim();
+  console.log('Checking if email is authorized:', normalizedEmail);
   
   try {
     const { data, error } = await supabase
       .from('authorized_emails')
       .select('id')
-      .eq('email', email.toLowerCase())
+      .eq('email', normalizedEmail)
       .limit(1);
     
     if (error) {
       console.error('Error checking authorized email:', error);
       toast.error('Error checking email authorization');
-      throw error;
+      return false;
     }
     
-    return data && data.length > 0;
+    const isAuthorized = data && data.length > 0;
+    console.log('Email authorization result:', isAuthorized ? 'Authorized' : 'Not authorized');
+    
+    return isAuthorized;
   } catch (err) {
     console.error('Failed to check email authorization:', err);
+    toast.error('Failed to verify email authorization');
     return false;
   }
 };
@@ -77,12 +88,18 @@ export const signUp = async (
   fullName: string,
   company: string
 ) => {
+  console.log('Starting signup process for email:', email);
+  
   const isAuthorized = await checkEmailAuthorized(email);
+  console.log('Email authorization check result:', isAuthorized);
   
   if (!isAuthorized) {
+    console.error('Email not authorized to register:', email);
     toast.error('This email is not authorized to register. Please contact the administrator.');
     throw new Error('Email not authorized');
   }
+  
+  console.log('Email is authorized, proceeding with signup');
   
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -96,10 +113,12 @@ export const signUp = async (
   });
   
   if (error) {
+    console.error('Signup error:', error);
     toast.error(error.message);
     throw error;
   }
   
+  console.log('Registration successful:', data);
   toast.success('Registration successful! Please check your email to confirm your account.');
   return data;
 };

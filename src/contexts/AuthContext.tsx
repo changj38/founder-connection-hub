@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
-import { AuthUser, getCurrentUser, signIn, signOut, signUp } from '../integrations/supabase/auth';
+import { AuthUser, getCurrentUser, signIn, signOut, signUp, checkEmailAuthorized } from '../integrations/supabase/auth';
 
 interface AuthContextType {
   session: Session | null;
@@ -15,6 +15,7 @@ interface AuthContextType {
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   isAdmin: () => boolean;
   refreshUserData: () => Promise<AuthUser | null>; // Updated return type to match implementation
+  checkEmailAuthorized: (email: string) => Promise<boolean>; // Added function to check if email is authorized
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -117,9 +118,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (name: string, email: string, password: string, company: string) => {
+    console.log('Registration attempt for:', email);
     setLoading(true);
     try {
       await signUp(email, password, name, company);
+      console.log('Registration successful');
     } finally {
       setLoading(false);
     }
@@ -177,7 +180,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     forgotPassword,
     resetPassword,
     isAdmin,
-    refreshUserData
+    refreshUserData,
+    checkEmailAuthorized // Exposing this function for components that need to check authorization
   };
 
   return (

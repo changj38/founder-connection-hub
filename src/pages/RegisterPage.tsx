@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertCircle, Info } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Info, Loader2 } from 'lucide-react';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -16,6 +16,8 @@ const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<'unchecked' | 'checking' | 'authorized' | 'unauthorized'>('unchecked');
   const { register, currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -40,15 +42,48 @@ const RegisterPage = () => {
       return;
     }
     
+    if (emailStatus !== 'authorized') {
+      setError('This email is not authorized to register. Please contact the administrator.');
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
       await register(name, email, password, company);
       // Navigate to dashboard will happen automatically via auth state change
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // We'll check the email authorization status when the email field loses focus
+  const handleEmailBlur = async () => {
+    if (!email || email.trim() === '' || !email.includes('@')) return;
+    
+    try {
+      setIsCheckingEmail(true);
+      setEmailStatus('checking');
+      
+      // This will call the checkEmailAuthorized function internally
+      const isAuthorized = await import('../integrations/supabase/auth')
+        .then(module => module.checkEmailAuthorized(email));
+      
+      setEmailStatus(isAuthorized ? 'authorized' : 'unauthorized');
+      
+      if (!isAuthorized) {
+        setError('This email is not authorized to register. Please contact the administrator.');
+      } else {
+        setError('');
+      }
+    } catch (err) {
+      console.error('Error checking email authorization:', err);
+      setEmailStatus('unchecked');
+    } finally {
+      setIsCheckingEmail(false);
     }
   };
 
@@ -102,14 +137,28 @@ const RegisterPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="flex items-center justify-between">
+                  <span>Email</span>
+                  {isCheckingEmail && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
+                  {emailStatus === 'authorized' && !isCheckingEmail && (
+                    <span className="text-xs text-green-600">Email authorized ✓</span>
+                  )}
+                  {emailStatus === 'unauthorized' && !isCheckingEmail && (
+                    <span className="text-xs text-red-600">Email not authorized</span>
+                  )}
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailStatus('unchecked');
+                  }}
+                  onBlur={handleEmailBlur}
                   placeholder="youremail@example.com"
                   required
+                  className={emailStatus === 'authorized' ? 'border-green-500' : emailStatus === 'unauthorized' ? 'border-red-500' : ''}
                 />
               </div>
 
@@ -149,8 +198,17 @@ const RegisterPage = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating account...' : 'Create Account'}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSubmitting || emailStatus === 'unauthorized' || emailStatus === 'checking'}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : 'Create Account'}
               </Button>
             </form>
 
