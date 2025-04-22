@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -116,6 +115,28 @@ const AdminAuthorizedEmailsTab = () => {
     
     addEmailMutation.mutate(newEmail);
   };
+
+  // Add a console log to show all authorized emails when the component loads
+  useEffect(() => {
+    const logAuthorizedEmails = async () => {
+      const { data, error } = await supabase
+        .from('authorized_emails')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching authorized emails:', error);
+        toast.error('Failed to fetch authorized emails');
+        return;
+      }
+      
+      console.log('Current Authorized Emails:', data);
+      if (data && data.length === 0) {
+        console.log('No authorized emails found in the database.');
+      }
+    };
+
+    logAuthorizedEmails();
+  }, []);
 
   return (
     <div className="space-y-6">
