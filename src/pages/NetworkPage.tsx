@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Search, Linkedin, Mail, Building, Filter, Pencil } from 'lucide-react';
+import { Search, Linkedin, Mail, Building, Filter, Pencil, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
   Dialog,
@@ -30,8 +30,8 @@ type NetworkContact = {
   name: string;
   company?: string;
   position?: string;
-  email?: string;
   linkedin_url?: string;
+  website?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -55,8 +55,8 @@ const NetworkPage = () => {
     name: '',
     company: '',
     position: '',
-    email: '',
     linkedin_url: '',
+    website: '',
     notes: '',
     is_lp: false
   });
@@ -69,9 +69,10 @@ const NetworkPage = () => {
   const networkContacts: NetworkContact[] = networkContactsRaw.map((contact: any) => ({
     ...contact,
     category: contact.category || 'Other',
-    avatar_url: contact.avatar_url || undefined
+    avatar_url: contact.avatar_url || undefined,
+    website: contact.website || ''
   }));
-  
+
   const uniqueCategories = networkContacts && networkContacts.length 
     ? ['all', ...new Set(networkContacts.map(contact => contact.category || 'Other'))] 
     : ['all'];
@@ -123,8 +124,8 @@ const NetworkPage = () => {
       name: contact.name || '',
       company: contact.company || '',
       position: contact.position || '',
-      email: contact.email || '',
       linkedin_url: contact.linkedin_url || '',
+      website: contact.website || '',
       notes: contact.notes || '',
       is_lp: contact.is_lp || false
     });
@@ -291,29 +292,29 @@ const NetworkPage = () => {
                       <Building className="h-4 w-4" />
                       {contact.company || 'Independent'}
                     </div>
-                    
+                    <div className="flex gap-2 mt-2">
+                      {contact.website && (
+                        <a
+                          href={contact.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-600 hover:text-daydream-blue transition-colors"
+                        >
+                          <Globe className="h-5 w-5" />
+                        </a>
+                      )}
+                      {contact.linkedin_url && (
+                        <a 
+                          href={contact.linkedin_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-gray-600 hover:text-daydream-blue transition-colors"
+                        >
+                          <Linkedin className="h-5 w-5" />
+                        </a>
+                      )}
+                    </div>
                     <div className="flex justify-between items-center mt-4">
-                      <div className="flex gap-2">
-                        {contact.linkedin_url && (
-                          <a 
-                            href={contact.linkedin_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-gray-600 hover:text-daydream-blue transition-colors"
-                          >
-                            <Linkedin className="h-5 w-5" />
-                          </a>
-                        )}
-                        {contact.email && (
-                          <a 
-                            href={`mailto:${contact.email}`}
-                            className="text-gray-600 hover:text-daydream-blue transition-colors"
-                          >
-                            <Mail className="h-5 w-5" />
-                          </a>
-                        )}
-                      </div>
-                      
                       <div className="flex gap-2">
                         {isAdmin() && (
                           <Button 
@@ -395,125 +396,126 @@ const NetworkPage = () => {
         
         <TabsContent value="list" className="mt-0">
           <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredContacts.map((contact) => (
-                    <tr key={contact.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-daydream-blue text-white text-xs">
-                              {getInitials(contact.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{contact.name}</div>
-                          </div>
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredContacts.map((contact) => (
+                  <tr key={contact.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-daydream-blue text-white text-xs">
+                            {getInitials(contact.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{contact.name}</div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {contact.position || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {contact.company || 'Independent'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex gap-2">
-                          {contact.linkedin_url && (
-                            <a 
-                              href={contact.linkedin_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-gray-600 hover:text-daydream-blue transition-colors"
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {contact.position || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {contact.company || 'Independent'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex gap-2">
+                        {contact.website && (
+                          <a
+                            href={contact.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-600 hover:text-daydream-blue transition-colors"
+                          >
+                            <Globe className="h-4 w-4" />
+                          </a>
+                        )}
+                        {contact.linkedin_url && (
+                          <a 
+                            href={contact.linkedin_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-gray-600 hover:text-daydream-blue transition-colors"
+                          >
+                            <Linkedin className="h-4 w-4" />
+                          </a>
+                        )}
+                        <Dialog open={isIntroDialogOpen && selectedContact?.id === contact.id} onOpenChange={(open) => {
+                          setIsIntroDialogOpen(open);
+                          if (!open) setSelectedContact(null);
+                        }}>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="px-2 h-6"
+                              onClick={() => setSelectedContact(contact)}
                             >
-                              <Linkedin className="h-4 w-4" />
-                            </a>
-                          )}
-                          {contact.email && (
-                            <a 
-                              href={`mailto:${contact.email}`}
-                              className="text-gray-600 hover:text-daydream-blue transition-colors"
-                            >
-                              <Mail className="h-4 w-4" />
-                            </a>
-                          )}
-                          <Dialog open={isIntroDialogOpen && selectedContact?.id === contact.id} onOpenChange={(open) => {
-                            setIsIntroDialogOpen(open);
-                            if (!open) setSelectedContact(null);
-                          }}>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="px-2 h-6"
-                                onClick={() => setSelectedContact(contact)}
-                              >
-                                Request Intro
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Request Introduction</DialogTitle>
-                                <DialogDescription>
-                                  Tell us why you'd like to be introduced to {selectedContact?.name}.
-                                </DialogDescription>
-                              </DialogHeader>
-                              
-                              <div className="space-y-4 py-4">
-                                <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
-                                  <Avatar>
-                                    <AvatarFallback className="bg-daydream-blue text-white">
-                                      {selectedContact ? getInitials(selectedContact.name) : ''}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <h4 className="font-medium">{selectedContact?.name}</h4>
-                                    <p className="text-sm text-gray-500">{selectedContact?.position || 'N/A'} at {selectedContact?.company || 'N/A'}</p>
-                                  </div>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  <Label htmlFor="reason">Why would you like an introduction?</Label>
-                                  <Textarea
-                                    id="reason"
-                                    placeholder="Briefly explain the purpose of the introduction and how it might be valuable to both parties."
-                                    value={introReason}
-                                    onChange={(e) => setIntroReason(e.target.value)}
-                                    rows={5}
-                                  />
+                              Request Intro
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Request Introduction</DialogTitle>
+                              <DialogDescription>
+                                Tell us why you'd like to be introduced to {selectedContact?.name}.
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="space-y-4 py-4">
+                              <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
+                                <Avatar>
+                                  <AvatarFallback className="bg-daydream-blue text-white">
+                                    {selectedContact ? getInitials(selectedContact.name) : ''}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <h4 className="font-medium">{selectedContact?.name}</h4>
+                                  <p className="text-sm text-gray-500">{selectedContact?.position || 'N/A'} at {selectedContact?.company || 'N/A'}</p>
                                 </div>
                               </div>
                               
-                              <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsIntroDialogOpen(false)}>Cancel</Button>
-                                <Button 
-                                  onClick={handleIntroRequest}
-                                  disabled={!introReason.trim()}
-                                >
-                                  Send Request
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="reason">Why would you like an introduction?</Label>
+                                <Textarea
+                                  id="reason"
+                                  placeholder="Briefly explain the purpose of the introduction and how it might be valuable to both parties."
+                                  value={introReason}
+                                  onChange={(e) => setIntroReason(e.target.value)}
+                                  rows={5}
+                                />
+                              </div>
+                            </div>
+                            
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setIsIntroDialogOpen(false)}>Cancel</Button>
+                              <Button 
+                                onClick={handleIntroRequest}
+                                disabled={!introReason.trim()}
+                              >
+                                Send Request
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </TabsContent>
       </Tabs>
 
-      {/* Edit Contact Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -556,21 +558,20 @@ const NetworkPage = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={editFormData.email}
-                  onChange={handleEditInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
                 <Label htmlFor="linkedin_url">LinkedIn URL</Label>
                 <Input
                   id="linkedin_url"
                   name="linkedin_url"
                   value={editFormData.linkedin_url}
+                  onChange={handleEditInputChange}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  name="website"
+                  value={editFormData.website}
                   onChange={handleEditInputChange}
                 />
               </div>

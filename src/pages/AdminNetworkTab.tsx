@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PlusCircle, User, Mail, Briefcase, Linkedin, MoreHorizontal, Building, Pencil, Image, Trash2 } from 'lucide-react';
+import { PlusCircle, User, Briefcase, Linkedin, MoreHorizontal, Building, Pencil, Image, Trash2, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchNetworkContacts, addNetworkContact, updateNetworkContact } from '../utils/adminApi';
@@ -21,8 +21,8 @@ type NetworkContact = {
   name: string;
   company?: string;
   position?: string;
-  email?: string;
   linkedin_url?: string;
+  website?: string;
   notes?: string;
   is_lp?: boolean;
   created_at: string;
@@ -41,8 +41,8 @@ const AdminNetworkTab = () => {
     name: '',
     company: '',
     position: '',
-    email: '',
     linkedin_url: '',
+    website: '',
     notes: '',
     is_lp: false,
     avatar_url: ''
@@ -70,8 +70,8 @@ const AdminNetworkTab = () => {
       name: '',
       company: '',
       position: '',
-      email: '',
       linkedin_url: '',
+      website: '',
       notes: '',
       is_lp: false,
       avatar_url: ''
@@ -86,8 +86,8 @@ const AdminNetworkTab = () => {
       name: contact.name || '',
       company: contact.company || '',
       position: contact.position || '',
-      email: contact.email || '',
       linkedin_url: contact.linkedin_url || '',
+      website: contact.website || '',
       notes: contact.notes || '',
       is_lp: contact.is_lp || false,
       avatar_url: contact.avatar_url || ''
@@ -224,8 +224,8 @@ const AdminNetworkTab = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Company</TableHead>
                     <TableHead>Position</TableHead>
-                    <TableHead>Email</TableHead>
                     <TableHead>LinkedIn</TableHead>
+                    <TableHead>Website</TableHead>
                     <TableHead>LP</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -257,18 +257,20 @@ const AdminNetworkTab = () => {
                         <TableCell>{contact.company || "—"}</TableCell>
                         <TableCell>{contact.position || "—"}</TableCell>
                         <TableCell>
-                          {contact.email ? (
-                            <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">
-                              {contact.email}
+                          {contact.linkedin_url ? (
+                            <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                              <Linkedin className="h-4 w-4" />
+                              Profile
                             </a>
                           ) : (
                             "—"
                           )}
                         </TableCell>
                         <TableCell>
-                          {contact.linkedin_url ? (
-                            <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                              Profile
+                          {contact.website ? (
+                            <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                              <Globe className="h-4 w-4" />
+                              Website
                             </a>
                           ) : (
                             "—"
@@ -383,19 +385,6 @@ const AdminNetworkTab = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="email" className="flex items-center">
-                  <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
                 <Label htmlFor="linkedin_url" className="flex items-center">
                   <Linkedin className="h-4 w-4 mr-2 text-gray-500" />
                   LinkedIn URL
@@ -405,6 +394,19 @@ const AdminNetworkTab = () => {
                   name="linkedin_url"
                   value={formData.linkedin_url}
                   onChange={handleInputChange}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="website" className="flex items-center">
+                  <Globe className="h-4 w-4 mr-2 text-gray-500" />
+                  Website
+                </Label>
+                <Input
+                  id="website"
+                  name="website"
+                  value={formData.website}
+                  onChange={handleInputChange}
+                  placeholder="Enter organization's website"
                 />
               </div>
             </div>
