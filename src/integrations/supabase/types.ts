@@ -215,6 +215,7 @@ export type Database = {
           notes: string | null
           position: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -229,6 +230,7 @@ export type Database = {
           notes?: string | null
           position?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -243,6 +245,7 @@ export type Database = {
           notes?: string | null
           position?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }

@@ -108,7 +108,7 @@ const AdminNetworkTab = () => {
       }
 
       if (isEditMode && currentContact) {
-        await updateNetworkContact(currentContact.id, formData);
+        await updateNetworkContact(currentContact.id, { ...formData });
         toast({
           title: "Success",
           description: "Network contact updated successfully",
@@ -125,11 +125,11 @@ const AdminNetworkTab = () => {
       setIsDialogOpen(false);
       
       queryClient.invalidateQueries({ queryKey: ['networkContacts'] });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving network contact:", error);
       toast({
         title: "Error",
-        description: `Failed to ${isEditMode ? 'update' : 'add'} network contact`,
+        description: `Failed to ${isEditMode ? 'update' : 'add'} network contact: ${error?.message || ''}`,
         variant: "destructive",
       });
     }
