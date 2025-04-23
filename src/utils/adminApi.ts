@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -114,17 +115,31 @@ export const addNetworkContact = async (contactData: Partial<NetworkContact>) =>
 };
 
 export const updateNetworkContact = async (id: string, contactData: Partial<NetworkContact>) => {
-  const { error } = await supabase
-    .from('network_contacts')
-    .update(contactData)
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error updating network contact:', error);
+  try {
+    console.log('Updating network contact with ID:', id);
+    console.log('Update data:', contactData);
+    
+    if (!id) {
+      throw new Error('Contact ID is required for update');
+    }
+    
+    const { error, data } = await supabase
+      .from('network_contacts')
+      .update(contactData)
+      .eq('id', id)
+      .select();
+    
+    if (error) {
+      console.error('Error updating network contact:', error);
+      throw error;
+    }
+    
+    console.log('Update successful, returned data:', data);
+    return true;
+  } catch (error) {
+    console.error('Exception in updateNetworkContact:', error);
     throw error;
   }
-  
-  return true;
 };
 
 export const updateContactAvatar = async (id: string, avatarUrl: string) => {
@@ -359,4 +374,66 @@ export const assignHelpRequest = async (requestId: string, adminId: string) => {
   }
   
   return true;
+};
+
+// New function for bulk importing network contacts
+export const bulkImportNetworkContacts = async (contacts: Partial<NetworkContact>[]) => {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user?.id) {
+      throw new Error('User not authenticated');
+    }
+    
+    // Add created_by to each contact
+    const contactsWithCreatedBy = contacts.map(contact => ({
+      ...contact,
+      created_by: userData.user.id
+    }));
+    
+    const { data, error } = await supabase
+      .from('network_contacts')
+      .insert(contactsWithCreatedBy);
+    
+    if (error) {
+      console.error('Error bulk importing network contacts:', error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception in bulkImportNetworkContacts:', error);
+    throw error;
+  }
+};
+
+// New function for bulk importing portfolio companies
+export const bulkImportPortfolioCompanies = async (companies: Partial<PortfolioCompany>[]) => {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user?.id) {
+      throw new Error('User not authenticated');
+    }
+    
+    // Add created_by to each company
+    const companiesWithCreatedBy = companies.map(company => ({
+      ...company,
+      created_by: userData.user.id
+    }));
+    
+    const { data, error } = await supabase
+      .from('portfolio_companies')
+      .insert(companiesWithCreatedBy);
+    
+    if (error) {
+      console.error('Error bulk importing portfolio companies:', error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Exception in bulkImportPortfolioCompanies:', error);
+    throw error;
+  }
 };

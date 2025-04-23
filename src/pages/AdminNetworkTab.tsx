@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -7,14 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PlusCircle, User, Briefcase, Linkedin, MoreHorizontal, Building, Pencil, Image, Trash2, Globe } from 'lucide-react';
+import { PlusCircle, User, Briefcase, Linkedin, MoreHorizontal, Building, Pencil, Image, Trash2, Globe, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchNetworkContacts, addNetworkContact, updateNetworkContact } from '../utils/adminApi';
+import { fetchNetworkContacts, addNetworkContact, updateNetworkContact, bulkImportNetworkContacts } from '../utils/adminApi';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
+import CSVImporter from '@/components/CSVImporter';
 
 type NetworkContact = {
   id: string;
@@ -48,6 +50,7 @@ const AdminNetworkTab = () => {
     avatar_url: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const { data: networkContacts = [], isLoading, error } = useQuery({
     queryKey: ['networkContacts'],
@@ -108,6 +111,7 @@ const AdminNetworkTab = () => {
       }
 
       if (isEditMode && currentContact) {
+        console.log('Updating contact:', currentContact.id, formData);
         await updateNetworkContact(currentContact.id, { ...formData });
         toast({
           title: "Success",
@@ -171,17 +175,58 @@ const AdminNetworkTab = () => {
     }
   };
 
+  const handleImportContacts = async (contacts: Partial<NetworkContact>[]) => {
+    try {
+      // Filter out contacts without a name
+      const validContacts = contacts.filter(contact => contact.name && contact.name.trim() !== '');
+      
+      if (validContacts.length === 0) {
+        toast({
+          title: "Error",
+          description: "No valid contacts found in the CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      await bulkImportNetworkContacts(validContacts);
+      
+      toast({
+        title: "Success",
+        description: `Successfully imported ${validContacts.length} contacts`,
+      });
+      
+      setIsImportDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['networkContacts'] });
+    } catch (error: any) {
+      console.error("Error importing contacts:", error);
+      toast({
+        title: "Error",
+        description: `Failed to import contacts: ${error?.message || ''}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const expectedCSVFields = ['name', 'company', 'position', 'email', 'linkedin_url', 'website', 'notes', 'is_lp'];
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">Network Contacts</h2>
-        <Button onClick={() => {
-          resetForm();
-          setIsDialogOpen(true);
-        }}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add Contact
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Import CSV
+          </Button>
+          <Button onClick={() => {
+            resetForm();
+            setIsDialogOpen(true);
+          }}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Contact
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6">
@@ -335,6 +380,7 @@ const AdminNetworkTab = () => {
         </Card>
       )}
 
+      {/* Add/Edit Contact Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -470,6 +516,42 @@ const AdminNetworkTab = () => {
               Cancel
             </Button>
             <Button onClick={handleSaveContact}>{isEditMode ? 'Update' : 'Add'} Contact</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import CSV Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Import Network Contacts</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file to bulk import network contacts. The CSV should include columns for name, company, position, etc.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <CSVImporter
+              onImport={handleImportContacts}
+              expectedFields={expectedCSVFields}
+              entityName="network contacts"
+              buttonText="Select CSV File"
+            />
+            
+            <div className="mt-6 border rounded-md p-4 bg-gray-50">
+              <h3 className="text-sm font-medium mb-2">CSV Format Guidelines:</h3>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
+                <li>First row should contain column headers</li>
+                <li>Required field: <code className="bg-gray-200 px-1 rounded">name</code></li>
+                <li>Optional fields: company, position, email, linkedin_url, website, notes</li>
+                <li>For LP status, use "true" or "false" in the is_lp column</li>
+                <li>Save your file with UTF-8 encoding</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
