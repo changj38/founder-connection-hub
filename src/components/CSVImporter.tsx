@@ -64,15 +64,21 @@ const CSVImporter = ({ onImport, expectedFields, entityName, buttonText = "Impor
     }
     
     // Check for empty required fields in data
-    const requiredFieldIndexes = expectedFields.map(field => parsed.headers.indexOf(field));
+    // For our use case, only 'name' is truly required
+    const nameFieldIndex = parsed.headers.indexOf('name');
     
-    parsed.data.forEach((row, rowIndex) => {
-      requiredFieldIndexes.forEach(fieldIndex => {
-        if (fieldIndex >= 0 && (!row[fieldIndex] || row[fieldIndex].trim() === '')) {
-          errors.push(`Row ${rowIndex + 1}: Empty required field '${parsed.headers[fieldIndex]}'`);
+    if (nameFieldIndex >= 0) {
+      parsed.data.forEach((row, rowIndex) => {
+        if (!row[nameFieldIndex] || row[nameFieldIndex].trim() === '') {
+          errors.push(`Row ${rowIndex + 1}: Missing required 'name' field`);
         }
       });
-    });
+    } else {
+      // If name field is not found in headers but it's required, add error
+      if (expectedFields.includes('name')) {
+        errors.push("The 'name' field is required but was not found in the CSV headers");
+      }
+    }
     
     return {
       valid: errors.length === 0,
@@ -100,7 +106,7 @@ const CSVImporter = ({ onImport, expectedFields, entityName, buttonText = "Impor
       });
       
       return item;
-    });
+    }).filter(item => item.name && item.name.trim() !== ''); // Ensure we only return items with valid names
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +131,13 @@ const CSVImporter = ({ onImport, expectedFields, entityName, buttonText = "Impor
       
       // Transform data to proper format
       const transformedData = transformData(parsed);
+      
+      // Check if we have any valid data with names
+      if (transformedData.length === 0) {
+        setValidationErrors(['No valid data found. Each entry must have a name.']);
+        setIsValidating(false);
+        return;
+      }
       
       setIsValidating(false);
       setIsImporting(true);

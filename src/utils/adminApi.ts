@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -385,9 +384,17 @@ export const bulkImportNetworkContacts = async (contacts: Partial<NetworkContact
       throw new Error('User not authenticated');
     }
     
-    // Add created_by to each contact
-    const contactsWithCreatedBy = contacts.map(contact => ({
+    // Filter to ensure all contacts have a name, which is required by the database
+    const validContacts = contacts.filter(contact => contact.name && contact.name.trim() !== '');
+    
+    if (validContacts.length === 0) {
+      throw new Error('No valid contacts to import. All contacts must have a name.');
+    }
+    
+    // Add created_by to each contact and ensure name is present
+    const contactsWithCreatedBy = validContacts.map(contact => ({
       ...contact,
+      name: contact.name!, // Use non-null assertion as we've filtered for this
       created_by: userData.user.id
     }));
     
@@ -416,9 +423,17 @@ export const bulkImportPortfolioCompanies = async (companies: Partial<PortfolioC
       throw new Error('User not authenticated');
     }
     
-    // Add created_by to each company
-    const companiesWithCreatedBy = companies.map(company => ({
+    // Filter to ensure all companies have a name, which is required by the database
+    const validCompanies = companies.filter(company => company.name && company.name.trim() !== '');
+    
+    if (validCompanies.length === 0) {
+      throw new Error('No valid companies to import. All companies must have a name.');
+    }
+    
+    // Add created_by to each company and ensure name is present
+    const companiesWithCreatedBy = validCompanies.map(company => ({
       ...company,
+      name: company.name!, // Use non-null assertion as we've filtered for this
       created_by: userData.user.id
     }));
     
