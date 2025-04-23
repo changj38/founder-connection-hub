@@ -8,6 +8,7 @@ interface NetworkContact {
   position?: string;
   email?: string;
   linkedin_url?: string;
+  website?: string;
   notes?: string;
   avatar_url?: string;
   is_lp?: boolean;
@@ -39,21 +40,19 @@ interface Profile {
   updated_at: string;
 }
 
-// The base HelpRequest interface that matches the database schema
 interface HelpRequest {
   id: string;
   user_id: string;
   message: string;
   request_type: string;
   status: string;
-  requester_email?: string; // Now present in database schema
+  requester_email?: string;
   resolution_notes?: string;
   assigned_to?: string;
   created_at: string;
   updated_at: string;
 }
 
-// Extended interface that includes profile information
 interface HelpRequestWithProfile extends HelpRequest {
   profiles: Profile | null;
   user_email?: string;
@@ -94,7 +93,6 @@ export const addNetworkContact = async (contactData: Partial<NetworkContact>) =>
     throw new Error('User not authenticated');
   }
   
-  // Ensure name is provided as it's required in the database schema
   if (!contactData.name) {
     throw new Error('Name is required');
   }
@@ -103,7 +101,7 @@ export const addNetworkContact = async (contactData: Partial<NetworkContact>) =>
     .from('network_contacts')
     .insert({
       ...contactData,
-      name: contactData.name, // Explicitly include name to satisfy TypeScript
+      name: contactData.name,
       created_by: userData.user.id
     });
   
@@ -164,7 +162,7 @@ export const fetchPortfolioCompanies = async (): Promise<PortfolioCompany[]> => 
 };
 
 export const addPortfolioCompany = async (companyData: { 
-  name: string;  // Ensuring name is required
+  name: string; 
   description?: string;
   industry?: string;
   founded_year?: number;
@@ -187,7 +185,6 @@ export const addPortfolioCompany = async (companyData: {
       throw new Error('User not authenticated');
     }
     
-    // Ensure name is provided as it's required in the database schema
     if (!companyData.name) {
       console.error('Company name is required but was not provided');
       throw new Error('Company name is required');
@@ -202,7 +199,7 @@ export const addPortfolioCompany = async (companyData: {
       .from('portfolio_companies')
       .insert({
         ...companyData,
-        name: companyData.name,  // Explicitly include name to satisfy TypeScript
+        name: companyData.name,
         created_by: userData.user.id
       })
       .select();
@@ -216,14 +213,13 @@ export const addPortfolioCompany = async (companyData: {
     return data;
   } catch (error) {
     console.error('Exception in addPortfolioCompany:', error);
-    throw error; // Re-throw to be handled by the caller
+    throw error;
   }
 };
 
 // Help requests functions
 export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => {
   try {
-    // Get all help requests directly without attempting to join
     const { data: helpRequests, error } = await supabase
       .from('help_requests')
       .select('*')
@@ -234,20 +230,17 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
       throw error;
     }
     
-    // Return empty array if no help requests found
     if (!helpRequests || helpRequests.length === 0) {
       return [];
     }
     
-    // If user_id is available, fetch profiles separately
     const userIds = helpRequests
-      .filter(req => req.user_id) // Filter out any nulls
+      .filter(req => req.user_id)
       .map(req => req.user_id);
     
     let profilesMap: Record<string, Profile> = {};
     
     if (userIds.length > 0) {
-      // Fetch profiles for these users
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -255,22 +248,17 @@ export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => 
       
       if (profilesError) {
         console.error('Error fetching user profiles:', profilesError);
-        // Continue without profiles rather than failing completely
       } else if (profiles) {
-        // Create a map of user IDs to their profile data
         profiles.forEach(profile => {
           profilesMap[profile.id] = profile;
         });
       }
     }
     
-    // Add profile data to each help request
     const helpRequestsWithProfiles = helpRequests.map((request: HelpRequest) => {
       return {
         ...request,
         profiles: request.user_id && profilesMap[request.user_id] ? profilesMap[request.user_id] : null,
-        // First try to use the requester_email field if available
-        // Then fall back to undefined if neither is available
         user_email: request.requester_email || undefined
       };
     });
@@ -302,7 +290,6 @@ export const updateHelpRequestStatus = async (id: string, status: string, resolu
   return true;
 };
 
-// Function to get help request statistics
 export const getHelpRequestStats = async (): Promise<HelpRequestStats> => {
   try {
     const { data, error } = await supabase
@@ -329,7 +316,6 @@ export const getHelpRequestStats = async (): Promise<HelpRequestStats> => {
       };
     }
     
-    // Calculate statistics
     const stats = {
       total: data.length,
       pending: data.filter(req => req.status === 'Pending').length,
@@ -361,7 +347,6 @@ export const getHelpRequestStats = async (): Promise<HelpRequestStats> => {
   }
 };
 
-// Function to assign a request to an admin
 export const assignHelpRequest = async (requestId: string, adminId: string) => {
   const { error } = await supabase
     .from('help_requests')
