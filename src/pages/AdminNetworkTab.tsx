@@ -565,8 +565,12 @@ const AdminNetworkTab = () => {
               <h3 className="text-sm font-medium mb-2">CSV Format Guidelines:</h3>
               <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
                 <li>First row should contain column headers</li>
-                <li>Required field: <code className="bg-gray-200 px-1 rounded">name</code></li>
+                <li>Required fields: 
+                  <code className="bg-gray-200 px-1 rounded">name</code>, 
+                  <code className="bg-gray-200 px-1 rounded">category</code>
+                </li>
                 <li>Optional fields: company, position, email, linkedin_url, website, notes</li>
+                <li>Valid categories: investor, product_operator, engineering_operator</li>
                 <li>For LP status, use "true" or "false" in the is_lp column</li>
                 <li>Save your file with UTF-8 encoding</li>
               </ul>
