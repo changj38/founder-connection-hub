@@ -49,7 +49,7 @@ const AdminNetworkTab = () => {
     notes: '',
     is_lp: false,
     avatar_url: '',
-    category: 'investor' // Add default category
+    category: 'investor'
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -181,13 +181,15 @@ const AdminNetworkTab = () => {
 
   const handleImportContacts = async (contacts: Partial<NetworkContact>[]) => {
     try {
-      // Filter out contacts without a name
-      const validContacts = contacts.filter(contact => contact.name && contact.name.trim() !== '');
+      const validContacts = contacts.filter(contact => 
+        contact.name && contact.name.trim() !== '' && 
+        contact.category && contact.category.trim() !== ''
+      );
       
       if (validContacts.length === 0) {
         toast({
           title: "Error",
-          description: "No valid contacts found in the CSV file",
+          description: "No valid contacts found in the CSV file. All contacts must have a name and category.",
           variant: "destructive",
         });
         return;
@@ -212,7 +214,7 @@ const AdminNetworkTab = () => {
     }
   };
 
-  const expectedCSVFields = ['name', 'company', 'position', 'email', 'linkedin_url', 'website', 'notes', 'is_lp'];
+  const expectedCSVFields = ['name', 'company', 'position', 'email', 'linkedin_url', 'website', 'notes', 'is_lp', 'category'];
 
   return (
     <div>
@@ -384,7 +386,6 @@ const AdminNetworkTab = () => {
         </Card>
       )}
 
-      {/* Add/Edit Contact Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -544,7 +545,6 @@ const AdminNetworkTab = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Import CSV Dialog */}
       <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>

@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -107,11 +108,16 @@ export const addNetworkContact = async (contactData: Partial<NetworkContact>) =>
     throw new Error('Name is required');
   }
   
+  if (!contactData.category) {
+    throw new Error('Category is required');
+  }
+  
   const { error } = await supabase
     .from('network_contacts')
     .insert({
       ...contactData,
       name: contactData.name,
+      category: contactData.category,
       created_by: userData.user.id
     });
   
@@ -394,17 +400,21 @@ export const bulkImportNetworkContacts = async (contacts: Partial<NetworkContact
       throw new Error('User not authenticated');
     }
     
-    // Filter to ensure all contacts have a name, which is required by the database
-    const validContacts = contacts.filter(contact => contact.name && contact.name.trim() !== '');
+    // Filter to ensure all contacts have a name and category, which are required by the database
+    const validContacts = contacts.filter(contact => 
+      contact.name && contact.name.trim() !== '' && 
+      contact.category && contact.category.trim() !== ''
+    );
     
     if (validContacts.length === 0) {
-      throw new Error('No valid contacts to import. All contacts must have a name.');
+      throw new Error('No valid contacts to import. All contacts must have a name and category.');
     }
     
-    // Add created_by to each contact and ensure name is present
+    // Add created_by to each contact and ensure name and category are present
     const contactsWithCreatedBy = validContacts.map(contact => ({
       ...contact,
-      name: contact.name!, // Use non-null assertion as we've filtered for this
+      name: contact.name!,
+      category: contact.category!,
       created_by: userData.user.id
     }));
     

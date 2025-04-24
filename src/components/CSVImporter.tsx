@@ -1,213 +1,211 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Upload, FileWarning, CheckCircle } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Upload } from 'lucide-react';
+import { CONTACT_CATEGORIES } from '@/utils/adminApi';
 
 interface CSVImporterProps {
-  onImport: (data: any[]) => Promise<void>;
+  onImport: (data: any[]) => void;
   expectedFields: string[];
   entityName: string;
   buttonText?: string;
 }
 
-const CSVImporter = ({ onImport, expectedFields, entityName, buttonText = "Import CSV" }: CSVImporterProps) => {
-  const { toast } = useToast();
-  const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState(0);
+const CSVImporter = ({ onImport, expectedFields, entityName, buttonText = "Select CSV File" }: CSVImporterProps) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [importDisabled, setImportDisabled] = useState(true);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [isValidating, setIsValidating] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   
-  const parseCSV = (text: string): { headers: string[], data: string[][] } => {
-    const rows = text.split(/\r?\n/).filter(row => row.trim());
-    const headers = rows[0].split(',').map(h => h.trim());
+  const isNetworkContactImport = expectedFields.includes('category');
+  const validCategories = CONTACT_CATEGORIES.map(cat => cat.value);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    setError(null);
+    setValidationErrors([]);
     
-    const data = rows.slice(1).map(row => {
-      // Handle quoted values with commas inside them
-      const values: string[] = [];
-      let currentValue = '';
-      let insideQuote = false;
-      
-      for (let i = 0; i < row.length; i++) {
-        const char = row[i];
+    if (!selectedFile) {
+      setFile(null);
+      setPreviewData([]);
+      return;
+    }
+    
+    if (selectedFile.type !== "text/csv" && !selectedFile.name.endsWith('.csv')) {
+      setError("Please upload a CSV file.");
+      setFile(null);
+      return;
+    }
+    
+    setFile(selectedFile);
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const result = parseCSV(text);
         
-        if (char === '"' && (i === 0 || row[i-1] !== '\\')) {
+        if (result.length === 0) {
+          setError("The CSV file is empty.");
+          setPreviewData([]);
+          setImportDisabled(true);
+          return;
+        }
+        
+        // Validate headers
+        const headers = Object.keys(result[0]);
+        const missingFields = expectedFields.filter(field => 
+          field === 'name' && !headers.includes(field)
+        );
+        
+        if (missingFields.length > 0) {
+          setError(`Required fields missing: ${missingFields.join(', ')}`);
+          setPreviewData([]);
+          setImportDisabled(true);
+          return;
+        }
+        
+        // Validate required fields and perform data validation
+        const errors: string[] = [];
+        let hasRequiredFields = true;
+        
+        // Check if any record is missing required fields
+        result.forEach((record, index) => {
+          if (!record.name || record.name.trim() === '') {
+            errors.push(`Row ${index + 1}: Missing required field 'name'`);
+            hasRequiredFields = false;
+          }
+          
+          // For network contacts, validate category
+          if (isNetworkContactImport) {
+            if (!record.category || record.category.trim() === '') {
+              errors.push(`Row ${index + 1}: Missing required field 'category'`);
+              hasRequiredFields = false;
+            } else if (!validCategories.includes(record.category)) {
+              errors.push(`Row ${index + 1}: Invalid category '${record.category}'. Valid options are: ${validCategories.join(', ')}`);
+              hasRequiredFields = false;
+            }
+          }
+        });
+        
+        setValidationErrors(errors);
+        setPreviewData(result);
+        setImportDisabled(!hasRequiredFields);
+      } catch (err: any) {
+        setError(`Error parsing CSV: ${err.message}`);
+        setPreviewData([]);
+        setImportDisabled(true);
+      }
+    };
+    
+    reader.readAsText(selectedFile);
+  };
+
+  const parseCSV = (csvText: string) => {
+    const lines = csvText.split(/\r\n|\n/);
+    const result = [];
+    const headers = lines[0].split(',').map(header => header.trim());
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Split by comma but respect quoted values
+      let row: string[] = [];
+      let insideQuote = false;
+      let currentValue = '';
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        
+        if (char === '"') {
           insideQuote = !insideQuote;
         } else if (char === ',' && !insideQuote) {
-          values.push(currentValue.trim());
+          row.push(currentValue.trim());
           currentValue = '';
         } else {
           currentValue += char;
         }
       }
       
-      // Add the last value
-      values.push(currentValue.trim());
+      row.push(currentValue.trim()); // Add the last value
       
-      return values;
-    });
-    
-    return { headers, data };
-  };
-
-  const validateData = (parsed: { headers: string[], data: string[][] }): { valid: boolean, errors: string[] } => {
-    const errors: string[] = [];
-    
-    // Check if required fields are present
-    const missingFields = expectedFields.filter(field => !parsed.headers.includes(field));
-    if (missingFields.length > 0) {
-      errors.push(`Missing required fields: ${missingFields.join(', ')}`);
-    }
-    
-    // Check for empty required fields in data
-    // For our use case, only 'name' is truly required
-    const nameFieldIndex = parsed.headers.indexOf('name');
-    
-    if (nameFieldIndex >= 0) {
-      parsed.data.forEach((row, rowIndex) => {
-        if (!row[nameFieldIndex] || row[nameFieldIndex].trim() === '') {
-          errors.push(`Row ${rowIndex + 1}: Missing required 'name' field`);
-        }
-      });
-    } else {
-      // If name field is not found in headers but it's required, add error
-      if (expectedFields.includes('name')) {
-        errors.push("The 'name' field is required but was not found in the CSV headers");
-      }
-    }
-    
-    return {
-      valid: errors.length === 0,
-      errors
-    };
-  };
-
-  const transformData = (parsed: { headers: string[], data: string[][] }): any[] => {
-    return parsed.data.map(row => {
-      const item: Record<string, any> = {};
-      
-      parsed.headers.forEach((header, index) => {
-        // Convert to appropriate types
-        let value = row[index] || '';
-        
-        if (header === 'is_lp') {
-          // Convert "true", "yes", "1" to boolean true
-          item[header] = ['true', 'yes', '1'].includes(value.toLowerCase());
-        } else if (['founded_year', 'investment_year'].includes(header) && value) {
-          const year = parseInt(value, 10);
-          item[header] = isNaN(year) ? null : year;
-        } else {
-          item[header] = value || null;
+      const obj: Record<string, any> = {};
+      headers.forEach((header, index) => {
+        if (header && index < row.length) {
+          let value = row[index];
+          
+          // Remove surrounding quotes if present
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.substring(1, value.length - 1);
+          }
+          
+          // Convert "true"/"false" strings to boolean for boolean fields
+          if (header === 'is_lp' || header === 'is_admin') {
+            obj[header] = value.toLowerCase() === 'true';
+          } 
+          // Convert numeric fields to numbers
+          else if (['founded_year', 'investment_year'].includes(header) && !isNaN(Number(value))) {
+            obj[header] = value ? Number(value) : null;
+          }
+          // All other fields remain strings
+          else {
+            obj[header] = value;
+          }
         }
       });
       
-      return item;
-    }).filter(item => item.name && item.name.trim() !== ''); // Ensure we only return items with valid names
+      result.push(obj);
+    }
+    
+    return result;
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    
-    setIsValidating(true);
-    setValidationErrors([]);
-    
-    try {
-      const text = await file.text();
-      const parsed = parseCSV(text);
-      
-      // Validate data
-      const validation = validateData(parsed);
-      
-      if (!validation.valid) {
-        setValidationErrors(validation.errors);
-        setIsValidating(false);
-        return;
-      }
-      
-      // Transform data to proper format
-      const transformedData = transformData(parsed);
-      
-      // Check if we have any valid data with names
-      if (transformedData.length === 0) {
-        setValidationErrors(['No valid data found. Each entry must have a name.']);
-        setIsValidating(false);
-        return;
-      }
-      
-      setIsValidating(false);
-      setIsImporting(true);
-      
-      // Start import process
-      await onImport(transformedData);
-      
-      toast({
-        title: "Import Successful",
-        description: `${transformedData.length} ${entityName} imported successfully.`,
-      });
-      
-    } catch (error: any) {
-      console.error("CSV import error:", error);
-      toast({
-        title: "Import Failed",
-        description: `Error: ${error.message || "Unknown error occurred"}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsImporting(false);
-      setImportProgress(0);
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-  
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
+  const handleImport = useCallback(() => {
+    if (!file || importDisabled) return;
+    onImport(previewData);
+  }, [file, previewData, onImport, importDisabled]);
 
   return (
-    <div>
-      <input
-        type="file"
-        accept=".csv"
-        onChange={handleFileChange}
-        ref={fileInputRef}
-        className="hidden"
-      />
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="csvFile">Upload {entityName} CSV file</Label>
+        <input
+          id="csvFile"
+          type="file"
+          accept=".csv"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        <Button 
+          variant="outline" 
+          className="w-full py-8 border-dashed hover:border-neutral-400 flex flex-col items-center justify-center gap-2"
+          onClick={() => document.getElementById('csvFile')?.click()}
+        >
+          <Upload className="h-6 w-6 text-neutral-500" />
+          <span>{buttonText}</span>
+          <span className="text-sm text-neutral-500">{file ? file.name : '.csv files only'}</span>
+        </Button>
+      </div>
       
-      <Button 
-        onClick={triggerFileInput} 
-        variant="outline"
-        disabled={isImporting || isValidating}
-        className="gap-2"
-      >
-        <Upload size={16} />
-        {buttonText}
-      </Button>
-      
-      {isValidating && (
-        <Card className="mt-4">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-amber-600">
-              <FileWarning size={18} />
-              <span>Validating CSV file...</span>
-            </div>
-          </CardContent>
-        </Card>
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       
       {validationErrors.length > 0 && (
-        <Alert variant="destructive" className="mt-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Validation Errors</AlertTitle>
           <AlertDescription>
-            <div className="font-bold mb-1">CSV Validation Failed:</div>
-            <ul className="list-disc pl-5">
+            <ul className="list-disc pl-4 mt-2">
               {validationErrors.map((error, index) => (
                 <li key={index}>{error}</li>
               ))}
@@ -216,20 +214,48 @@ const CSVImporter = ({ onImport, expectedFields, entityName, buttonText = "Impor
         </Alert>
       )}
       
-      {isImporting && (
-        <Card className="mt-4">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span>Importing data...</span>
-            </div>
-            <Progress value={importProgress} className="h-2" />
-          </CardContent>
-        </Card>
+      {previewData.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium">Preview ({previewData.length} records):</h3>
+          <Card>
+            <CardContent className="p-4 overflow-auto max-h-48">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b">
+                    {Object.keys(previewData[0]).map((header) => (
+                      <th key={header} className="p-2 text-left">{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewData.slice(0, 5).map((row, rowIndex) => (
+                    <tr key={rowIndex} className="border-b">
+                      {Object.entries(row).map(([key, value]) => (
+                        <td key={key} className="p-2">
+                          {typeof value === 'boolean' ? value.toString() : (value as string)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {previewData.length > 5 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {previewData.length - 5} more records...
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Button 
+            onClick={handleImport} 
+            disabled={importDisabled}
+            className="w-full"
+          >
+            Import {previewData.length} {entityName}
+          </Button>
+        </div>
       )}
-      
-      <div className="mt-2 text-xs text-gray-500">
-        <p>Expected CSV format: {expectedFields.join(', ')}</p>
-      </div>
     </div>
   );
 };

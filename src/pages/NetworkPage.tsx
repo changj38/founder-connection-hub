@@ -20,12 +20,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { fetchNetworkContacts, updateNetworkContact } from '../utils/adminApi';
+import { fetchNetworkContacts, updateNetworkContact, CONTACT_CATEGORIES } from '../utils/adminApi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CONTACT_CATEGORIES } from '../utils/adminApi';
 
 type NetworkContact = {
   id: string;
@@ -60,7 +59,8 @@ const NetworkPage = () => {
     linkedin_url: '',
     website: '',
     notes: '',
-    is_lp: false
+    is_lp: false,
+    category: 'investor'
   });
 
   const { data: networkContactsRaw = [], isLoading, error } = useQuery({
@@ -81,7 +81,7 @@ const NetworkPage = () => {
   
   const categories = uniqueCategories.map(category => ({
     value: category,
-    label: category === 'all' ? 'All' : category
+    label: category === 'all' ? 'All' : CONTACT_CATEGORIES.find(cat => cat.value === category)?.label || category
   }));
 
   const filteredContacts = networkContacts.filter(contact => {
@@ -129,7 +129,8 @@ const NetworkPage = () => {
       linkedin_url: contact.linkedin_url || '',
       website: contact.website || '',
       notes: contact.notes || '',
-      is_lp: contact.is_lp || false
+      is_lp: contact.is_lp || false,
+      category: contact.category || 'investor'
     });
     setIsEditDialogOpen(true);
   };
@@ -538,6 +539,28 @@ const NetworkPage = () => {
                 required
               />
             </div>
+
+            {isAdmin() && (
+              <div className="grid gap-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select
+                  value={editFormData.category}
+                  onValueChange={(value) => setEditFormData({ ...editFormData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTACT_CATEGORIES.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="company">Company</Label>
@@ -588,21 +611,6 @@ const NetworkPage = () => {
                 rows={3}
               />
             </div>
-            {isAdmin() && (
-              <div className="grid gap-2">
-                <Label htmlFor="is_lp">Limited Partner (LP)</Label>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_lp"
-                    checked={editFormData.is_lp}
-                    onCheckedChange={(checked) => setEditFormData({ ...editFormData, is_lp: checked })}
-                  />
-                  <Label htmlFor="is_lp">
-                    {editFormData.is_lp ? 'Yes' : 'No'}
-                  </Label>
-                </div>
-              </div>
-            )}
           </div>
           
           <DialogFooter>
