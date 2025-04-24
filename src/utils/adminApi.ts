@@ -12,6 +12,7 @@ interface NetworkContact {
   notes?: string;
   avatar_url?: string;
   is_lp?: boolean;
+  category: string;
   created_at: string;
   created_by: string;
   updated_at: string;
@@ -70,6 +71,15 @@ interface HelpRequestStats {
     other: number;
   };
 }
+
+export const CONTACT_CATEGORIES = [
+  { value: 'investor', label: 'Investor' },
+  { value: 'product_operator', label: 'Product Operator' },
+  { value: 'engineering_operator', label: 'Engineering Operator' },
+  { value: 'growth_operator', label: 'Growth Operator' },
+  { value: 'community_builder', label: 'Community Builder' },
+  { value: 'founder', label: 'Founder' }
+] as const;
 
 // Network contacts functions
 export const fetchNetworkContacts = async (): Promise<NetworkContact[]> => {

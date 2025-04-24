@@ -204,6 +204,7 @@ export type Database = {
       network_contacts: {
         Row: {
           avatar_url: string | null
+          category: string
           company: string | null
           created_at: string
           created_by: string
@@ -219,6 +220,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          category: string
           company?: string | null
           created_at?: string
           created_by: string
@@ -234,6 +236,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          category?: string
           company?: string | null
           created_at?: string
           created_by?: string

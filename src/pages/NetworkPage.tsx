@@ -24,6 +24,8 @@ import { fetchNetworkContacts, updateNetworkContact } from '../utils/adminApi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CONTACT_CATEGORIES } from '../utils/adminApi';
 
 type NetworkContact = {
   id: string;

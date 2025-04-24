@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,12 +10,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { PlusCircle, User, Briefcase, Linkedin, MoreHorizontal, Building, Pencil, Image, Trash2, Globe, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchNetworkContacts, addNetworkContact, updateNetworkContact, bulkImportNetworkContacts } from '../utils/adminApi';
+import { fetchNetworkContacts, addNetworkContact, updateNetworkContact, bulkImportNetworkContacts, CONTACT_CATEGORIES } from '../utils/adminApi';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import CSVImporter from '@/components/CSVImporter';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 type NetworkContact = {
   id: string;
@@ -31,6 +31,7 @@ type NetworkContact = {
   updated_at: string;
   created_by: string;
   avatar_url?: string;
+  category: string;
 };
 
 const AdminNetworkTab = () => {
@@ -47,7 +48,8 @@ const AdminNetworkTab = () => {
     website: '',
     notes: '',
     is_lp: false,
-    avatar_url: ''
+    avatar_url: '',
+    category: 'investor' // Add default category
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -77,7 +79,8 @@ const AdminNetworkTab = () => {
       website: '',
       notes: '',
       is_lp: false,
-      avatar_url: ''
+      avatar_url: '',
+      category: 'investor'
     });
     setIsEditMode(false);
     setCurrentContact(null);
@@ -93,7 +96,8 @@ const AdminNetworkTab = () => {
       website: contact.website || '',
       notes: contact.notes || '',
       is_lp: contact.is_lp || false,
-      avatar_url: contact.avatar_url || ''
+      avatar_url: contact.avatar_url || '',
+      category: contact.category || 'investor'
     });
     setIsEditMode(true);
     setIsDialogOpen(true);
@@ -403,6 +407,26 @@ const AdminNetworkTab = () => {
                 required
               />
             </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="category">Category *</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTACT_CATEGORIES.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="company" className="flex items-center">
