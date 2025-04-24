@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { HelpCircle, Users, Building2, MessageSquare, ClipboardList, MessageCircle } from 'lucide-react';
 import { fetchUserRequests, Request } from '../utils/requestsApi';
+
 const DashboardPage = () => {
   const {
     currentUser
   } = useAuth();
 
-  // Use React Query to fetch user requests
   const {
     data: requestData = [],
     isLoading,
@@ -23,10 +23,10 @@ const DashboardPage = () => {
     queryFn: fetchUserRequests
   });
 
-  // Effect to log request data for debugging
   useEffect(() => {
     console.log('Request data received in component:', requestData);
   }, [requestData]);
+
   const formatDate = (date?: Date | string) => {
     if (!date) return 'N/A';
     return new Intl.DateTimeFormat('en-US', {
@@ -35,6 +35,7 @@ const DashboardPage = () => {
       timeZone: 'GMT'
     }).format(new Date(date));
   };
+
   const getRequestTypeLabel = (type: string) => {
     switch (type) {
       case 'intro':
@@ -45,10 +46,10 @@ const DashboardPage = () => {
         return 'Request';
     }
   };
+
   const filteredPortfolioRequests = requestData.filter(request => request.type === 'portfolio');
   const filteredIntroRequests = requestData.filter(request => request.type === 'intro');
 
-  // Show appropriate status label with color
   const getStatusDisplay = (status: string) => {
     switch (status) {
       case 'completed':
@@ -67,7 +68,6 @@ const DashboardPage = () => {
     }
   };
 
-  // Format request details display
   const formatRequestDetails = (request: Request) => {
     return <div>
         <div className="text-sm text-gray-600">{request.details}</div>
@@ -80,145 +80,146 @@ const DashboardPage = () => {
           </div>}
       </div>;
   };
-  return <div className="space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight">Welcome back, <span className="text-daydream-blue">{currentUser?.fullName}</span></h1>
-        <p className="text-gray-500 mt-1 flex items-center">
-          <span className="mr-1">Last login:</span> {formatDate(currentUser?.lastLogin)} GMT
+
+  return (
+    <div className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-medium tracking-tight text-ramp-900">
+          Welcome back, <span className="text-ramp-accent">{currentUser?.fullName}</span>
+        </h1>
+        <p className="text-ramp-500">
+          Last login: {formatDate(currentUser?.lastLogin)} GMT
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl flex items-center">
-              <HelpCircle className="w-5 h-5 mr-2 text-indigo-500" />
-              Portfolio Ask
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col flex-grow">
-            <p className="text-gray-600 mb-4 flex-grow">Have a question to ask our DayDream Team? Ask Here!</p>
-            <div className="mt-auto pb-3">
-              <Link to="/help" className="block">
-                <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
-                  Ask Now
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {[
+          {
+            title: 'Portfolio Ask',
+            description: 'Have a question to ask our DayDream Team? Ask Here!',
+            icon: <HelpCircle className="w-5 h-5" />,
+            link: '/help',
+            buttonText: 'Ask Now'
+          },
+          {
+            title: 'Access CRM',
+            description: 'Browse our network of contacts and request introductions.',
+            icon: <Users className="w-5 h-5" />,
+            link: '/network',
+            buttonText: 'View Contacts'
+          },
+          {
+            title: 'Portfolio Companies',
+            description: 'Explore our portfolio and connect with founders.',
+            icon: <Building2 className="w-5 h-5" />,
+            link: '/portfolio',
+            buttonText: 'View Portfolio'
+          },
+          {
+            title: 'Founder Forum',
+            description: 'Connect with other founders and share experiences.',
+            icon: <MessageSquare className="w-5 h-5" />,
+            link: '/forum',
+            buttonText: 'Join Discussion'
+          }
+        ].map((item, index) => (
+          <Card key={index} className="bg-white border-ramp-200 hover:border-ramp-accent transition-colors duration-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2 text-ramp-800">
+                {React.cloneElement(item.icon, { className: 'text-ramp-accent' })}
+                {item.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col h-[calc(100%-4rem)]">
+              <p className="text-sm text-ramp-600 mb-4 flex-grow">{item.description}</p>
+              <Link to={item.link} className="block mt-auto">
+                <Button 
+                  className="w-full bg-ramp-accent hover:bg-ramp-accent/90 text-white"
+                  variant="default"
+                >
+                  {item.buttonText}
                 </Button>
               </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl flex items-center">
-              <Users className="w-5 h-5 mr-2 text-indigo-500" />
-              Access CRM
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col flex-grow">
-            <p className="text-gray-600 mb-4 flex-grow">
-              Browse our network of contacts and request introductions to potential partners.
-            </p>
-            <div className="mt-auto pb-3">
-              <Link to="/network" className="block">
-                <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
-                  View Contacts
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl flex items-center">
-              <Building2 className="w-5 h-5 mr-2 text-indigo-500" />
-              Portfolio Companies
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col flex-grow">
-            <p className="text-gray-600 mb-4 flex-grow">
-              Explore our portfolio of companies and connect with founders in our network.
-            </p>
-            <div className="mt-auto pb-3">
-              <Link to="/portfolio" className="block">
-                <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
-                  View Portfolio
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl flex items-center">
-              <MessageSquare className="w-5 h-5 mr-2 text-indigo-500" />
-              Founder Forum
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col flex-grow">
-            <p className="text-gray-600 mb-4 flex-grow">
-              Connect with other founders, share experiences, and ask questions in our community forum.
-            </p>
-            <div className="mt-auto pb-3">
-              <Link to="/forum" className="block">
-                <Button variant="sleek" className="w-full py-3 text-base font-medium shadow-sm">
-                  Join Discussion
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <Card className="overflow-hidden border-gray-200">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <ClipboardList className="w-5 h-5 mr-2" />
+      <Card className="border-ramp-200">
+        <CardHeader className="border-b border-ramp-100 bg-ramp-50">
+          <CardTitle className="text-lg flex items-center gap-2 text-ramp-800">
+            <ClipboardList className="w-5 h-5 text-ramp-accent" />
             Your Requests
           </CardTitle>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-ramp-500">
             Track the status of your portfolio asks and introduction requests
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="flex justify-end mb-4">
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
+        <CardContent className="p-0">
+          <div className="p-4 border-b border-ramp-100">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetch()}
+              className="ml-auto block border-ramp-200 text-ramp-600 hover:text-ramp-700 hover:bg-ramp-50"
+            >
               Refresh Requests
             </Button>
           </div>
-          <Tabs defaultValue="all">
-            <TabsList className="w-full justify-start mb-4">
-              <TabsTrigger value="all">All Requests</TabsTrigger>
-              <TabsTrigger value="portfolio">Portfolio Asks</TabsTrigger>
-              <TabsTrigger value="intro">Intro Requests</TabsTrigger>
-            </TabsList>
-            
+          
+          <Tabs defaultValue="all" className="w-full">
+            <div className="px-4 border-b border-ramp-100">
+              <TabsList className="w-full justify-start -mb-px">
+                <TabsTrigger 
+                  value="all"
+                  className="data-[state=active]:border-ramp-accent data-[state=active]:text-ramp-accent"
+                >
+                  All Requests
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="portfolio"
+                  className="data-[state=active]:border-ramp-accent data-[state=active]:text-ramp-accent"
+                >
+                  Portfolio Asks
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="intro"
+                  className="data-[state=active]:border-ramp-accent data-[state=active]:text-ramp-accent"
+                >
+                  Intro Requests
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
             <TabsContent value="all" className="mt-0">
-              {isLoading ? <div className="text-center py-10 border rounded-md">
-                  <p className="text-gray-500">Loading requests...</p>
-                </div> : error ? <div className="text-center py-10 border rounded-md">
-                  <p className="text-red-500">Failed to load requests</p>
-                </div> : requestData.length > 0 ? <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-ramp-accent"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <p className="text-ramp-error">Failed to load requests</p>
+                </div>
+              ) : requestData.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-ramp-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Details</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-ramp-100">
                       {requestData.map(request => <tr key={request.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-ramp-500">
                             {formatDate(request.date)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-ramp-900">
                             {getRequestTypeLabel(request.type)}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
+                          <td className="px-6 py-4 text-sm text-ramp-500">
                             {formatRequestDetails(request)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -227,31 +228,39 @@ const DashboardPage = () => {
                         </tr>)}
                     </tbody>
                   </table>
-                </div> : <div className="text-center py-10 border rounded-md">
-                  <p className="text-gray-500">No requests found</p>
-                </div>}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-ramp-500">No requests found</p>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="portfolio" className="mt-0">
-              {isLoading ? <div className="text-center py-10 border rounded-md">
-                  <p className="text-gray-500">Loading requests...</p>
-                </div> : error ? <div className="text-center py-10 border rounded-md">
-                  <p className="text-red-500">Failed to load requests</p>
-                </div> : filteredPortfolioRequests.length > 0 ? <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-ramp-accent"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <p className="text-ramp-error">Failed to load requests</p>
+                </div>
+              ) : filteredPortfolioRequests.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-ramp-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Details</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-ramp-100">
                       {filteredPortfolioRequests.map(request => <tr key={request.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-ramp-500">
                             {formatDate(request.date)}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
+                          <td className="px-6 py-4 text-sm text-ramp-500">
                             {formatRequestDetails(request)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -260,39 +269,47 @@ const DashboardPage = () => {
                         </tr>)}
                     </tbody>
                   </table>
-                </div> : <div className="text-center py-10 border rounded-md">
-                  <p className="text-gray-500">No portfolio asks found</p>
-                </div>}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-ramp-500">No portfolio asks found</p>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="intro" className="mt-0">
-              {isLoading ? <div className="text-center py-10 border rounded-md">
-                  <p className="text-gray-500">Loading requests...</p>
-                </div> : error ? <div className="text-center py-10 border rounded-md">
-                  <p className="text-red-500">Failed to load requests</p>
-                </div> : filteredIntroRequests.length > 0 ? <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-ramp-accent"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <p className="text-ramp-error">Failed to load requests</p>
+                </div>
+              ) : filteredIntroRequests.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-ramp-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Company</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-ramp-500 uppercase tracking-wider">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-ramp-100">
                       {filteredIntroRequests.map(request => <tr key={request.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-ramp-500">
                             {formatDate(request.date)}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
+                          <td className="px-6 py-4 text-sm text-ramp-500">
                             <div>
-                              <div className="text-sm text-gray-600">{request.company}</div>
+                              <div className="text-sm text-ramp-600">{request.company}</div>
                               {request.resolution_notes && <div className="mt-2 pt-2 border-t border-gray-100">
-                                  <div className="flex items-center text-sm text-gray-600 mb-1">
+                                  <div className="flex items-center text-sm text-ramp-600 mb-1">
                                     <MessageCircle className="h-4 w-4 mr-1 text-indigo-500" />
                                     <span className="font-medium">Admin response:</span>
                                   </div>
-                                  <div className="text-sm text-gray-700 pl-5">{request.resolution_notes}</div>
+                                  <div className="text-sm text-ramp-700 pl-5">{request.resolution_notes}</div>
                                 </div>}
                             </div>
                           </td>
@@ -302,13 +319,18 @@ const DashboardPage = () => {
                         </tr>)}
                     </tbody>
                   </table>
-                </div> : <div className="text-center py-10 border rounded-md">
-                  <p className="text-gray-500">No intro requests found</p>
-                </div>}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-ramp-500">No intro requests found</p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default DashboardPage;
