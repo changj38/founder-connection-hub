@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -179,8 +180,10 @@ const AdminNetworkTab = () => {
     }
   };
 
-  const handleImportContacts = async (contacts: Partial<NetworkContact>[]) => {
+  const handleImportContacts = async (contacts: any[]) => {
     try {
+      console.log('Starting import process with contacts:', contacts);
+      
       const validContacts = contacts.filter(contact => 
         contact.name && contact.name.trim() !== '' && 
         contact.category && contact.category.trim() !== ''
@@ -195,6 +198,7 @@ const AdminNetworkTab = () => {
         return;
       }
       
+      console.log('Valid contacts to import:', validContacts);
       await bulkImportNetworkContacts(validContacts);
       
       toast({
