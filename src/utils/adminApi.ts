@@ -394,12 +394,9 @@ export const assignHelpRequest = async (requestId: string, adminId: string) => {
 // New function for bulk importing network contacts
 export const bulkImportNetworkContacts = async (contacts: Partial<NetworkContact>[]) => {
   try {
-    console.log('Starting bulk import with contacts:', contacts);
-    
     const { data: userData } = await supabase.auth.getUser();
     
     if (!userData?.user?.id) {
-      console.error('User not authenticated when trying to import contacts');
       throw new Error('User not authenticated');
     }
     
@@ -408,8 +405,6 @@ export const bulkImportNetworkContacts = async (contacts: Partial<NetworkContact
       contact.name && contact.name.trim() !== '' && 
       contact.category && contact.category.trim() !== ''
     );
-    
-    console.log('Valid contacts for import:', validContacts.length);
     
     if (validContacts.length === 0) {
       throw new Error('No valid contacts to import. All contacts must have a name and category.');
@@ -423,20 +418,16 @@ export const bulkImportNetworkContacts = async (contacts: Partial<NetworkContact
       created_by: userData.user.id
     }));
     
-    console.log('Attempting to insert contacts with data:', contactsWithCreatedBy);
-    
     const { data, error } = await supabase
       .from('network_contacts')
-      .insert(contactsWithCreatedBy)
-      .select();
+      .insert(contactsWithCreatedBy);
     
     if (error) {
-      console.error('Supabase error bulk importing network contacts:', error);
+      console.error('Error bulk importing network contacts:', error);
       throw error;
     }
     
-    console.log('Successfully imported contacts:', data);
-    return data;
+    return true;
   } catch (error) {
     console.error('Exception in bulkImportNetworkContacts:', error);
     throw error;
@@ -468,15 +459,14 @@ export const bulkImportPortfolioCompanies = async (companies: Partial<PortfolioC
     
     const { data, error } = await supabase
       .from('portfolio_companies')
-      .insert(companiesWithCreatedBy)
-      .select();
+      .insert(companiesWithCreatedBy);
     
     if (error) {
       console.error('Error bulk importing portfolio companies:', error);
       throw error;
     }
     
-    return data;
+    return true;
   } catch (error) {
     console.error('Exception in bulkImportPortfolioCompanies:', error);
     throw error;

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -13,6 +13,7 @@ import {
   HelpCircle, 
   LogOut,
   UserRound,
+  MapPin,
   Shield
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,12 +43,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     { path: '/help', label: 'Help', icon: <HelpCircle className="w-5 h-5" /> },
   ];
 
+  // Admin dashboard button will only be shown if the user is an admin
   const showAdminButton = isAdmin && isAdmin();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
@@ -59,6 +61,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 />
               </Link>
               
+              {/* Desktop nav - Shifted left */}
               <div className="hidden md:flex items-center space-x-1">
                 {navItems.map((item) => (
                   <Link
@@ -75,6 +78,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   </Link>
                 ))}
                 
+                {/* Admin Dashboard Link - Only visible to admins */}
                 {showAdminButton && (
                   <Link
                     to="/admin"
@@ -92,6 +96,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
             
             <div className="flex items-center gap-4">
+              {/* Profile Menu */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -127,6 +132,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       Update Profile
                     </Button>
                     
+                    {/* Admin Dashboard - Only visible to admins (in profile menu) */}
                     {showAdminButton && (
                       <Button
                         variant="ghost"
@@ -150,6 +156,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 </PopoverContent>
               </Popover>
 
+              {/* Mobile menu button */}
               <div className="md:hidden">
                 <button
                   className="p-2 rounded-md text-gray-500 hover:text-gray-700 focus:outline-none"
@@ -163,6 +170,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
 
+      {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="fixed inset-0 bg-black bg-opacity-25" onClick={() => setMobileMenuOpen(false)} />
@@ -199,6 +207,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 </Link>
               ))}
               
+              {/* Admin Dashboard Link - Mobile, only visible to admins */}
               {showAdminButton && (
                 <Link
                   to="/admin"
@@ -238,6 +247,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       )}
 
+      {/* Main content */}
       <main className="flex-1 overflow-y-auto p-6">
         {children}
       </main>
