@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,53 +20,50 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import NotFound from "./pages/NotFound";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
-import { ThemeProvider } from "next-themes";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/network" element={<NetworkPage />} />
-                <Route path="/portfolio" element={<PortfolioPage />} />
-                <Route path="/forum" element={<ForumPage />} />
-                <Route path="/help" element={<HelpPage />} />
-                <Route path="/profile/settings" element={<ProfileSettingsPage />} />
-              </Route>
-              
-              {/* Admin Routes */}
-              <Route element={<AdminRoute />}>
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/admin/portfolio" element={<AdminPage />} />
-                <Route path="/admin/forum" element={<AdminPage />} />
-                <Route path="/admin/help" element={<AdminPage />} />
-                <Route path="/admin/users" element={<AdminPage />} />
-                <Route path="/admin/authorized" element={<AdminPage />} />
-                <Route path="/admin/settings" element={<AdminPage />} />
-              </Route>
-              
-              {/* Catch-all Route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/network" element={<NetworkPage />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/forum" element={<ForumPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/profile/settings" element={<ProfileSettingsPage />} />
+            </Route>
+            
+            {/* Admin Routes */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/portfolio" element={<AdminPage />} />
+              <Route path="/admin/forum" element={<AdminPage />} />
+              <Route path="/admin/help" element={<AdminPage />} />
+              <Route path="/admin/users" element={<AdminPage />} />
+              <Route path="/admin/authorized" element={<AdminPage />} />
+              <Route path="/admin/settings" element={<AdminPage />} />
+            </Route>
+            
+            {/* Catch-all Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

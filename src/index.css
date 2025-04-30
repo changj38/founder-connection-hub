@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap');
 
@@ -27,28 +28,6 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 220 10% 12%;
-    --foreground: 0 0% 100%;  /* Changed to pure white */
-    --card: 220 10% 15%;
-    --card-foreground: 0 0% 100%;  /* Changed to pure white */
-    --popover: 220 10% 12%;
-    --popover-foreground: 0 0% 100%;  /* Changed to pure white */
-    --primary: 0 0% 100%;  /* Changed to pure white */
-    --primary-foreground: 220 10% 12%;
-    --secondary: 220 10% 18%;
-    --secondary-foreground: 0 0% 100%;  /* Changed to pure white */
-    --muted: 220 10% 18%;
-    --muted-foreground: 0 0% 85%;  /* Lightened for better visibility */
-    --accent: 220 10% 18%;
-    --accent-foreground: 0 0% 100%;  /* Changed to pure white */
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;  /* Changed to pure white */
-    --border: 220 10% 20%;
-    --input: 220 10% 20%;
-    --ring: 0 0% 100%;  /* Changed to pure white */
   }
 
   * {
