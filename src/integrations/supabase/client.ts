@@ -31,18 +31,11 @@ export const supabase = createClient<Database>(
     },
     db: {
       // Connection pooling settings
-      schema: 'public',
-      // Set reasonable pool size
-      poolSize: 10
+      schema: 'public'
     },
     realtime: {
       // Improve realtime connections
-      timeout: 30000,
-      // Auto reconnect if connection drops
-      eventsPerSecond: 10
-    },
-    // Configure retries for reliability
-    maxRetryCount: 3,
-    retryDelay: 1000 // Start with 1 second retry delay
+      timeout: 30000
+    }
   }
 );

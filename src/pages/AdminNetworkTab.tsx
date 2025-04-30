@@ -143,7 +143,7 @@ const AdminNetworkTab = () => {
     }
   };
 
-  const handleLPToggle = (checked) => {
+  const handleLPToggle = (checked: boolean) => {
     setFormData({ ...formData, is_lp: checked });
   };
 
@@ -160,7 +160,7 @@ const AdminNetworkTab = () => {
       const { error } = await supabase
         .from('network_contacts')
         .delete()
-        .eq('id', contactId);
+        .eq('id', contactId as any);
 
       if (error) throw error;
 
@@ -235,6 +235,7 @@ const AdminNetworkTab = () => {
         </div>
       </div>
 
+      {/* Search Card */}
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="relative">
@@ -255,6 +256,7 @@ const AdminNetworkTab = () => {
         </CardContent>
       </Card>
 
+      {/* Contacts Table */}
       {isLoading ? (
         <div className="flex justify-center my-8">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
@@ -386,6 +388,7 @@ const AdminNetworkTab = () => {
         </Card>
       )}
 
+      {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -545,6 +548,7 @@ const AdminNetworkTab = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Import Dialog */}
       <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>

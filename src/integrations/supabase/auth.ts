@@ -1,6 +1,6 @@
-
 import { supabase } from './client';
 import { toast } from 'sonner';
+import { Database } from './types';
 
 export interface AuthUser {
   id: string;
@@ -27,7 +27,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', session.user.id)
+    .eq('id', session.user.id as any)
     .single();
   
   if (profileError) {
@@ -36,6 +36,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   
   console.log('Profile data:', profile);
   
+  // Use optional chaining to safely access properties
   return {
     id: session.user.id,
     email: session.user.email || '',
@@ -63,7 +64,7 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('authorized_emails')
       .select('*')
-      .eq('email', normalizedEmail);
+      .eq('email', normalizedEmail as any);
     
     if (error) {
       console.error('Error checking authorized email:', error);
