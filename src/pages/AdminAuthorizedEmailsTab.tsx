@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +14,6 @@ import {
 import { toast } from 'sonner';
 import { Mail, Plus, UserX, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Database } from '@/integrations/supabase/types';
 
 interface AuthorizedEmail {
   id: string;
@@ -58,7 +56,7 @@ const AdminAuthorizedEmailsTab = () => {
       console.log('Adding email:', email);
       const { data, error } = await supabase
         .from('authorized_emails')
-        .insert([{ email: email.toLowerCase() as string }]);
+        .insert([{ email: email.toLowerCase() }]);
       
       if (error) {
         console.error('Error adding email:', error);
@@ -86,7 +84,7 @@ const AdminAuthorizedEmailsTab = () => {
       const { error } = await supabase
         .from('authorized_emails')
         .delete()
-        .eq('id', id as string);
+        .eq('id', id);
       
       if (error) {
         console.error('Error removing email:', error);

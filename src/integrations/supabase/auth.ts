@@ -27,7 +27,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', session.user.id as string)
+    .eq('id', session.user.id)
     .single();
   
   if (profileError) {
@@ -63,7 +63,7 @@ export const checkEmailAuthorized = async (email: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('authorized_emails')
       .select('*')
-      .eq('email', normalizedEmail as string);
+      .eq('email', normalizedEmail);
     
     if (error) {
       console.error('Error checking authorized email:', error);

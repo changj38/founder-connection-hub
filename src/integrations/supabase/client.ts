@@ -31,11 +31,15 @@ export const supabase = createClient<Database>(
     },
     db: {
       // Connection pooling settings
-      schema: 'public'
+      schema: 'public',
+      // Set reasonable pool size
+      poolSize: 10
     },
     realtime: {
       // Improve realtime connections
-      timeout: 30000
+      timeout: 30000,
+      // Auto reconnect if connection drops
+      eventsPerSecond: 10
     },
     // Configure retries for reliability
     maxRetryCount: 3,
