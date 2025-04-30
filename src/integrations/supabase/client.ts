@@ -17,25 +17,6 @@ export const supabase = createClient<Database>(
       persistSession: true,
       autoRefreshToken: true,
       storage: localStorage
-    },
-    global: {
-      // Add request handlers
-      fetch: (url, options) => {
-        // Configuring reasonable request timeouts
-        return fetch(url, {
-          ...options,
-          // 30 second timeout for requests
-          signal: options?.signal || AbortSignal.timeout(30000)
-        });
-      }
-    },
-    db: {
-      // Connection pooling settings
-      schema: 'public'
-    },
-    realtime: {
-      // Improve realtime connections
-      timeout: 30000
     }
   }
 );

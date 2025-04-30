@@ -30,7 +30,7 @@ const AdminForumTab = () => {
       const { error } = await supabase
         .from('forum_posts')
         .delete()
-        .eq('id', postId as any);
+        .eq('id', postId);
 
       if (error) throw error;
 
@@ -47,7 +47,7 @@ const AdminForumTab = () => {
       const { error } = await supabase
         .from('forum_comments')
         .delete()
-        .eq('id', commentId as any);
+        .eq('id', commentId);
 
       if (error) throw error;
 
