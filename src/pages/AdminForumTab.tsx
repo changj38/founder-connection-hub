@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +29,7 @@ const AdminForumTab = () => {
       const { error } = await supabase
         .from('forum_posts')
         .delete()
-        .eq('id', postId);
+        .eq('id', postId as string);
 
       if (error) throw error;
 
@@ -47,7 +46,7 @@ const AdminForumTab = () => {
       const { error } = await supabase
         .from('forum_comments')
         .delete()
-        .eq('id', commentId);
+        .eq('id', commentId as string);
 
       if (error) throw error;
 
