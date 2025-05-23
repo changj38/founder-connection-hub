@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import ErrorBoundary from "./components/ErrorBoundary";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -22,70 +21,51 @@ import AdminRoute from "./components/AdminRoute";
 import NotFound from "./pages/NotFound";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (failureCount, error) => {
-        console.log('Query retry attempt:', failureCount, error);
-        return failureCount < 2;
-      },
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <ErrorBoundary>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                
-                {/* Protected Routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/network" element={<NetworkPage />} />
-                  <Route path="/portfolio" element={<PortfolioPage />} />
-                  <Route path="/forum" element={<ForumPage />} />
-                  <Route path="/help" element={<HelpPage />} />
-                  <Route path="/profile/settings" element={<ProfileSettingsPage />} />
-                </Route>
-                
-                {/* Admin Routes */}
-                <Route element={<AdminRoute />}>
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/admin/portfolio" element={<AdminPage />} />
-                  <Route path="/admin/forum" element={<AdminPage />} />
-                  <Route path="/admin/help" element={<AdminPage />} />
-                  <Route path="/admin/users" element={<AdminPage />} />
-                  <Route path="/admin/authorized" element={<AdminPage />} />
-                  <Route path="/admin/settings" element={<AdminPage />} />
-                </Route>
-                
-                {/* Catch-all Route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </ErrorBoundary>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/network" element={<NetworkPage />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/forum" element={<ForumPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/profile/settings" element={<ProfileSettingsPage />} />
+            </Route>
+            
+            {/* Admin Routes */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/portfolio" element={<AdminPage />} />
+              <Route path="/admin/forum" element={<AdminPage />} />
+              <Route path="/admin/help" element={<AdminPage />} />
+              <Route path="/admin/users" element={<AdminPage />} />
+              <Route path="/admin/authorized" element={<AdminPage />} />
+              <Route path="/admin/settings" element={<AdminPage />} />
+            </Route>
+            
+            {/* Catch-all Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
 );
 
 export default App;

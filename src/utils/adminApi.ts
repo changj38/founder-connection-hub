@@ -1,53 +1,66 @@
-import { supabase } from '@/integrations/supabase/client';
 
-export type HelpRequest = {
-  id: string;
-  created_at: string;
-  user_id: string;
-  request_type: string;
-  message: string;
-  status: string;
-  requester_email?: string;
-  resolution_notes?: string;
-  assigned_to?: string;
-  updated_at: string;
-  profiles: {
-    id: string;
-    full_name?: string;
-    company?: string;
-    role?: string;
-  } | null;
-  user_email?: string;
-};
+import { supabase } from '../integrations/supabase/client';
 
-export type NetworkContact = {
+// Define types
+interface NetworkContact {
   id: string;
-  created_at: string;
   name: string;
   company?: string;
   position?: string;
   email?: string;
   linkedin_url?: string;
+  website?: string;
   notes?: string;
   avatar_url?: string;
-  website?: string;
-  category: string;
   is_lp?: boolean;
-};
-
-export type PortfolioCompany = {
-  id: string;
+  category: string;
   created_at: string;
+  created_by: string;
+  updated_at: string;
+}
+
+interface PortfolioCompany {
+  id: string;
   name: string;
   description?: string;
-  website?: string;
   industry?: string;
   founded_year?: number;
   investment_year?: number;
+  website?: string;
   logo_url?: string;
-};
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+}
 
-export type HelpRequestStats = {
+interface Profile {
+  id: string;
+  full_name?: string;
+  company?: string;
+  role?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface HelpRequest {
+  id: string;
+  user_id: string;
+  message: string;
+  request_type: string;
+  status: string;
+  requester_email?: string;
+  resolution_notes?: string;
+  assigned_to?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface HelpRequestWithProfile extends HelpRequest {
+  profiles: Profile | null;
+  user_email?: string;
+}
+
+interface HelpRequestStats {
   total: number;
   pending: number;
   inProgress: number;
@@ -58,342 +71,414 @@ export type HelpRequestStats = {
     portfolio: number;
     other: number;
   };
-};
+}
 
 export const CONTACT_CATEGORIES = [
-  { value: 'founder', label: 'Founder' },
   { value: 'investor', label: 'Investor' },
-  { value: 'advisor', label: 'Advisor' },
-  { value: 'mentor', label: 'Mentor' },
-  { value: 'partner', label: 'Partner' },
-  { value: 'other', label: 'Other' }
-];
+  { value: 'product_operator', label: 'Product Operator' },
+  { value: 'engineering_operator', label: 'Engineering Operator' },
+  { value: 'growth_operator', label: 'Growth Operator' },
+  { value: 'community_builder', label: 'Community Builder' },
+  { value: 'founder', label: 'Founder' }
+] as const;
 
-export const fetchNetworkContacts = async () => {
-  console.log('AdminAPI: Fetching network contacts');
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
-      .from('network_contacts')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('AdminAPI: Error fetching network contacts:', error);
-      throw error;
-    }
-
-    console.log('AdminAPI: Successfully fetched network contacts:', data?.length || 0);
-    return data || [];
-  } catch (error) {
-    console.error('AdminAPI: Unexpected error fetching network contacts:', error);
+// Network contacts functions
+export const fetchNetworkContacts = async (): Promise<NetworkContact[]> => {
+  const { data, error } = await supabase
+    .from('network_contacts')
+    .select('*')
+    .order('name');
+  
+  if (error) {
+    console.error('Error fetching network contacts:', error);
     throw error;
   }
+  
+  return data || [];
 };
 
-export const addNetworkContact = async (contact: Omit<NetworkContact, 'id' | 'created_at'>) => {
-  console.log('AdminAPI: Adding network contact');
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
-      .from('network_contacts')
-      .insert([{
-        ...contact,
-        created_by: user.id
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('AdminAPI: Error adding network contact:', error);
-      throw error;
-    }
-
-    console.log('AdminAPI: Successfully added network contact');
-    return data;
-  } catch (error) {
-    console.error('AdminAPI: Unexpected error adding network contact:', error);
+export const addNetworkContact = async (contactData: Partial<NetworkContact>) => {
+  const { data: userData } = await supabase.auth.getUser();
+  
+  if (!userData?.user?.id) {
+    throw new Error('User not authenticated');
+  }
+  
+  if (!contactData.name) {
+    throw new Error('Name is required');
+  }
+  
+  if (!contactData.category) {
+    throw new Error('Category is required');
+  }
+  
+  const { error } = await supabase
+    .from('network_contacts')
+    .insert({
+      ...contactData,
+      name: contactData.name,
+      category: contactData.category,
+      created_by: userData.user.id
+    });
+  
+  if (error) {
+    console.error('Error adding network contact:', error);
     throw error;
   }
+  
+  return true;
 };
 
-export const updateNetworkContact = async (id: string, updates: Partial<NetworkContact>) => {
-  console.log('AdminAPI: Updating network contact');
+export const updateNetworkContact = async (id: string, contactData: Partial<NetworkContact>) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
+    console.log('Updating network contact with ID:', id);
+    console.log('Update data:', contactData);
+    
+    if (!id) {
+      throw new Error('Contact ID is required for update');
+    }
+    
+    const { error, data } = await supabase
       .from('network_contacts')
-      .update(updates)
+      .update(contactData)
       .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('AdminAPI: Error updating network contact:', error);
-      throw error;
-    }
-
-    console.log('AdminAPI: Successfully updated network contact');
-    return data;
-  } catch (error) {
-    console.error('AdminAPI: Unexpected error updating network contact:', error);
-    throw error;
-  }
-};
-
-export const bulkImportNetworkContacts = async (contacts: Array<Partial<NetworkContact>>) => {
-  console.log('AdminAPI: Bulk importing network contacts');
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    // Validate and filter contacts to ensure required fields
-    const validContacts = contacts.filter(contact => 
-      contact.name && contact.category
-    ).map(contact => ({
-      name: contact.name || 'Unknown',
-      category: contact.category || 'other',
-      company: contact.company || null,
-      position: contact.position || null,
-      email: contact.email || null,
-      linkedin_url: contact.linkedin_url || null,
-      notes: contact.notes || null,
-      avatar_url: contact.avatar_url || null,
-      website: contact.website || null,
-      is_lp: contact.is_lp || false,
-      created_by: user.id
-    }));
-
-    if (validContacts.length === 0) {
-      throw new Error('No valid contacts to import');
-    }
-
-    const { data, error } = await supabase
-      .from('network_contacts')
-      .insert(validContacts)
       .select();
-
+    
     if (error) {
-      console.error('AdminAPI: Error bulk importing network contacts:', error);
+      console.error('Error updating network contact:', error);
       throw error;
     }
-
-    console.log('AdminAPI: Successfully bulk imported network contacts:', data?.length || 0);
-    return data || [];
+    
+    console.log('Update successful, returned data:', data);
+    return true;
   } catch (error) {
-    console.error('AdminAPI: Unexpected error bulk importing network contacts:', error);
+    console.error('Exception in updateNetworkContact:', error);
     throw error;
   }
 };
 
-export const fetchPortfolioCompanies = async () => {
-  console.log('AdminAPI: Fetching portfolio companies');
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+export const updateContactAvatar = async (id: string, avatarUrl: string) => {
+  const { error } = await supabase
+    .from('network_contacts')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error updating contact avatar:', error);
+    throw error;
+  }
+  
+  return true;
+};
 
+export const fetchLinkedInProfilePicture = async (linkedinUrl: string) => {
+  console.log('LinkedIn profile URL:', linkedinUrl);
+  return null;
+};
+
+// Portfolio companies functions
+export const fetchPortfolioCompanies = async (): Promise<PortfolioCompany[]> => {
+  const { data, error } = await supabase
+    .from('portfolio_companies')
+    .select('*')
+    .order('name');
+  
+  if (error) {
+    console.error('Error fetching portfolio companies:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const addPortfolioCompany = async (companyData: { 
+  name: string; 
+  description?: string;
+  industry?: string;
+  founded_year?: number;
+  investment_year?: number;
+  website?: string;
+  logo_url?: string;
+}) => {
+  try {
+    console.log('Starting addPortfolioCompany with data:', companyData);
+    
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting current user:', userError);
+      throw new Error('Authentication error: ' + userError.message);
+    }
+    
+    if (!userData?.user?.id) {
+      console.error('User not authenticated when adding portfolio company - no user ID found');
+      throw new Error('User not authenticated');
+    }
+    
+    if (!companyData.name) {
+      console.error('Company name is required but was not provided');
+      throw new Error('Company name is required');
+    }
+    
+    console.log('Preparing to insert portfolio company with data:', {
+      ...companyData,
+      created_by: userData.user.id
+    });
+    
     const { data, error } = await supabase
       .from('portfolio_companies')
+      .insert({
+        ...companyData,
+        name: companyData.name,
+        created_by: userData.user.id
+      })
+      .select();
+    
+    if (error) {
+      console.error('Supabase error adding portfolio company:', error);
+      throw error;
+    }
+    
+    console.log('Successfully added company to database:', data);
+    return data;
+  } catch (error) {
+    console.error('Exception in addPortfolioCompany:', error);
+    throw error;
+  }
+};
+
+// Help requests functions
+export const fetchHelpRequests = async (): Promise<HelpRequestWithProfile[]> => {
+  try {
+    const { data: helpRequests, error } = await supabase
+      .from('help_requests')
       .select('*')
       .order('created_at', { ascending: false });
-
+    
     if (error) {
-      console.error('AdminAPI: Error fetching portfolio companies:', error);
+      console.error('Error fetching help requests:', error);
       throw error;
     }
-
-    console.log('AdminAPI: Successfully fetched portfolio companies:', data?.length || 0);
-    return data || [];
-  } catch (error) {
-    console.error('AdminAPI: Unexpected error fetching portfolio companies:', error);
-    throw error;
-  }
-};
-
-export const addPortfolioCompany = async (company: Omit<PortfolioCompany, 'id' | 'created_at'>) => {
-  console.log('AdminAPI: Adding portfolio company');
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
-      .from('portfolio_companies')
-      .insert([{
-        ...company,
-        created_by: user.id
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('AdminAPI: Error adding portfolio company:', error);
-      throw error;
+    
+    if (!helpRequests || helpRequests.length === 0) {
+      return [];
     }
-
-    console.log('AdminAPI: Successfully added portfolio company');
-    return data;
-  } catch (error) {
-    console.error('AdminAPI: Unexpected error adding portfolio company:', error);
-    throw error;
-  }
-};
-
-export const bulkImportPortfolioCompanies = async (companies: Array<Partial<PortfolioCompany>>) => {
-  console.log('AdminAPI: Bulk importing portfolio companies');
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    // Validate and filter companies to ensure required fields
-    const validCompanies = companies.filter(company => 
-      company.name
-    ).map(company => ({
-      name: company.name || 'Unknown Company',
-      description: company.description || null,
-      industry: company.industry || null,
-      founded_year: company.founded_year || null,
-      investment_year: company.investment_year || null,
-      website: company.website || null,
-      logo_url: company.logo_url || null,
-      created_by: user.id
-    }));
-
-    if (validCompanies.length === 0) {
-      throw new Error('No valid companies to import');
+    
+    const userIds = helpRequests
+      .filter(req => req.user_id)
+      .map(req => req.user_id);
+    
+    let profilesMap: Record<string, Profile> = {};
+    
+    if (userIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error('Error fetching user profiles:', profilesError);
+      } else if (profiles) {
+        profiles.forEach(profile => {
+          profilesMap[profile.id] = profile;
+        });
+      }
     }
-
-    const { data, error } = await supabase
-      .from('portfolio_companies')
-      .insert(validCompanies)
-      .select();
-
-    if (error) {
-      console.error('AdminAPI: Error bulk importing portfolio companies:', error);
-      throw error;
-    }
-
-    console.log('AdminAPI: Successfully bulk imported portfolio companies:', data?.length || 0);
-    return data || [];
+    
+    const helpRequestsWithProfiles = helpRequests.map((request: HelpRequest) => {
+      return {
+        ...request,
+        profiles: request.user_id && profilesMap[request.user_id] ? profilesMap[request.user_id] : null,
+        user_email: request.requester_email || undefined
+      };
+    });
+    
+    return helpRequestsWithProfiles;
   } catch (error) {
-    console.error('AdminAPI: Unexpected error bulk importing portfolio companies:', error);
-    throw error;
-  }
-};
-
-export const fetchHelpRequests = async () => {
-  console.log('AdminAPI: Fetching help requests');
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
-      .from('help_requests')
-      .select(`
-        *,
-        profiles!inner(
-          id,
-          full_name,
-          company,
-          role
-        )
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('AdminAPI: Error fetching help requests:', error);
-      throw error;
-    }
-
-    console.log('AdminAPI: Successfully fetched help requests:', data?.length || 0);
-    return data || [];
-  } catch (error) {
-    console.error('AdminAPI: Unexpected error fetching help requests:', error);
+    console.error('Failed to load help requests:', error);
     throw error;
   }
 };
 
 export const updateHelpRequestStatus = async (id: string, status: string, resolutionNotes?: string) => {
-  console.log('AdminAPI: Updating help request status');
+  const updateData: { status: string; resolution_notes?: string } = { status };
+  
+  if (resolutionNotes) {
+    updateData.resolution_notes = resolutionNotes;
+  }
+  
+  const { error } = await supabase
+    .from('help_requests')
+    .update(updateData)
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error updating help request status:', error);
+    throw error;
+  }
+  
+  return true;
+};
+
+export const getHelpRequestStats = async (): Promise<HelpRequestStats> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const updates: any = {
-      status,
-      updated_at: new Date().toISOString()
-    };
-
-    if (resolutionNotes) {
-      updates.resolution_notes = resolutionNotes;
-    }
-
     const { data, error } = await supabase
       .from('help_requests')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
+      .select('status, request_type');
+    
     if (error) {
-      console.error('AdminAPI: Error updating help request status:', error);
+      console.error('Error fetching help request stats:', error);
       throw error;
     }
+    
+    if (!data) {
+      return {
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        declined: 0,
+        byType: {
+          intro: 0,
+          portfolio: 0,
+          other: 0
+        }
+      };
+    }
+    
+    const stats = {
+      total: data.length,
+      pending: data.filter(req => req.status === 'Pending').length,
+      inProgress: data.filter(req => req.status === 'In Progress').length,
+      completed: data.filter(req => req.status === 'Completed').length,
+      declined: data.filter(req => req.status === 'Declined').length,
+      byType: {
+        intro: data.filter(req => req.request_type === 'intro').length,
+        portfolio: data.filter(req => req.request_type === 'portfolio').length,
+        other: data.filter(req => !['intro', 'portfolio'].includes(req.request_type)).length
+      }
+    };
+    
+    return stats;
+  } catch (error) {
+    console.error('Error calculating help request stats:', error);
+    return {
+      total: 0,
+      pending: 0,
+      inProgress: 0,
+      completed: 0,
+      declined: 0,
+      byType: {
+        intro: 0,
+        portfolio: 0,
+        other: 0
+      }
+    };
+  }
+};
 
-    console.log('AdminAPI: Successfully updated help request status');
+export const assignHelpRequest = async (requestId: string, adminId: string) => {
+  const { error } = await supabase
+    .from('help_requests')
+    .update({ assigned_to: adminId })
+    .eq('id', requestId);
+  
+  if (error) {
+    console.error('Error assigning help request:', error);
+    throw error;
+  }
+  
+  return true;
+};
+
+// New function for bulk importing network contacts
+export const bulkImportNetworkContacts = async (contacts: Partial<NetworkContact>[]) => {
+  try {
+    console.log('Starting bulk import with contacts:', contacts);
+    
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user?.id) {
+      console.error('User not authenticated when trying to import contacts');
+      throw new Error('User not authenticated');
+    }
+    
+    // Filter to ensure all contacts have a name and category, which are required by the database
+    const validContacts = contacts.filter(contact => 
+      contact.name && contact.name.trim() !== '' && 
+      contact.category && contact.category.trim() !== ''
+    );
+    
+    console.log('Valid contacts for import:', validContacts.length);
+    
+    if (validContacts.length === 0) {
+      throw new Error('No valid contacts to import. All contacts must have a name and category.');
+    }
+    
+    // Add created_by to each contact and ensure name and category are present
+    const contactsWithCreatedBy = validContacts.map(contact => ({
+      ...contact,
+      name: contact.name!,
+      category: contact.category!,
+      created_by: userData.user.id
+    }));
+    
+    console.log('Attempting to insert contacts with data:', contactsWithCreatedBy);
+    
+    const { data, error } = await supabase
+      .from('network_contacts')
+      .insert(contactsWithCreatedBy)
+      .select();
+    
+    if (error) {
+      console.error('Supabase error bulk importing network contacts:', error);
+      throw error;
+    }
+    
+    console.log('Successfully imported contacts:', data);
     return data;
   } catch (error) {
-    console.error('AdminAPI: Unexpected error updating help request status:', error);
+    console.error('Exception in bulkImportNetworkContacts:', error);
     throw error;
   }
 };
 
-export const getHelpRequestStats = async (): Promise<HelpRequestStats> => {
-  console.log('AdminAPI: Fetching help request stats');
+// New function for bulk importing portfolio companies
+export const bulkImportPortfolioCompanies = async (companies: Partial<PortfolioCompany>[]) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user?.id) {
+      throw new Error('User not authenticated');
+    }
+    
+    // Filter to ensure all companies have a name, which is required by the database
+    const validCompanies = companies.filter(company => company.name && company.name.trim() !== '');
+    
+    if (validCompanies.length === 0) {
+      throw new Error('No valid companies to import. All companies must have a name.');
+    }
+    
+    // Add created_by to each company and ensure name is present
+    const companiesWithCreatedBy = validCompanies.map(company => ({
+      ...company,
+      name: company.name!, // Use non-null assertion as we've filtered for this
+      created_by: userData.user.id
+    }));
+    
     const { data, error } = await supabase
-      .from('help_requests')
-      .select('status, request_type');
-
+      .from('portfolio_companies')
+      .insert(companiesWithCreatedBy)
+      .select();
+    
     if (error) {
-      console.error('AdminAPI: Error fetching help request stats:', error);
+      console.error('Error bulk importing portfolio companies:', error);
       throw error;
     }
-
-    const total = data.length;
-    const pending = data.filter(req => req.status === 'Pending').length;
-    const inProgress = data.filter(req => req.status === 'In Progress').length;
-    const completed = data.filter(req => req.status === 'Completed').length;
-    const declined = data.filter(req => req.status === 'Declined').length;
-    const intro = data.filter(req => req.request_type === 'intro').length;
-    const portfolio = data.filter(req => req.request_type === 'portfolio').length;
-    const other = data.filter(req => req.request_type === 'other').length;
-
-    const stats: HelpRequestStats = {
-      total,
-      pending,
-      inProgress,
-      completed,
-      declined,
-      byType: {
-        intro,
-        portfolio,
-        other
-      }
-    };
-
-    console.log('AdminAPI: Successfully fetched help request stats:', stats);
-    return stats;
+    
+    return data;
   } catch (error) {
-    console.error('AdminAPI: Unexpected error fetching help request stats:', error);
+    console.error('Exception in bulkImportPortfolioCompanies:', error);
     throw error;
   }
 };

@@ -10,42 +10,24 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-
     --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
-
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 5% 64.9%;
-
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
-
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   * {
@@ -73,21 +55,9 @@
     background-image: linear-gradient(135deg, #2563eb 0%, #8b5cf6 50%, #ec4899 100%);
   }
 
-  .gradient-blue {
-    background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
-  }
-
-  .gradient-blue-light {
-    background: linear-gradient(135deg, #7dd3fc 0%, #60a5fa 100%);
-  }
-
   .dots-bg {
     background-image: radial-gradient(#00000020 1px, transparent 0);
     background-size: 20px 20px;
-  }
-
-  .button-gradient {
-    @apply bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200;
   }
 }
 

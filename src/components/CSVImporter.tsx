@@ -167,6 +167,8 @@ const CSVImporter = ({ onImport, expectedFields, entityName, buttonText = "Selec
 
   const handleImport = useCallback(() => {
     if (!file || importDisabled) return;
+    
+    console.log('Importing data:', previewData);
     onImport(previewData);
   }, [file, previewData, onImport, importDisabled]);
 
