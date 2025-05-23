@@ -296,7 +296,7 @@ export const fetchHelpRequests = async () => {
       .from('help_requests')
       .select(`
         *,
-        profiles!help_requests_user_id_fkey (
+        profiles!inner(
           id,
           full_name,
           company,
