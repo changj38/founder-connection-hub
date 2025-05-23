@@ -148,20 +148,29 @@ export const updateNetworkContact = async (id: string, updates: Partial<NetworkC
   }
 };
 
-export const bulkImportNetworkContacts = async (contacts: Omit<NetworkContact, 'id' | 'created_at'>[]) => {
+export const bulkImportNetworkContacts = async (contacts: Array<Omit<NetworkContact, 'id' | 'created_at'>>) => {
   console.log('AdminAPI: Bulk importing network contacts');
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const contactsWithCreatedBy = contacts.map(contact => ({
+    // Validate and filter contacts to ensure required fields
+    const validContacts = contacts.filter(contact => 
+      contact.name && contact.category
+    ).map(contact => ({
       ...contact,
-      created_by: user.id
+      created_by: user.id,
+      category: contact.category || 'other', // Ensure category is present
+      name: contact.name || 'Unknown' // Ensure name is present
     }));
+
+    if (validContacts.length === 0) {
+      throw new Error('No valid contacts to import');
+    }
 
     const { data, error } = await supabase
       .from('network_contacts')
-      .insert(contactsWithCreatedBy)
+      .insert(validContacts)
       .select();
 
     if (error) {
@@ -229,20 +238,28 @@ export const addPortfolioCompany = async (company: Omit<PortfolioCompany, 'id' |
   }
 };
 
-export const bulkImportPortfolioCompanies = async (companies: Omit<PortfolioCompany, 'id' | 'created_at'>[]) => {
+export const bulkImportPortfolioCompanies = async (companies: Array<Omit<PortfolioCompany, 'id' | 'created_at'>>) => {
   console.log('AdminAPI: Bulk importing portfolio companies');
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const companiesWithCreatedBy = companies.map(company => ({
+    // Validate and filter companies to ensure required fields
+    const validCompanies = companies.filter(company => 
+      company.name
+    ).map(company => ({
       ...company,
-      created_by: user.id
+      created_by: user.id,
+      name: company.name || 'Unknown Company' // Ensure name is present
     }));
+
+    if (validCompanies.length === 0) {
+      throw new Error('No valid companies to import');
+    }
 
     const { data, error } = await supabase
       .from('portfolio_companies')
-      .insert(companiesWithCreatedBy)
+      .insert(validCompanies)
       .select();
 
     if (error) {
@@ -268,7 +285,7 @@ export const fetchHelpRequests = async () => {
       .from('help_requests')
       .select(`
         *,
-        profiles:user_id (
+        profiles!help_requests_user_id_fkey (
           id,
           full_name,
           company,
