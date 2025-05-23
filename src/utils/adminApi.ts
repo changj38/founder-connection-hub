@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type HelpRequest = {
@@ -148,7 +147,7 @@ export const updateNetworkContact = async (id: string, updates: Partial<NetworkC
   }
 };
 
-export const bulkImportNetworkContacts = async (contacts: Array<Omit<NetworkContact, 'id' | 'created_at'>>) => {
+export const bulkImportNetworkContacts = async (contacts: Array<Partial<NetworkContact>>) => {
   console.log('AdminAPI: Bulk importing network contacts');
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -158,10 +157,17 @@ export const bulkImportNetworkContacts = async (contacts: Array<Omit<NetworkCont
     const validContacts = contacts.filter(contact => 
       contact.name && contact.category
     ).map(contact => ({
-      ...contact,
-      created_by: user.id,
-      category: contact.category || 'other', // Ensure category is present
-      name: contact.name || 'Unknown' // Ensure name is present
+      name: contact.name || 'Unknown',
+      category: contact.category || 'other',
+      company: contact.company || null,
+      position: contact.position || null,
+      email: contact.email || null,
+      linkedin_url: contact.linkedin_url || null,
+      notes: contact.notes || null,
+      avatar_url: contact.avatar_url || null,
+      website: contact.website || null,
+      is_lp: contact.is_lp || false,
+      created_by: user.id
     }));
 
     if (validContacts.length === 0) {
@@ -238,7 +244,7 @@ export const addPortfolioCompany = async (company: Omit<PortfolioCompany, 'id' |
   }
 };
 
-export const bulkImportPortfolioCompanies = async (companies: Array<Omit<PortfolioCompany, 'id' | 'created_at'>>) => {
+export const bulkImportPortfolioCompanies = async (companies: Array<Partial<PortfolioCompany>>) => {
   console.log('AdminAPI: Bulk importing portfolio companies');
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -248,9 +254,14 @@ export const bulkImportPortfolioCompanies = async (companies: Array<Omit<Portfol
     const validCompanies = companies.filter(company => 
       company.name
     ).map(company => ({
-      ...company,
-      created_by: user.id,
-      name: company.name || 'Unknown Company' // Ensure name is present
+      name: company.name || 'Unknown Company',
+      description: company.description || null,
+      industry: company.industry || null,
+      founded_year: company.founded_year || null,
+      investment_year: company.investment_year || null,
+      website: company.website || null,
+      logo_url: company.logo_url || null,
+      created_by: user.id
     }));
 
     if (validCompanies.length === 0) {
