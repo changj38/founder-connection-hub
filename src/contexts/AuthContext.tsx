@@ -5,10 +5,19 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   user: User | null;
+  currentUser: User | null; // Alias for backward compatibility
   session: Session | null;
   loading: boolean;
   error: string | null;
   signOut: () => Promise<void>;
+  logout: () => Promise<void>; // Alias for signOut
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, company: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, password: string) => Promise<void>;
+  checkEmailAuthorized: (email: string) => Promise<boolean>;
+  refreshUserData: () => Promise<void>;
+  isAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,7 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('AuthProvider: Initializing auth state');
     
-    // Get initial session
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('AuthProvider: Auth state changed:', event, session?.user?.email || 'No user');
+        setSession(session);
+        setUser(session?.user ?? null);
+        setError(null);
+        setLoading(false);
+      }
+    );
+
+    // THEN check for existing session
     const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -44,21 +64,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initializeAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('AuthProvider: Auth state changed:', event, session?.user?.email || 'No user');
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setError(null);
-        
-        if (event === 'SIGNED_OUT') {
-          setLoading(false);
-        }
-      }
-    );
 
     return () => {
       console.log('AuthProvider: Cleaning up auth subscription');
@@ -82,8 +87,135 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const login = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        throw error;
+      }
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (name: string, email: string, password: string, company: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            company: company
+          }
+        }
+      });
+      if (error) {
+        throw error;
+      }
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        throw error;
+      }
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (token: string, password: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        throw error;
+      }
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkEmailAuthorized = async (email: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('authorized_emails')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking email authorization:', error);
+        return false;
+      }
+      
+      return !!data;
+    } catch (err) {
+      console.error('Error checking email authorization:', err);
+      return false;
+    }
+  };
+
+  const refreshUserData = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        throw error;
+      }
+      setUser(user);
+    } catch (err: any) {
+      console.error('Error refreshing user data:', err);
+      setError(err.message);
+    }
+  };
+
+  const isAdmin = (): boolean => {
+    // Check if user has admin role - you may need to adjust this logic
+    // based on how admin status is stored in your profiles table
+    return user?.user_metadata?.role === 'admin' || user?.email === 'admin@daydreamventures.com';
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, error, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      currentUser: user, // Alias for backward compatibility
+      session, 
+      loading, 
+      error, 
+      signOut,
+      logout: signOut, // Alias for signOut
+      login,
+      register,
+      forgotPassword,
+      resetPassword,
+      checkEmailAuthorized,
+      refreshUserData,
+      isAdmin
+    }}>
       {children}
     </AuthContext.Provider>
   );
