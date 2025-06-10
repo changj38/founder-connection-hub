@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Tabs, 
   TabsContent, 
@@ -24,12 +24,17 @@ import { useSearchParams } from 'react-router-dom';
 
 const AdminPage = () => {
   const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'help';
-  const [activeTab, setActiveTab] = useState<string>(defaultTab);
+  const [activeTab, setActiveTab] = useState<string>('help');
+
+  // Update active tab when URL search params change
+  useEffect(() => {
+    const tab = searchParams.get('tab') || 'help';
+    setActiveTab(tab);
+  }, [searchParams]);
 
   return (
     <div className="container mx-auto py-6 space-y-8">
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <TabsList>
