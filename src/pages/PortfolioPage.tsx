@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Building, User, Globe, Search } from 'lucide-react';
+import { Building, User, Globe, Search, Users, Linkedin } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -164,19 +165,25 @@ const PortfolioPage = () => {
               </CardHeader>
               
               <CardContent className="pb-4 flex flex-col flex-1">
-                <p className="text-slate-700 text-sm mb-4 line-clamp-3 flex-1">
+                <p className="text-slate-800 text-sm mb-4 line-clamp-3 flex-1">
                   {company.description || 'No description available.'}
                 </p>
                 
                 <div className="space-y-2 mb-4">
+                  {company.founder_names && (
+                    <div className="flex items-center text-sm text-slate-800">
+                      <Users className="h-4 w-4 mr-2" />
+                      <span>Founders: {company.founder_names}</span>
+                    </div>
+                  )}
                   {company.founded_year && (
-                    <div className="flex items-center text-sm text-slate-700">
+                    <div className="flex items-center text-sm text-slate-800">
                       <User className="h-4 w-4 mr-2" />
                       <span>Founded: {company.founded_year}</span>
                     </div>
                   )}
                   {company.website && (
-                    <div className="flex items-center text-sm text-slate-700">
+                    <div className="flex items-center text-sm text-slate-800">
                       <Globe className="h-4 w-4 mr-2" />
                       <a
                         href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
@@ -185,6 +192,19 @@ const PortfolioPage = () => {
                         className="text-primary hover:underline truncate"
                       >
                         {company.website}
+                      </a>
+                    </div>
+                  )}
+                  {company.ceo_linkedin_url && (
+                    <div className="flex items-center text-sm text-slate-800">
+                      <Linkedin className="h-4 w-4 mr-2" />
+                      <a
+                        href={company.ceo_linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        CEO LinkedIn
                       </a>
                     </div>
                   )}
@@ -240,17 +260,26 @@ const PortfolioPage = () => {
               
               <div className="mt-4">
                 <h3 className="text-sm font-medium mb-2">About</h3>
-                <p className="text-slate-700 mb-4">
+                <p className="text-slate-800 mb-4">
                   {selectedCompany.description || 'No description available.'}
                 </p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  {selectedCompany.founder_names && (
+                    <Card className="p-3">
+                      <h4 className="text-xs text-slate-600 mb-1">Founders</h4>
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-primary" />
+                        <span className="text-slate-800">{selectedCompany.founder_names}</span>
+                      </div>
+                    </Card>
+                  )}
                   {selectedCompany.founded_year && (
                     <Card className="p-3">
                       <h4 className="text-xs text-slate-600 mb-1">Founded</h4>
                       <div className="flex items-center">
                         <User className="h-4 w-4 mr-2 text-primary" />
-                        <span className="text-slate-700">{selectedCompany.founded_year}</span>
+                        <span className="text-slate-800">{selectedCompany.founded_year}</span>
                       </div>
                     </Card>
                   )}
@@ -259,12 +288,12 @@ const PortfolioPage = () => {
                       <h4 className="text-xs text-slate-600 mb-1">Invested</h4>
                       <div className="flex items-center">
                         <Building className="h-4 w-4 mr-2 text-primary" />
-                        <span className="text-slate-700">{selectedCompany.investment_year}</span>
+                        <span className="text-slate-800">{selectedCompany.investment_year}</span>
                       </div>
                     </Card>
                   )}
                   {selectedCompany.website && (
-                    <Card className="p-3 sm:col-span-2">
+                    <Card className="p-3">
                       <h4 className="text-xs text-slate-600 mb-1">Website</h4>
                       <div className="flex items-center">
                         <Globe className="h-4 w-4 mr-2 text-primary" />
@@ -275,6 +304,22 @@ const PortfolioPage = () => {
                           className="text-primary hover:underline"
                         >
                           {selectedCompany.website}
+                        </a>
+                      </div>
+                    </Card>
+                  )}
+                  {selectedCompany.ceo_linkedin_url && (
+                    <Card className="p-3">
+                      <h4 className="text-xs text-slate-600 mb-1">CEO LinkedIn</h4>
+                      <div className="flex items-center">
+                        <Linkedin className="h-4 w-4 mr-2 text-primary" />
+                        <a
+                          href={selectedCompany.ceo_linkedin_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          View Profile
                         </a>
                       </div>
                     </Card>

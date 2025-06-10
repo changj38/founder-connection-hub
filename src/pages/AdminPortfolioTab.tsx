@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PlusCircle, Briefcase, MoreHorizontal, Building, Pencil, Image, Trash2, Globe, Upload } from 'lucide-react';
+import { PlusCircle, Briefcase, MoreHorizontal, Building, Pencil, Image, Trash2, Globe, Upload, Users, Linkedin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchPortfolioCompanies, addPortfolioCompany, bulkImportPortfolioCompanies } from '../utils/adminApi';
@@ -25,6 +24,8 @@ type PortfolioCompany = {
   investment_year?: number;
   website?: string;
   logo_url?: string;
+  founder_names?: string;
+  ceo_linkedin_url?: string;
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -43,7 +44,9 @@ const AdminPortfolioTab = () => {
     founded_year: undefined as number | undefined,
     investment_year: undefined as number | undefined,
     website: '',
-    logo_url: ''
+    logo_url: '',
+    founder_names: '',
+    ceo_linkedin_url: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -78,7 +81,9 @@ const AdminPortfolioTab = () => {
       founded_year: undefined,
       investment_year: undefined,
       website: '',
-      logo_url: ''
+      logo_url: '',
+      founder_names: '',
+      ceo_linkedin_url: ''
     });
     setIsEditMode(false);
     setCurrentCompany(null);
@@ -93,7 +98,9 @@ const AdminPortfolioTab = () => {
       founded_year: company.founded_year || undefined,
       investment_year: company.investment_year || undefined,
       website: company.website || '',
-      logo_url: company.logo_url || ''
+      logo_url: company.logo_url || '',
+      founder_names: company.founder_names || '',
+      ceo_linkedin_url: company.ceo_linkedin_url || ''
     });
     setIsEditMode(true);
     setIsDialogOpen(true);
@@ -121,7 +128,9 @@ const AdminPortfolioTab = () => {
             founded_year: formData.founded_year || null,
             investment_year: formData.investment_year || null,
             website: formData.website || null,
-            logo_url: formData.logo_url || null
+            logo_url: formData.logo_url || null,
+            founder_names: formData.founder_names || null,
+            ceo_linkedin_url: formData.ceo_linkedin_url || null
           })
           .eq('id', currentCompany.id);
 
@@ -218,7 +227,7 @@ const AdminPortfolioTab = () => {
     }
   };
 
-  const expectedCSVFields = ['name', 'description', 'industry', 'founded_year', 'investment_year', 'website', 'logo_url'];
+  const expectedCSVFields = ['name', 'description', 'industry', 'founded_year', 'investment_year', 'website', 'logo_url', 'founder_names', 'ceo_linkedin_url'];
 
   return (
     <div>
@@ -305,28 +314,49 @@ const AdminPortfolioTab = () => {
                       {company.description}
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                    {company.founded_year && (
+                  <div className="space-y-2 text-sm">
+                    {company.founder_names && (
                       <div className="flex items-center gap-1 text-gray-600">
-                        <span className="font-medium">Founded:</span> {company.founded_year}
+                        <Users className="h-4 w-4" />
+                        <span className="font-medium">Founders:</span> {company.founder_names}
                       </div>
                     )}
-                    {company.investment_year && (
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <span className="font-medium">Investment:</span> {company.investment_year}
-                      </div>
-                    )}
-                    {company.website && (
-                      <a
-                        href={company.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-blue-600 hover:underline"
-                      >
-                        <Globe className="h-4 w-4" />
-                        Website
-                      </a>
-                    )}
+                    <div className="flex flex-wrap gap-x-6 gap-y-2">
+                      {company.founded_year && (
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <span className="font-medium">Founded:</span> {company.founded_year}
+                        </div>
+                      )}
+                      {company.investment_year && (
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <span className="font-medium">Investment:</span> {company.investment_year}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-x-6 gap-y-2">
+                      {company.website && (
+                        <a
+                          href={company.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-blue-600 hover:underline"
+                        >
+                          <Globe className="h-4 w-4" />
+                          Website
+                        </a>
+                      )}
+                      {company.ceo_linkedin_url && (
+                        <a
+                          href={company.ceo_linkedin_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-blue-600 hover:underline"
+                        >
+                          <Linkedin className="h-4 w-4" />
+                          CEO
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="pt-2 pb-4 border-t flex justify-end gap-2">
@@ -437,6 +467,32 @@ const AdminPortfolioTab = () => {
                 />
               </div>
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="founder_names" className="flex items-center">
+                <Users className="h-4 w-4 mr-2 text-gray-500" />
+                Founder Names
+              </Label>
+              <Input
+                id="founder_names"
+                name="founder_names"
+                value={formData.founder_names}
+                onChange={handleInputChange}
+                placeholder="e.g., John Doe, Jane Smith"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ceo_linkedin_url" className="flex items-center">
+                <Linkedin className="h-4 w-4 mr-2 text-gray-500" />
+                CEO LinkedIn URL
+              </Label>
+              <Input
+                id="ceo_linkedin_url"
+                name="ceo_linkedin_url"
+                value={formData.ceo_linkedin_url}
+                onChange={handleInputChange}
+                placeholder="https://linkedin.com/in/ceo-name"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="founded_year">Founded Year</Label>
@@ -523,7 +579,7 @@ const AdminPortfolioTab = () => {
               <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
                 <li>First row should contain column headers</li>
                 <li>Required field: <code className="bg-gray-200 px-1 rounded">name</code></li>
-                <li>Optional fields: description, industry, founded_year, investment_year, website, logo_url</li>
+                <li>Optional fields: description, industry, founded_year, investment_year, website, logo_url, founder_names, ceo_linkedin_url</li>
                 <li>For year fields, use numeric values (e.g., 2018)</li>
                 <li>Save your file with UTF-8 encoding</li>
               </ul>

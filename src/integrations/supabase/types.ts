@@ -254,10 +254,12 @@ export type Database = {
       }
       portfolio_companies: {
         Row: {
+          ceo_linkedin_url: string | null
           created_at: string
           created_by: string
           description: string | null
           founded_year: number | null
+          founder_names: string | null
           id: string
           industry: string | null
           investment_year: number | null
@@ -267,10 +269,12 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          ceo_linkedin_url?: string | null
           created_at?: string
           created_by: string
           description?: string | null
           founded_year?: number | null
+          founder_names?: string | null
           id?: string
           industry?: string | null
           investment_year?: number | null
@@ -280,10 +284,12 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          ceo_linkedin_url?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
           founded_year?: number | null
+          founder_names?: string | null
           id?: string
           industry?: string | null
           investment_year?: number | null
