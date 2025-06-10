@@ -89,7 +89,7 @@ const HelpPage = () => {
             <CardContent>
               <Textarea 
                 placeholder="I need help with..." 
-                className="min-h-[200px]"
+                className="min-h-[200px] shadow-lg border-slate-200 focus:shadow-xl transition-shadow duration-200"
                 value={helpRequest}
                 onChange={(e) => setHelpRequest(e.target.value)}
               />
