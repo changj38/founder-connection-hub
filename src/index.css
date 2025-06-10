@@ -8,8 +8,8 @@
 
 @layer base {
   :root {
-    /* Modern Light Blue Gradient System */
-    --background: 250 250 250;
+    /* Modern Light Blue System */
+    --background: 248 250 252;
     --foreground: 15 23 42;
     --card: 255 255 255;
     --card-foreground: 15 23 42;
@@ -22,12 +22,12 @@
     --primary-light: 147 197 253;
     --primary-lighter: 219 234 254;
     
-    /* Secondary Grays */
-    --secondary: 248 250 252;
+    /* Secondary Blues */
+    --secondary: 240 249 255;
     --secondary-foreground: 71 85 105;
     --muted: 241 245 249;
     --muted-foreground: 100 116 139;
-    --accent: 240 249 255;
+    --accent: 239 246 255;
     --accent-foreground: 15 23 42;
     
     /* Status Colors */
@@ -42,11 +42,12 @@
     --ring: 59 130 246;
     --radius: 12px;
     
-    /* Modern Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    /* Enhanced Shadows */
+    --shadow-sm: 0 2px 4px 0 rgb(59 130 246 / 0.04), 0 1px 2px 0 rgb(0 0 0 / 0.02);
+    --shadow: 0 8px 16px 0 rgb(59 130 246 / 0.08), 0 4px 8px 0 rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 16px 32px 0 rgb(59 130 246 / 0.12), 0 8px 16px 0 rgb(0 0 0 / 0.06);
+    --shadow-xl: 0 24px 48px 0 rgb(59 130 246 / 0.16), 0 12px 24px 0 rgb(0 0 0 / 0.08);
+    --shadow-float: 0 32px 64px 0 rgb(59 130 246 / 0.2), 0 16px 32px 0 rgb(0 0 0 / 0.1);
   }
 
   * {
@@ -56,10 +57,11 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background: linear-gradient(135deg, rgb(248 250 252) 0%, rgb(241 245 249) 100%);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-semibold tracking-tight text-slate-900;
   }
 
   h1 {
@@ -78,12 +80,20 @@
 @layer components {
   /* Modern Floating Panel */
   .floating-panel {
-    @apply bg-white rounded-2xl border border-slate-200/60 shadow-lg backdrop-blur-sm;
+    @apply bg-white rounded-2xl border border-slate-200/60 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl;
+    box-shadow: 
+      0 16px 32px 0 rgb(59 130 246 / 0.12), 
+      0 8px 16px 0 rgb(0 0 0 / 0.06),
+      0 0 0 1px rgb(59 130 246 / 0.04);
   }
 
   /* Premium Glass Effect */
   .glass-panel {
-    @apply bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl;
+    @apply bg-white/90 backdrop-blur-xl border border-blue-200/40 rounded-2xl;
+    box-shadow: 
+      0 24px 48px 0 rgb(59 130 246 / 0.16), 
+      0 12px 24px 0 rgb(0 0 0 / 0.08),
+      inset 0 1px 0 rgb(255 255 255 / 0.5);
   }
 
   /* Modern Gradient Backgrounds */
@@ -102,25 +112,37 @@
 
   /* Modern Button Styles */
   .btn-primary {
-    @apply bg-blue-500 hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md;
+    @apply bg-blue-500 hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-xl transition-all duration-200;
+    box-shadow: 0 8px 16px 0 rgb(59 130 246 / 0.2), 0 4px 8px 0 rgb(0 0 0 / 0.04);
   }
 
   .btn-secondary {
-    @apply bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-6 py-3 rounded-xl transition-all duration-200;
+    @apply bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium px-6 py-3 rounded-xl transition-all duration-200;
+    box-shadow: 0 4px 8px 0 rgb(59 130 246 / 0.08);
   }
 
   .btn-ghost {
-    @apply text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium px-6 py-3 rounded-xl transition-all duration-200;
+    @apply text-slate-600 hover:text-blue-600 hover:bg-blue-50 font-medium px-6 py-3 rounded-xl transition-all duration-200;
   }
 
   /* Modern Input Styles */
   .input-modern {
     @apply bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200;
+    box-shadow: 0 2px 4px 0 rgb(59 130 246 / 0.04);
   }
 
   /* Modern Card Styles */
   .card-modern {
-    @apply bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-md transition-all duration-200;
+    @apply bg-white rounded-2xl border border-slate-200/60 p-6 transition-all duration-200;
+    box-shadow: 
+      0 8px 16px 0 rgb(59 130 246 / 0.08), 
+      0 4px 8px 0 rgb(0 0 0 / 0.04);
+  }
+
+  .card-modern:hover {
+    box-shadow: 
+      0 16px 32px 0 rgb(59 130 246 / 0.12), 
+      0 8px 16px 0 rgb(0 0 0 / 0.06);
   }
 
   /* Dashboard Grid */
@@ -187,12 +209,12 @@
   }
 
   .scrollbar-modern::-webkit-scrollbar-thumb {
-    background: rgb(203 213 225);
+    background: rgb(147 197 253);
     border-radius: 3px;
   }
 
   .scrollbar-modern::-webkit-scrollbar-thumb:hover {
-    background: rgb(148 163 184);
+    background: rgb(59 130 246);
   }
 }
 
