@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Users, 
@@ -27,8 +27,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { currentUser, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('help');
 
   const handleLogout = () => {
     logout();
@@ -36,14 +37,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   const navItems = [
-    { path: '/admin', label: 'Dashboard', icon: <Shield className="w-5 h-5" />, tab: 'overview' },
-    { path: '/admin/users', label: 'Manage Users', icon: <Users className="w-5 h-5" />, tab: 'network' },
-    { path: '/admin/portfolio', label: 'Manage Portfolio', icon: <Building className="w-5 h-5" />, tab: 'portfolio' },
-    { path: '/admin/forum', label: 'Manage Forum', icon: <MessagesSquare className="w-5 h-5" />, tab: 'forum' },
-    { path: '/admin/help', label: 'Help Requests', icon: <HelpCircle className="w-5 h-5" />, tab: 'requests' },
-    { path: '/admin/authorized', label: 'Authorized Emails', icon: <Mail className="w-5 h-5" />, tab: 'authorized' },
-    { path: '/admin/settings', label: 'Settings', icon: <Settings className="w-5 h-5" />, tab: 'settings' },
+    { tab: 'help', label: 'Help Requests', icon: <HelpCircle className="w-5 h-5" /> },
+    { tab: 'network', label: 'Manage Users', icon: <Users className="w-5 h-5" /> },
+    { tab: 'portfolio', label: 'Manage Portfolio', icon: <Building className="w-5 h-5" /> },
+    { tab: 'forum', label: 'Manage Forum', icon: <MessagesSquare className="w-5 h-5" /> },
+    { tab: 'authorized', label: 'Authorized Emails', icon: <Mail className="w-5 h-5" /> },
   ];
+
+  const handleNavClick = (tab: string) => {
+    navigate(`/admin?tab=${tab}`);
+    setMobileMenuOpen(false);
+  };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -57,21 +61,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       .toUpperCase();
   };
 
-  // Set active tab based on current path
+  // Set active tab based on URL search params
   useEffect(() => {
-    const currentPath = location.pathname;
-    const matchedItem = navItems.find(item => item.path === currentPath);
-    if (matchedItem) {
-      setActiveTab(matchedItem.tab);
-      
-      // Pass the active tab to AdminPage if it's a child
-      const adminPageElement = document.getElementById('admin-page');
-      if (adminPageElement) {
-        const event = new CustomEvent('tabChange', { detail: { tab: matchedItem.tab } });
-        adminPageElement.dispatchEvent(event);
-      }
-    }
-  }, [location.pathname]);
+    const tab = searchParams.get('tab') || 'help';
+    setActiveTab(tab);
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -137,10 +131,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             
             <div className="space-y-1 px-2">
               {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                <button
+                  key={item.tab}
+                  onClick={() => handleNavClick(item.tab)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-left ${
                     activeTab === item.tab
                       ? 'bg-gray-100 text-daydream-purple'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-daydream-purple'
@@ -148,7 +142,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 >
                   {item.icon}
                   {item.label}
-                </Link>
+                </button>
               ))}
             </div>
           </nav>
@@ -186,19 +180,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <div className="flex-1 overflow-y-auto">
                 <nav className="space-y-1 p-2 mt-4">
                   {navItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    <button
+                      key={item.tab}
+                      onClick={() => handleNavClick(item.tab)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-left ${
                         activeTab === item.tab
                           ? 'bg-gray-100 text-daydream-purple'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-daydream-purple'
                       }`}
-                      onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.icon}
                       {item.label}
-                    </Link>
+                    </button>
                   ))}
                 </nav>
               </div>
