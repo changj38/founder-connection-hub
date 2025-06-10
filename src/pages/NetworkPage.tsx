@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -262,26 +263,26 @@ const NetworkPage = () => {
               <p>No contacts found matching your criteria.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
               {filteredContacts.map((contact) => (
                 <Card key={contact.id} className="overflow-hidden border-gray-200 hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-2 p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-sm leading-tight mb-1 truncate">{contact.name}</CardTitle>
-                        <p className="text-xs text-gray-500 leading-tight truncate">{contact.position || 'N/A'}</p>
+                  <CardHeader className="pb-2 p-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CardTitle className="text-sm leading-tight truncate">{contact.name}</CardTitle>
+                        {contact.is_lp && (
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 flex-shrink-0"
+                          >
+                            LP
+                          </Badge>
+                        )}
                       </div>
-                      {contact.is_lp && (
-                        <Badge 
-                          variant="secondary" 
-                          className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 flex-shrink-0"
-                        >
-                          LP
-                        </Badge>
-                      )}
+                      <p className="text-xs text-gray-500 leading-tight truncate">{contact.position || 'N/A'}</p>
                     </div>
                   </CardHeader>
-                  <CardContent className="pb-3 p-4 pt-0">
+                  <CardContent className="pb-3 p-3 pt-0">
                     <div className="mb-2 flex items-center gap-2 text-xs text-gray-600">
                       <Building className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate">{contact.company || 'Independent'}</span>
@@ -398,7 +399,17 @@ const NetworkPage = () => {
                 {filteredContacts.map((contact) => (
                   <tr key={contact.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium">{contact.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium">{contact.name}</div>
+                        {contact.is_lp && (
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5"
+                          >
+                            LP
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {contact.position || 'N/A'}
