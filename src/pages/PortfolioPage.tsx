@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -111,7 +110,7 @@ const PortfolioPage = () => {
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Portfolio Companies</h1>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-slate-600 text-lg">
           Browse through the companies we've invested in. You can view detailed information and
           request introductions to their founders.
         </p>
@@ -119,7 +118,7 @@ const PortfolioPage = () => {
       
       <div className="mb-6">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             type="text"
             placeholder="Search companies by name, industry..."
@@ -129,14 +128,14 @@ const PortfolioPage = () => {
           />
         </div>
         
-        <div className="mt-4 text-sm text-muted-foreground">
+        <div className="mt-4 text-sm text-slate-600">
           Showing {filteredCompanies.length} of {portfolioCompanies.length} companies
         </div>
       </div>
       
       {filteredCompanies.length === 0 ? (
         <Card className="p-10 text-center">
-          <p className="text-muted-foreground">No companies found matching your search criteria.</p>
+          <p className="text-slate-600">No companies found matching your search criteria.</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -154,7 +153,7 @@ const PortfolioPage = () => {
                     )}
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg truncate">{company.name}</h3>
+                    <h3 className="font-semibold text-lg truncate text-slate-900">{company.name}</h3>
                     {company.industry && (
                       <span className="inline-block bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full mt-1">
                         {company.industry}
@@ -165,19 +164,19 @@ const PortfolioPage = () => {
               </CardHeader>
               
               <CardContent className="pb-4 flex flex-col flex-1">
-                <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1">
+                <p className="text-slate-700 text-sm mb-4 line-clamp-3 flex-1">
                   {company.description || 'No description available.'}
                 </p>
                 
                 <div className="space-y-2 mb-4">
                   {company.founded_year && (
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    <div className="flex items-center text-sm text-slate-700">
                       <User className="h-4 w-4 mr-2" />
                       <span>Founded: {company.founded_year}</span>
                     </div>
                   )}
                   {company.website && (
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    <div className="flex items-center text-sm text-slate-700">
                       <Globe className="h-4 w-4 mr-2" />
                       <a
                         href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
@@ -241,32 +240,32 @@ const PortfolioPage = () => {
               
               <div className="mt-4">
                 <h3 className="text-sm font-medium mb-2">About</h3>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-slate-700 mb-4">
                   {selectedCompany.description || 'No description available.'}
                 </p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   {selectedCompany.founded_year && (
                     <Card className="p-3">
-                      <h4 className="text-xs text-muted-foreground mb-1">Founded</h4>
+                      <h4 className="text-xs text-slate-600 mb-1">Founded</h4>
                       <div className="flex items-center">
                         <User className="h-4 w-4 mr-2 text-primary" />
-                        <span>{selectedCompany.founded_year}</span>
+                        <span className="text-slate-700">{selectedCompany.founded_year}</span>
                       </div>
                     </Card>
                   )}
                   {selectedCompany.investment_year && (
                     <Card className="p-3">
-                      <h4 className="text-xs text-muted-foreground mb-1">Invested</h4>
+                      <h4 className="text-xs text-slate-600 mb-1">Invested</h4>
                       <div className="flex items-center">
                         <Building className="h-4 w-4 mr-2 text-primary" />
-                        <span>{selectedCompany.investment_year}</span>
+                        <span className="text-slate-700">{selectedCompany.investment_year}</span>
                       </div>
                     </Card>
                   )}
                   {selectedCompany.website && (
                     <Card className="p-3 sm:col-span-2">
-                      <h4 className="text-xs text-muted-foreground mb-1">Website</h4>
+                      <h4 className="text-xs text-slate-600 mb-1">Website</h4>
                       <div className="flex items-center">
                         <Globe className="h-4 w-4 mr-2 text-primary" />
                         <a
@@ -320,7 +319,7 @@ const PortfolioPage = () => {
                     </Avatar>
                     <div>
                       <h4 className="font-medium">{selectedCompany.name}</h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-slate-600">
                         {selectedCompany.industry || 'Technology'} 
                         {selectedCompany.founded_year ? ` • Founded: ${selectedCompany.founded_year}` : ''}
                       </p>
