@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +12,22 @@ import { fetchPortfolioCompanies } from '../utils/adminApi';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+interface PortfolioCompany {
+  id: string;
+  name: string;
+  description?: string;
+  industry?: string;
+  founded_year?: number;
+  investment_year?: number;
+  website?: string;
+  logo_url?: string;
+  founder_names?: string;
+  ceo_linkedin_url?: string;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+}
 
 const PortfolioPage = () => {
   const [searchQuery, setSearchQuery] = useState('');

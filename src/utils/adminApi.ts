@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 
 // Define types
@@ -28,6 +27,8 @@ interface PortfolioCompany {
   investment_year?: number;
   website?: string;
   logo_url?: string;
+  founder_names?: string;
+  ceo_linkedin_url?: string;
   created_at: string;
   created_by: string;
   updated_at: string;
@@ -199,6 +200,8 @@ export const addPortfolioCompany = async (companyData: {
   investment_year?: number;
   website?: string;
   logo_url?: string;
+  founder_names?: string;
+  ceo_linkedin_url?: string;
 }) => {
   try {
     console.log('Starting addPortfolioCompany with data:', companyData);
