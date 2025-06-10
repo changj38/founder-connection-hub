@@ -37,7 +37,7 @@ const createTimeoutPromise = (ms: number, message: string) => {
   });
 };
 
-const withTimeout = async <T>(promise: Promise<T>, ms: number, timeoutMessage: string): Promise<T> => {
+const withTimeout = async <T,>(promise: Promise<T>, ms: number, timeoutMessage: string): Promise<T> => {
   return Promise.race([
     promise,
     createTimeoutPromise(ms, timeoutMessage)
