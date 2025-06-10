@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -267,16 +266,7 @@ const NetworkPage = () => {
               {filteredContacts.map((contact) => (
                 <Card key={contact.id} className="overflow-hidden border-gray-200 hover:shadow-md transition-shadow">
                   <CardHeader className="pb-2">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-12 w-12 flex-shrink-0">
-                        {contact.avatar_url ? (
-                          <AvatarImage src={contact.avatar_url} alt={contact.name} />
-                        ) : (
-                          <AvatarFallback className="bg-daydream-blue text-white">
-                            {getInitials(contact.name)}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
+                    <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-base leading-tight mb-1">{contact.name}</CardTitle>
                         <p className="text-sm text-gray-500 leading-tight">{contact.position || 'N/A'}</p>
@@ -354,12 +344,7 @@ const NetworkPage = () => {
                             </DialogHeader>
                             
                             <div className="space-y-4 py-4">
-                              <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
-                                <Avatar>
-                                  <AvatarFallback className="bg-daydream-blue text-white">
-                                    {selectedContact ? getInitials(selectedContact.name) : ''}
-                                  </AvatarFallback>
-                                </Avatar>
+                              <div className="p-3 border rounded-md bg-gray-50">
                                 <div>
                                   <h4 className="font-medium">{selectedContact?.name}</h4>
                                   <p className="text-sm text-gray-500">{selectedContact?.position || 'N/A'} at {selectedContact?.company || 'N/A'}</p>
@@ -413,16 +398,7 @@ const NetworkPage = () => {
                 {filteredContacts.map((contact) => (
                   <tr key={contact.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-daydream-blue text-white text-xs">
-                            {getInitials(contact.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{contact.name}</div>
-                        </div>
-                      </div>
+                      <div className="font-medium">{contact.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {contact.position || 'N/A'}
@@ -475,12 +451,7 @@ const NetworkPage = () => {
                             </DialogHeader>
                             
                             <div className="space-y-4 py-4">
-                              <div className="flex items-center gap-3 p-3 border rounded-md bg-gray-50">
-                                <Avatar>
-                                  <AvatarFallback className="bg-daydream-blue text-white">
-                                    {selectedContact ? getInitials(selectedContact.name) : ''}
-                                  </AvatarFallback>
-                                </Avatar>
+                              <div className="p-3 border rounded-md bg-gray-50">
                                 <div>
                                   <h4 className="font-medium">{selectedContact?.name}</h4>
                                   <p className="text-sm text-gray-500">{selectedContact?.position || 'N/A'} at {selectedContact?.company || 'N/A'}</p>
