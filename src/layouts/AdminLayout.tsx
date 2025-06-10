@@ -88,7 +88,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 />
                 <span className="ml-2 text-sm font-medium text-indigo-600">Admin</span>
               </Link>
-              <Button variant="sleek" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard" className="flex items-center text-sm">
                   <ArrowLeft className="h-4 w-4 mr-1" />
                   Back to Dashboard
