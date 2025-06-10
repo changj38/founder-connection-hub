@@ -265,7 +265,7 @@ const NetworkPage = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
               {filteredContacts.map((contact) => (
-                <Card key={contact.id} className="overflow-hidden border-gray-200 hover:shadow-md transition-shadow">
+                <Card key={contact.id} className="overflow-hidden border-gray-200 hover:shadow-md transition-shadow flex flex-col">
                   <CardHeader className="pb-2 p-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -282,7 +282,7 @@ const NetworkPage = () => {
                       <p className="text-xs text-gray-500 leading-tight truncate">{contact.position || 'N/A'}</p>
                     </div>
                   </CardHeader>
-                  <CardContent className="pb-3 p-3 pt-0">
+                  <CardContent className="pb-3 p-3 pt-0 flex flex-col flex-1">
                     <div className="mb-2 flex items-center gap-2 text-xs text-gray-600">
                       <Building className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate">{contact.company || 'Independent'}</span>
@@ -309,7 +309,7 @@ const NetworkPage = () => {
                         </a>
                       )}
                     </div>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1.5 mt-auto">
                       {isAdmin() && (
                         <Button 
                           size="sm" 
