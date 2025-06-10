@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -266,8 +267,8 @@ const NetworkPage = () => {
               {filteredContacts.map((contact) => (
                 <Card key={contact.id} className="overflow-hidden border-gray-200 hover:shadow-md transition-shadow">
                   <CardHeader className="pb-2">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-12 w-12 flex-shrink-0">
                         {contact.avatar_url ? (
                           <AvatarImage src={contact.avatar_url} alt={contact.name} />
                         ) : (
@@ -276,14 +277,14 @@ const NetworkPage = () => {
                           </AvatarFallback>
                         )}
                       </Avatar>
-                      <div>
-                        <CardTitle className="text-base">{contact.name}</CardTitle>
-                        <p className="text-sm text-gray-500">{contact.position || 'N/A'}</p>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base leading-tight mb-1">{contact.name}</CardTitle>
+                        <p className="text-sm text-gray-500 leading-tight">{contact.position || 'N/A'}</p>
                       </div>
                       {contact.is_lp && (
                         <Badge 
                           variant="secondary" 
-                          className="bg-yellow-100 text-yellow-800 ml-2"
+                          className="bg-yellow-100 text-yellow-800 flex-shrink-0"
                         >
                           LP
                         </Badge>
@@ -292,8 +293,8 @@ const NetworkPage = () => {
                   </CardHeader>
                   <CardContent className="pb-4">
                     <div className="mb-3 flex items-center gap-2 text-sm text-gray-600">
-                      <Building className="h-4 w-4" />
-                      {contact.company || 'Independent'}
+                      <Building className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{contact.company || 'Independent'}</span>
                     </div>
                     <div className="flex gap-2 mt-2">
                       {contact.website && (
