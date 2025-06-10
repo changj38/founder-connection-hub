@@ -262,31 +262,31 @@ const NetworkPage = () => {
               <p>No contacts found matching your criteria.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredContacts.map((contact) => (
                 <Card key={contact.id} className="overflow-hidden border-gray-200 hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
+                  <CardHeader className="pb-2 p-4">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base leading-tight mb-1">{contact.name}</CardTitle>
-                        <p className="text-sm text-gray-500 leading-tight">{contact.position || 'N/A'}</p>
+                        <CardTitle className="text-sm leading-tight mb-1 truncate">{contact.name}</CardTitle>
+                        <p className="text-xs text-gray-500 leading-tight truncate">{contact.position || 'N/A'}</p>
                       </div>
                       {contact.is_lp && (
                         <Badge 
                           variant="secondary" 
-                          className="bg-yellow-100 text-yellow-800 flex-shrink-0"
+                          className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 flex-shrink-0"
                         >
                           LP
                         </Badge>
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent className="pb-4">
-                    <div className="mb-3 flex items-center gap-2 text-sm text-gray-600">
-                      <Building className="h-4 w-4 flex-shrink-0" />
+                  <CardContent className="pb-3 p-4 pt-0">
+                    <div className="mb-2 flex items-center gap-2 text-xs text-gray-600">
+                      <Building className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate">{contact.company || 'Independent'}</span>
                     </div>
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex gap-2 mt-2 mb-3">
                       {contact.website && (
                         <a
                           href={contact.website}
@@ -294,7 +294,7 @@ const NetworkPage = () => {
                           rel="noopener noreferrer"
                           className="text-gray-600 hover:text-daydream-blue transition-colors"
                         >
-                          <Globe className="h-5 w-5" />
+                          <Globe className="h-4 w-4" />
                         </a>
                       )}
                       {contact.linkedin_url && (
@@ -304,77 +304,77 @@ const NetworkPage = () => {
                           rel="noopener noreferrer"
                           className="text-gray-600 hover:text-daydream-blue transition-colors"
                         >
-                          <Linkedin className="h-5 w-5" />
+                          <Linkedin className="h-4 w-4" />
                         </a>
                       )}
                     </div>
-                    <div className="flex justify-between items-center mt-4">
-                      <div className="flex gap-2">
-                        {isAdmin() && (
+                    <div className="flex flex-col gap-1.5">
+                      {isAdmin() && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => handleEditContact(contact)}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" /> 
+                          Edit
+                        </Button>
+                      )}
+                      <Dialog open={isIntroDialogOpen && selectedContact?.id === contact.id} onOpenChange={(open) => {
+                        setIsIntroDialogOpen(open);
+                        if (!open) setSelectedContact(null);
+                      }}>
+                        <DialogTrigger asChild>
                           <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleEditContact(contact)}
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              setSelectedContact(contact);
+                              setIsIntroDialogOpen(true);
+                            }}
                           >
-                            <Pencil className="h-4 w-4 mr-1" /> 
-                            Edit
+                            Request Intro
                           </Button>
-                        )}
-                        <Dialog open={isIntroDialogOpen && selectedContact?.id === contact.id} onOpenChange={(open) => {
-                          setIsIntroDialogOpen(open);
-                          if (!open) setSelectedContact(null);
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button 
-                              size="sm"
-                              onClick={() => {
-                                setSelectedContact(contact);
-                                setIsIntroDialogOpen(true);
-                              }}
-                            >
-                              Request Intro
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Request Introduction</DialogTitle>
-                              <DialogDescription>
-                                Tell us why you'd like to be introduced to {selectedContact?.name}.
-                              </DialogDescription>
-                            </DialogHeader>
-                            
-                            <div className="space-y-4 py-4">
-                              <div className="p-3 border rounded-md bg-gray-50">
-                                <div>
-                                  <h4 className="font-medium">{selectedContact?.name}</h4>
-                                  <p className="text-sm text-gray-500">{selectedContact?.position || 'N/A'} at {selectedContact?.company || 'N/A'}</p>
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <Label htmlFor="reason">Why would you like an introduction?</Label>
-                                <Textarea
-                                  id="reason"
-                                  placeholder="Briefly explain the purpose of the introduction and how it might be valuable to both parties."
-                                  value={introReason}
-                                  onChange={(e) => setIntroReason(e.target.value)}
-                                  rows={5}
-                                />
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Request Introduction</DialogTitle>
+                            <DialogDescription>
+                              Tell us why you'd like to be introduced to {selectedContact?.name}.
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          <div className="space-y-4 py-4">
+                            <div className="p-3 border rounded-md bg-gray-50">
+                              <div>
+                                <h4 className="font-medium">{selectedContact?.name}</h4>
+                                <p className="text-sm text-gray-500">{selectedContact?.position || 'N/A'} at {selectedContact?.company || 'N/A'}</p>
                               </div>
                             </div>
                             
-                            <DialogFooter>
-                              <Button variant="outline" onClick={() => setIsIntroDialogOpen(false)}>Cancel</Button>
-                              <Button 
-                                onClick={handleIntroRequest}
-                                disabled={!introReason.trim()}
-                              >
-                                Send Request
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="reason">Why would you like an introduction?</Label>
+                              <Textarea
+                                id="reason"
+                                placeholder="Briefly explain the purpose of the introduction and how it might be valuable to both parties."
+                                value={introReason}
+                                onChange={(e) => setIntroReason(e.target.value)}
+                                rows={5}
+                              />
+                            </div>
+                          </div>
+                          
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsIntroDialogOpen(false)}>Cancel</Button>
+                            <Button 
+                              onClick={handleIntroRequest}
+                              disabled={!introReason.trim()}
+                            >
+                              Send Request
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </CardContent>
                 </Card>
