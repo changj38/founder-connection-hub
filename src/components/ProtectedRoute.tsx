@@ -10,12 +10,12 @@ const ProtectedRoute = () => {
   const { currentUser, loading, error, resetLoadingState } = useAuth();
   const [showTimeout, setShowTimeout] = useState(false);
 
-  // Show timeout message after 8 seconds of loading
+  // Show timeout message after 12 seconds of loading (increased from 8)
   useEffect(() => {
     if (loading) {
       const timer = setTimeout(() => {
         setShowTimeout(true);
-      }, 8000);
+      }, 12000);
       
       return () => clearTimeout(timer);
     } else {
@@ -23,8 +23,8 @@ const ProtectedRoute = () => {
     }
   }, [loading]);
 
-  // Show error state
-  if (error) {
+  // Show error state only for non-network errors
+  if (error && !error.includes('timeout') && !error.includes('network')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="text-center max-w-md">
@@ -47,7 +47,7 @@ const ProtectedRoute = () => {
     );
   }
 
-  // Show loading state with timeout handling
+  // Show loading state with enhanced timeout handling
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -63,7 +63,7 @@ const ProtectedRoute = () => {
                 Reset Loading
               </Button>
               <p className="text-sm text-gray-500">
-                If the problem persists, try refreshing the page or clearing your browser cache.
+                Network issues can cause delays. If the problem persists, try refreshing the page.
               </p>
             </div>
           )}

@@ -16,13 +16,15 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      storage: localStorage
+      storage: localStorage,
+      detectSessionInUrl: true,
+      flowType: 'pkce'
     },
     global: {
       fetch: (url, options = {}) => {
         return fetch(url, {
           ...options,
-          signal: AbortSignal.timeout(8000), // 8 second timeout for all requests
+          signal: AbortSignal.timeout(15000), // Increased from 8 seconds to 15 seconds
         });
       },
     },
@@ -30,7 +32,7 @@ export const supabase = createClient<Database>(
       schema: 'public'
     },
     realtime: {
-      timeout: 5000,
+      timeout: 10000, // Increased from 5 seconds
       heartbeatIntervalMs: 30000,
     }
   }
