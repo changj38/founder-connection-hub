@@ -64,7 +64,7 @@ const AdminPortfolioTab = () => {
     (company.description && company.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     if (name === 'founded_year' || name === 'investment_year') {
@@ -664,5 +664,3 @@ const AdminPortfolioTab = () => {
 };
 
 export default AdminPortfolioTab;
-
-</edits_to_apply>
