@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -445,14 +446,14 @@ const AdminPortfolioTab = () => {
 
       {/* Add/Edit Company Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Portfolio Company' : 'Add New Portfolio Company'}</DialogTitle>
             <DialogDescription>
               {isEditMode ? 'Update the details of this company.' : 'Fill out the details to add a new company to your portfolio.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-4 overflow-y-auto flex-1">
             <div className="grid grid-cols-1 gap-2">
               <Label htmlFor="name" className="flex items-center">
                 <Building className="h-4 w-4 mr-2 text-gray-500" />
@@ -610,7 +611,7 @@ const AdminPortfolioTab = () => {
               )}
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => {
               resetForm();
               setIsDialogOpen(false);
