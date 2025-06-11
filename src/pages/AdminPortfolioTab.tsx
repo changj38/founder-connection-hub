@@ -14,6 +14,7 @@ import { fetchPortfolioCompanies, addPortfolioCompany, bulkImportPortfolioCompan
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import CSVImporter from '@/components/CSVImporter';
+import { uploadPortfolioLogo } from '@/utils/portfolioFileUtils';
 
 type PortfolioCompany = {
   id: string;
@@ -50,6 +51,7 @@ const AdminPortfolioTab = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   const { data: portfolioCompanies = [], isLoading, error } = useQuery({
     queryKey: ['portfolioCompanies'],
@@ -224,6 +226,42 @@ const AdminPortfolioTab = () => {
         description: `Failed to import companies: ${error?.message || ''}`,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!formData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a company name first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    
+    try {
+      const logoUrl = await uploadPortfolioLogo(file, formData.name);
+      setFormData(prev => ({ ...prev, logo_url: logoUrl }));
+      toast({
+        title: "Success",
+        description: "Logo uploaded successfully",
+      });
+    } catch (error: any) {
+      console.error('Logo upload error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload logo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingLogo(false);
+      // Reset the input
+      event.target.value = '';
     }
   };
 
@@ -520,17 +558,46 @@ const AdminPortfolioTab = () => {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="logo_url" className="flex items-center">
+              <Label className="flex items-center">
                 <Image className="h-4 w-4 mr-2 text-gray-500" />
-                Logo URL
+                Company Logo
               </Label>
-              <Input
-                id="logo_url"
-                name="logo_url"
-                value={formData.logo_url}
-                onChange={handleInputChange}
-                placeholder="Enter direct URL to company logo"
-              />
+              
+              {/* File Upload Option */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={isUploadingLogo || !formData.name.trim()}
+                    className="flex-1"
+                  />
+                  {isUploadingLogo && (
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-purple-600"></div>
+                  )}
+                </div>
+                {!formData.name.trim() && (
+                  <p className="text-sm text-gray-500">Enter company name first to enable file upload</p>
+                )}
+                
+                <div className="text-center text-sm text-gray-500">or</div>
+                
+                {/* URL Input Option */}
+                <div>
+                  <Label htmlFor="logo_url" className="text-sm text-gray-600">
+                    Logo URL
+                  </Label>
+                  <Input
+                    id="logo_url"
+                    name="logo_url"
+                    value={formData.logo_url}
+                    onChange={handleInputChange}
+                    placeholder="Enter direct URL to company logo"
+                  />
+                </div>
+              </div>
+              
               {formData.logo_url && (
                 <div className="mt-2 flex justify-center">
                   <Avatar className="h-16 w-16">
@@ -597,3 +664,5 @@ const AdminPortfolioTab = () => {
 };
 
 export default AdminPortfolioTab;
+
+</edits_to_apply>
