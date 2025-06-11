@@ -24,9 +24,7 @@ const LandingPage = () => {
         }} transition={{
           duration: 0.8
         }} className="max-w-3xl">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              DayDream Ventures Founder Portal
-            </h1>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-slate-50">DayDream Ventures Founder OS</h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-12">
               Exclusive access to resources, network, and support for our portfolio companies.
             </p>
