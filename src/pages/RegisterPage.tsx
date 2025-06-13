@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, AlertCircle, Info, Loader2 } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -21,6 +21,7 @@ const RegisterPage = () => {
   const [emailStatus, setEmailStatus] = useState<'unchecked' | 'checking' | 'authorized' | 'unauthorized'>('unchecked');
   const { register, currentUser, checkEmailAuthorized } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -52,7 +53,20 @@ const RegisterPage = () => {
 
     try {
       await register(name, email, password, company);
-      // Navigate to dashboard will happen automatically via auth state change
+      
+      // Show success toast
+      toast({
+        title: "Account created successfully!",
+        description: "Please sign in with your new credentials.",
+      });
+      
+      // Redirect to login page instead of letting auth state change redirect to dashboard
+      navigate('/login', { 
+        state: { 
+          fromRegistration: true, 
+          email: email 
+        } 
+      });
     } catch (err) {
       console.error('Registration error:', err);
       setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');

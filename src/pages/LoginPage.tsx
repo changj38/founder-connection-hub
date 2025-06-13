@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, CheckCircle } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +16,11 @@ const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if coming from registration
+  const fromRegistration = location.state?.fromRegistration;
+  const registeredEmail = location.state?.email;
 
   // Redirect if already logged in
   useEffect(() => {
@@ -22,6 +28,13 @@ const LoginPage = () => {
       navigate('/dashboard');
     }
   }, [currentUser, navigate]);
+
+  // Pre-fill email if coming from registration
+  useEffect(() => {
+    if (fromRegistration && registeredEmail) {
+      setEmail(registeredEmail);
+    }
+  }, [fromRegistration, registeredEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +85,16 @@ const LoginPage = () => {
               <h1 className="text-2xl font-semibold text-slate-900 mb-2">Welcome back</h1>
               <p className="text-slate-500">Sign in to your founder portal</p>
             </div>
+
+            {/* Success Message from Registration */}
+            {fromRegistration && (
+              <Alert className="mb-6 bg-green-50 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700">
+                  Account created successfully! Please sign in with your new credentials.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Error Message */}
             {error && (
