@@ -213,41 +213,111 @@ export type Database = {
         }
         Relationships: []
       }
+      fund_performance_snapshots: {
+        Row: {
+          created_at: string | null
+          deployed_capital: number
+          dpi: number
+          fund_id: string
+          id: string
+          irr_percentage: number
+          realized_value: number
+          remaining_capital: number
+          snapshot_date: string
+          tvpi: number
+          unrealized_value: number
+        }
+        Insert: {
+          created_at?: string | null
+          deployed_capital?: number
+          dpi?: number
+          fund_id: string
+          id?: string
+          irr_percentage?: number
+          realized_value?: number
+          remaining_capital?: number
+          snapshot_date?: string
+          tvpi?: number
+          unrealized_value?: number
+        }
+        Update: {
+          created_at?: string | null
+          deployed_capital?: number
+          dpi?: number
+          fund_id?: string
+          id?: string
+          irr_percentage?: number
+          realized_value?: number
+          remaining_capital?: number
+          snapshot_date?: string
+          tvpi?: number
+          unrealized_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fund_performance_snapshots_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funds: {
         Row: {
           check_size: number
           created_at: string
           created_by: string
+          deployed_capital: number | null
+          deployment_date: string | null
+          fund_model_id: string | null
           fund_size: number
           id: string
           name: string
           planned_investments: number
           reserve_ratio: number
+          status: string | null
           updated_at: string
         }
         Insert: {
           check_size: number
           created_at?: string
           created_by: string
+          deployed_capital?: number | null
+          deployment_date?: string | null
+          fund_model_id?: string | null
           fund_size: number
           id?: string
           name: string
           planned_investments: number
           reserve_ratio: number
+          status?: string | null
           updated_at?: string
         }
         Update: {
           check_size?: number
           created_at?: string
           created_by?: string
+          deployed_capital?: number | null
+          deployment_date?: string | null
+          fund_model_id?: string | null
           fund_size?: number
           id?: string
           name?: string
           planned_investments?: number
           reserve_ratio?: number
+          status?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "funds_fund_model_id_fkey"
+            columns: ["fund_model_id"]
+            isOneToOne: false
+            referencedRelation: "fund_models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       help_requests: {
         Row: {
@@ -298,9 +368,12 @@ export type Database = {
           id: string
           investment_date: string
           marked_up_valuation: number | null
+          model_expected_check_size: number | null
+          model_expected_valuation: number | null
           ownership_percentage: number
           realized_return: number | null
           updated_at: string
+          variance_percentage: number | null
         }
         Insert: {
           check_size: number
@@ -311,9 +384,12 @@ export type Database = {
           id?: string
           investment_date: string
           marked_up_valuation?: number | null
+          model_expected_check_size?: number | null
+          model_expected_valuation?: number | null
           ownership_percentage: number
           realized_return?: number | null
           updated_at?: string
+          variance_percentage?: number | null
         }
         Update: {
           check_size?: number
@@ -324,9 +400,12 @@ export type Database = {
           id?: string
           investment_date?: string
           marked_up_valuation?: number | null
+          model_expected_check_size?: number | null
+          model_expected_valuation?: number | null
           ownership_percentage?: number
           realized_return?: number | null
           updated_at?: string
+          variance_percentage?: number | null
         }
         Relationships: [
           {

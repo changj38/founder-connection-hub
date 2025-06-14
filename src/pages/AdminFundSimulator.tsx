@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Calculator, Save, TrendingUp, DollarSign, PieChart, BarChart3 } from 'lucide-react';
+import { Calculator, Save, TrendingUp, DollarSign, PieChart, BarChart3, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import FundModelInputs from '../components/fund-modeling/FundModelInputs';
 import FundModelMetrics from '../components/fund-modeling/FundModelMetrics';
 import FundModelCharts from '../components/fund-modeling/FundModelCharts';
@@ -28,6 +29,8 @@ interface FundModel {
 }
 
 const AdminFundSimulator = () => {
+  const navigate = useNavigate();
+  
   const [model, setModel] = useState<FundModel>({
     name: 'Fund Model 1',
     gp_commit_usd: 2000000,
@@ -132,6 +135,14 @@ const AdminFundSimulator = () => {
           <p className="text-gray-600">Test different fund construction strategies before deployment</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/portfolio-management')}
+            className="flex items-center gap-2"
+          >
+            <ArrowRight className="h-4 w-4" />
+            Go to Portfolio Management
+          </Button>
           <Button onClick={handleSaveModel} className="flex items-center gap-2">
             <Save className="h-4 w-4" />
             Save Model

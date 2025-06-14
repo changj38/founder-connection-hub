@@ -15,6 +15,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import NetworkPage from './pages/NetworkPage';
 import PortfolioPage from './pages/PortfolioPage';
+import PortfolioManagementPage from './pages/PortfolioManagementPage';
 import ForumPage from './pages/ForumPage';
 import HelpPage from './pages/HelpPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
@@ -38,6 +39,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/network" element={<NetworkPage />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/portfolio-management" element={<PortfolioManagementPage />} />
               <Route path="/forum" element={<ForumPage />} />
               <Route path="/help" element={<HelpPage />} />
               <Route path="/profile-settings" element={<ProfileSettingsPage />} />
