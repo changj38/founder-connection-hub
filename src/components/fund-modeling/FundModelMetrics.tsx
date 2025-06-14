@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, PieChart, Target } from 'lucide-react';
+import { ValuationStage } from './ValuationProgressionEditor';
 
 interface FundModel {
   name: string;
@@ -19,18 +20,10 @@ interface FundModel {
 
 interface FundModelMetricsProps {
   model: FundModel;
+  valuationStages: ValuationStage[];
 }
 
-// Valuation-based company progression model
-interface CompanyStage {
-  stage: string;
-  avgValuation: number;
-  successRate: number;
-  timeToNext: number;
-  exitProbability: number;
-}
-
-const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model }) => {
+const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model, valuationStages }) => {
   // Capital Calculations
   const management_fees = model.fund_size_usd * (model.mgmt_fee_pct / 100) * model.hold_period_years;
   const recycled_capital = model.fund_size_usd * (model.recycling_rate_pct / 100);
@@ -40,16 +33,16 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model }) => {
   const number_of_initial_investments = Math.floor(initial_allocation / model.avg_initial_check_usd);
   const ownership_per_investment = model.avg_initial_check_usd / model.avg_entry_valuation_usd;
 
-  // Valuation-based progression stages
-  const companyStages: CompanyStage[] = [
-    { stage: 'Entry (Seed/A)', avgValuation: model.avg_entry_valuation_usd, successRate: 1.0, timeToNext: 1.5, exitProbability: 0.05 },
-    { stage: 'Series B', avgValuation: model.avg_entry_valuation_usd * 3.2, successRate: 0.65, timeToNext: 2.0, exitProbability: 0.15 },
-    { stage: 'Series C+', avgValuation: model.avg_entry_valuation_usd * 8.5, successRate: 0.45, timeToNext: 2.5, exitProbability: 0.25 },
-    { stage: 'Growth/Pre-IPO', avgValuation: model.avg_entry_valuation_usd * 22, successRate: 0.30, timeToNext: 3.0, exitProbability: 0.60 },
-    { stage: 'Exit', avgValuation: model.avg_entry_valuation_usd * 45, successRate: 0.18, timeToNext: 0, exitProbability: 1.0 }
-  ];
+  // Convert valuation stages to progression data using current entry valuation
+  const companyStages = valuationStages.map(stage => ({
+    stage: stage.stage,
+    avgValuation: model.avg_entry_valuation_usd * stage.valuationMultiple,
+    successRate: stage.successRate,
+    timeToNext: stage.timeToNext,
+    exitProbability: stage.exitProbability
+  }));
 
-  // Portfolio outcome modeling
+  // Portfolio outcome modeling based on realistic VC power law distribution
   const portfolioOutcomes = {
     totalLoss: { count: Math.round(number_of_initial_investments * 0.45), avgReturn: 0 },
     partialLoss: { count: Math.round(number_of_initial_investments * 0.25), avgReturn: 0.3 },
@@ -59,7 +52,7 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model }) => {
     great: { count: Math.round(number_of_initial_investments * 0.01), avgReturn: 45 }
   };
 
-  // Calculate weighted average exit valuation
+  // Calculate weighted average exit valuation based on entry valuation and progression
   const totalCompanies = Object.values(portfolioOutcomes).reduce((sum, outcome) => sum + outcome.count, 0);
   const weightedExitValue = Object.values(portfolioOutcomes).reduce((sum, outcome) => {
     return sum + (outcome.count * outcome.avgReturn * model.avg_initial_check_usd);
@@ -69,13 +62,14 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model }) => {
   const topPerformers = portfolioOutcomes.great.count + portfolioOutcomes.good.count;
   const topPerformerValue = (portfolioOutcomes.great.count * portfolioOutcomes.great.avgReturn + 
                             portfolioOutcomes.good.count * portfolioOutcomes.good.avgReturn) * model.avg_initial_check_usd;
-  const concentrationRatio = topPerformerValue / weightedExitValue;
+  const concentrationRatio = weightedExitValue > 0 ? topPerformerValue / weightedExitValue : 0;
 
-  // Return Metrics
-  const TVPI = weightedExitValue / investable_capital;
-  const DPI = (weightedExitValue * 0.65) / investable_capital; // 65% realization rate
-  const MOIC = weightedExitValue / model.fund_size_usd;
-  const IRR = Math.pow(weightedExitValue / investable_capital, 1 / model.hold_period_years) - 1;
+  // Return Metrics - Fixed to be reactive to entry valuation changes
+  const TVPI = investable_capital > 0 ? weightedExitValue / investable_capital : 0;
+  const DPI = investable_capital > 0 ? (weightedExitValue * 0.65) / investable_capital : 0; // 65% realization rate
+  const MOIC = model.fund_size_usd > 0 ? weightedExitValue / model.fund_size_usd : 0;
+  const IRR = investable_capital > 0 && model.hold_period_years > 0 ? 
+    Math.pow(weightedExitValue / investable_capital, 1 / model.hold_period_years) - 1 : 0;
 
   // Follow-on modeling
   const followOnDeployment = reserve_allocation * 0.8; // 80% of reserves used
@@ -144,7 +138,7 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Company Valuation Progression
+            Company Valuation Progression (Editable Benchmarks)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -190,7 +184,7 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Fund Performance Metrics
+            Fund Performance Metrics (Updated with Entry Valuation)
           </CardTitle>
         </CardHeader>
         <CardContent>

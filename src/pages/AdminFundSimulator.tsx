@@ -11,6 +11,7 @@ import { Calculator, Save, TrendingUp, DollarSign, PieChart, BarChart3 } from 'l
 import FundModelInputs from '../components/fund-modeling/FundModelInputs';
 import FundModelMetrics from '../components/fund-modeling/FundModelMetrics';
 import FundModelCharts from '../components/fund-modeling/FundModelCharts';
+import ValuationProgressionEditor, { ValuationStage } from '../components/fund-modeling/ValuationProgressionEditor';
 
 interface FundModel {
   id?: string;
@@ -39,6 +40,15 @@ const AdminFundSimulator = () => {
     mgmt_fee_pct: 2.5,
     carry_pct: 20
   });
+
+  // Default valuation progression stages
+  const [valuationStages, setValuationStages] = useState<ValuationStage[]>([
+    { stage: 'Entry (Seed/A)', valuationMultiple: 1.0, successRate: 1.0, timeToNext: 1.5, exitProbability: 0.05 },
+    { stage: 'Series B', valuationMultiple: 3.2, successRate: 0.65, timeToNext: 2.0, exitProbability: 0.15 },
+    { stage: 'Series C+', valuationMultiple: 8.5, successRate: 0.45, timeToNext: 2.5, exitProbability: 0.25 },
+    { stage: 'Growth/Pre-IPO', valuationMultiple: 22, successRate: 0.30, timeToNext: 3.0, exitProbability: 0.60 },
+    { stage: 'Exit', valuationMultiple: 45, successRate: 0.18, timeToNext: 0, exitProbability: 1.0 }
+  ]);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -142,8 +152,15 @@ const AdminFundSimulator = () => {
       {/* Input Panel */}
       <FundModelInputs model={model} setModel={setModel} />
 
+      {/* Valuation Progression Editor */}
+      <ValuationProgressionEditor 
+        stages={valuationStages}
+        onStagesChange={setValuationStages}
+        entryValuation={model.avg_entry_valuation_usd}
+      />
+
       {/* Calculated Metrics */}
-      <FundModelMetrics model={model} />
+      <FundModelMetrics model={model} valuationStages={valuationStages} />
 
       {/* Charts & Visualizations */}
       <FundModelCharts model={model} />
