@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, TrendingUp, DollarSign, PieChart } from 'lucide-react';
+import { Plus, TrendingUp, DollarSign, PieChart, Target, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import FundSetupForm from '../components/fund-modeling/FundSetupForm';
 import InvestmentForm from '../components/fund-modeling/InvestmentForm';
@@ -14,6 +13,8 @@ import ScenarioSimulation from '../components/fund-modeling/ScenarioSimulation';
 import PortfolioVisualization from '../components/fund-modeling/PortfolioVisualization';
 import FundsList from '../components/fund-modeling/FundsList';
 import InvestmentsList from '../components/fund-modeling/InvestmentsList';
+import FundCompositionDashboard from '../components/fund-modeling/FundCompositionDashboard';
+import AllocationTargetsManager from '../components/fund-modeling/AllocationTargetsManager';
 
 interface Fund {
   id: string;
@@ -42,6 +43,7 @@ const AdminFundModelingTab = () => {
   const [showFundForm, setShowFundForm] = useState(false);
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [showScenarios, setShowScenarios] = useState(false);
+  const [activeView, setActiveView] = useState<'overview' | 'composition' | 'targets'>('overview');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -116,7 +118,7 @@ const AdminFundModelingTab = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Fund Modeling Dashboard</h2>
-          <p className="text-gray-600">Manage funds, track investments, and analyze returns</p>
+          <p className="text-gray-600">Comprehensive fund composition and performance analysis</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowFundForm(true)} className="flex items-center gap-2">
@@ -165,32 +167,79 @@ const AdminFundModelingTab = () => {
         </Card>
       )}
 
+      {/* View Toggle */}
+      {selectedFund && (
+        <div className="flex gap-2">
+          <Button
+            variant={activeView === 'overview' ? 'default' : 'outline'}
+            onClick={() => setActiveView('overview')}
+            className="flex items-center gap-2"
+          >
+            <DollarSign className="h-4 w-4" />
+            Portfolio Overview
+          </Button>
+          <Button
+            variant={activeView === 'composition' ? 'default' : 'outline'}
+            onClick={() => setActiveView('composition')}
+            className="flex items-center gap-2"
+          >
+            <PieChart className="h-4 w-4" />
+            Fund Composition
+          </Button>
+          <Button
+            variant={activeView === 'targets' ? 'default' : 'outline'}
+            onClick={() => setActiveView('targets')}
+            className="flex items-center gap-2"
+          >
+            <Target className="h-4 w-4" />
+            Allocation Targets
+          </Button>
+        </div>
+      )}
+
       {/* Metrics Header */}
       {selectedFund && investments && (
         <MetricsHeader fund={selectedFund} investments={investments} />
       )}
 
-      {/* Scenario Simulation */}
-      {showScenarios && selectedFund && investments && (
-        <ScenarioSimulation fund={selectedFund} investments={investments} />
-      )}
+      {/* Dynamic Content Based on Active View */}
+      {selectedFund && investments && (
+        <>
+          {activeView === 'overview' && (
+            <>
+              {/* Scenario Simulation */}
+              {showScenarios && (
+                <ScenarioSimulation fund={selectedFund} investments={investments} />
+              )}
 
-      {/* Portfolio Overview */}
-      {selectedFund && investments && investments.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <PortfolioVisualization investments={investments} />
-          <Card>
-            <CardHeader>
-              <CardTitle>Portfolio Companies</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <InvestmentsList 
-                investments={investments} 
-                onInvestmentUpdated={() => queryClient.invalidateQueries({ queryKey: ['investments'] })}
-              />
-            </CardContent>
-          </Card>
-        </div>
+              {/* Portfolio Overview */}
+              {investments.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <PortfolioVisualization investments={investments} />
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Portfolio Companies</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <InvestmentsList 
+                        investments={investments} 
+                        onInvestmentUpdated={() => queryClient.invalidateQueries({ queryKey: ['investments'] })}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeView === 'composition' && (
+            <FundCompositionDashboard fund={selectedFund} investments={investments} />
+          )}
+
+          {activeView === 'targets' && (
+            <AllocationTargetsManager />
+          )}
+        </>
       )}
 
       {/* Empty State */}
@@ -199,7 +248,7 @@ const AdminFundModelingTab = () => {
           <CardContent>
             <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No funds created yet</h3>
-            <p className="text-gray-500 mb-6">Create your first fund to start tracking investments and analyzing returns.</p>
+            <p className="text-gray-500 mb-6">Create your first fund to start tracking investments and analyzing composition.</p>
             <Button onClick={() => setShowFundForm(true)} className="flex items-center gap-2 mx-auto">
               <Plus className="h-4 w-4" />
               Create First Fund
