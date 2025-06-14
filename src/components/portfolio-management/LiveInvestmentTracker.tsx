@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -20,7 +19,6 @@ interface InvestmentForm {
   company_name: string;
   check_size: string;
   entry_valuation: string;
-  ownership_percentage: string;
   investment_date: string;
   marked_up_valuation: string;
 }
@@ -32,7 +30,6 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
     company_name: '',
     check_size: '',
     entry_valuation: '',
-    ownership_percentage: '',
     investment_date: new Date().toISOString().split('T')[0],
     marked_up_valuation: ''
   });
@@ -117,19 +114,23 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       company_name: '',
       check_size: '',
       entry_valuation: '',
-      ownership_percentage: '',
       investment_date: new Date().toISOString().split('T')[0],
       marked_up_valuation: ''
     });
   };
 
   const handleSubmit = () => {
+    // Calculate ownership percentage automatically
+    const checkSize = Number(formData.check_size);
+    const entryValuation = Number(formData.entry_valuation);
+    const ownershipPercentage = entryValuation > 0 ? (checkSize / entryValuation) * 100 : 0;
+
     const investmentData = {
       fund_id: fundId,
       company_name: formData.company_name,
-      check_size: Number(formData.check_size),
-      entry_valuation: Number(formData.entry_valuation),
-      ownership_percentage: Number(formData.ownership_percentage),
+      check_size: checkSize,
+      entry_valuation: entryValuation,
+      ownership_percentage: ownershipPercentage,
       investment_date: formData.investment_date,
       marked_up_valuation: formData.marked_up_valuation ? Number(formData.marked_up_valuation) : null
     };
@@ -147,7 +148,6 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       company_name: investment.company_name,
       check_size: investment.check_size.toString(),
       entry_valuation: investment.entry_valuation.toString(),
-      ownership_percentage: investment.ownership_percentage.toString(),
       investment_date: investment.investment_date,
       marked_up_valuation: investment.marked_up_valuation?.toString() || ''
     });
@@ -240,7 +240,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="entry-valuation">Entry Valuation ($)</Label>
                   <Input
                     id="entry-valuation"
@@ -248,18 +248,6 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                     value={formData.entry_valuation}
                     onChange={(e) => setFormData({ ...formData, entry_valuation: e.target.value })}
                     placeholder="10000000"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ownership">Ownership (%)</Label>
-                  <Input
-                    id="ownership"
-                    type="number"
-                    step="0.01"
-                    value={formData.ownership_percentage}
-                    onChange={(e) => setFormData({ ...formData, ownership_percentage: e.target.value })}
-                    placeholder="10.5"
                   />
                 </div>
 
