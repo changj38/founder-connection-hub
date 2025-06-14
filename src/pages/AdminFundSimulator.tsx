@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Calculator, Save, TrendingUp, DollarSign, PieChart, BarChart3, ArrowRight } from 'lucide-react';
+import { Calculator, Save, TrendingUp, DollarSign, PieChart, BarChart3, ArrowRight, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import FundModelInputs from '../components/fund-modeling/FundModelInputs';
 import FundModelMetrics from '../components/fund-modeling/FundModelMetrics';
@@ -102,8 +103,33 @@ const AdminFundSimulator = () => {
     }
   });
 
+  // Delete model mutation
+  const deleteModelMutation = useMutation({
+    mutationFn: async (modelId: string) => {
+      const { error } = await supabase
+        .from('fund_models')
+        .delete()
+        .eq('id', modelId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fund-models'] });
+      toast({
+        title: "Model deleted successfully",
+        description: "The fund model has been deleted."
+      });
+    }
+  });
+
   const handleSaveModel = () => {
     saveModelMutation.mutate(model);
+  };
+
+  const handleDeleteModel = (modelId: string) => {
+    if (confirm('Are you sure you want to delete this fund model? This action cannot be undone.')) {
+      deleteModelMutation.mutate(modelId);
+    }
   };
 
   const loadModel = (savedModel: any) => {
@@ -159,14 +185,23 @@ const AdminFundSimulator = () => {
           <CardContent>
             <div className="flex gap-2 flex-wrap">
               {savedModels.map((savedModel) => (
-                <Button
-                  key={savedModel.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadModel(savedModel)}
-                >
-                  {savedModel.name}
-                </Button>
+                <div key={savedModel.id} className="flex items-center gap-2 p-2 border rounded-lg">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => loadModel(savedModel)}
+                  >
+                    {savedModel.name}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteModel(savedModel.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               ))}
             </div>
           </CardContent>
