@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Edit, TrendingUp } from 'lucide-react';
+import { fetchPortfolioCompanies } from '../../utils/adminApi';
 
 interface LiveInvestmentTrackerProps {
   fundId: string;
@@ -37,6 +39,12 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch portfolio companies for the dropdown
+  const { data: portfolioCompanies = [] } = useQuery({
+    queryKey: ['portfolioCompanies'],
+    queryFn: fetchPortfolioCompanies
+  });
 
   // Fetch investments for this fund
   const { data: investments, isLoading } = useQuery({
@@ -192,14 +200,23 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
               </DialogHeader>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Company Name</Label>
-                  <Input
-                    id="company-name"
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="company-select">Company Name</Label>
+                  <Select
                     value={formData.company_name}
-                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    placeholder="e.g., Acme Corp"
-                  />
+                    onValueChange={(value) => setFormData({ ...formData, company_name: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a portfolio company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {portfolioCompanies.map((company) => (
+                        <SelectItem key={company.id} value={company.name}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -246,7 +263,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="marked-up-valuation">Current Valuation ($)</Label>
                   <Input
                     id="marked-up-valuation"
