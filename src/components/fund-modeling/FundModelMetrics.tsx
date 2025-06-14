@@ -42,29 +42,65 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model, valuationSta
     exitProbability: stage.exitProbability
   }));
 
-  // Portfolio outcome modeling based on realistic VC power law distribution
-  const portfolioOutcomes = {
-    totalLoss: { count: Math.round(number_of_initial_investments * 0.45), avgReturn: 0 },
-    partialLoss: { count: Math.round(number_of_initial_investments * 0.25), avgReturn: 0.3 },
-    breakeven: { count: Math.round(number_of_initial_investments * 0.15), avgReturn: 1.2 },
-    modest: { count: Math.round(number_of_initial_investments * 0.10), avgReturn: 3.5 },
-    good: { count: Math.round(number_of_initial_investments * 0.04), avgReturn: 12 },
-    great: { count: Math.round(number_of_initial_investments * 0.01), avgReturn: 45 }
+  // Calculate dynamic portfolio outcomes based on valuation progression
+  const calculatePortfolioOutcomes = () => {
+    // Start with all companies at entry
+    let remainingCompanies = number_of_initial_investments;
+    const outcomes = [];
+    
+    // Calculate cumulative success through each stage
+    let cumulativeSuccessRate = 1.0;
+    
+    for (let i = 0; i < valuationStages.length; i++) {
+      const stage = valuationStages[i];
+      const companiesAtThisStage = Math.round(remainingCompanies * stage.successRate);
+      const companiesExitingAtThisStage = Math.round(companiesAtThisStage * stage.exitProbability);
+      
+      if (companiesExitingAtThisStage > 0) {
+        outcomes.push({
+          stage: stage.stage,
+          count: companiesExitingAtThisStage,
+          avgReturn: stage.valuationMultiple,
+          avgValuation: model.avg_entry_valuation_usd * stage.valuationMultiple
+        });
+      }
+      
+      remainingCompanies = companiesAtThisStage - companiesExitingAtThisStage;
+    }
+    
+    // Add companies that never made it past entry (total losses)
+    const totalSuccessfulCompanies = outcomes.reduce((sum, outcome) => sum + outcome.count, 0);
+    const totalLossCompanies = number_of_initial_investments - totalSuccessfulCompanies;
+    
+    if (totalLossCompanies > 0) {
+      outcomes.unshift({
+        stage: 'Total Loss',
+        count: totalLossCompanies,
+        avgReturn: 0,
+        avgValuation: 0
+      });
+    }
+    
+    return outcomes;
   };
 
-  // Calculate weighted average exit valuation based on entry valuation and progression
-  const totalCompanies = Object.values(portfolioOutcomes).reduce((sum, outcome) => sum + outcome.count, 0);
-  const weightedExitValue = Object.values(portfolioOutcomes).reduce((sum, outcome) => {
+  const portfolioOutcomes = calculatePortfolioOutcomes();
+
+  // Calculate weighted average exit valuation based on dynamic outcomes
+  const totalCompanies = portfolioOutcomes.reduce((sum, outcome) => sum + outcome.count, 0);
+  const weightedExitValue = portfolioOutcomes.reduce((sum, outcome) => {
     return sum + (outcome.count * outcome.avgReturn * model.avg_initial_check_usd);
   }, 0);
 
-  // Portfolio concentration analysis
-  const topPerformers = portfolioOutcomes.great.count + portfolioOutcomes.good.count;
-  const topPerformerValue = (portfolioOutcomes.great.count * portfolioOutcomes.great.avgReturn + 
-                            portfolioOutcomes.good.count * portfolioOutcomes.good.avgReturn) * model.avg_initial_check_usd;
+  // Portfolio concentration analysis - top 20% of outcomes
+  const sortedOutcomes = [...portfolioOutcomes].sort((a, b) => b.avgReturn - a.avgReturn);
+  const topOutcomes = sortedOutcomes.slice(0, Math.ceil(sortedOutcomes.length * 0.2));
+  const topPerformerValue = topOutcomes.reduce((sum, outcome) => {
+    return sum + (outcome.count * outcome.avgReturn * model.avg_initial_check_usd);
+  }, 0);
   const concentrationRatio = weightedExitValue > 0 ? topPerformerValue / weightedExitValue : 0;
 
-  // Return Metrics - Fixed to be reactive to entry valuation changes
+  // Return Metrics - Now fully reactive to valuation progression changes
   const TVPI = investable_capital > 0 ? weightedExitValue / investable_capital : 0;
   const DPI = investable_capital > 0 ? (weightedExitValue * 0.65) / investable_capital : 0; // 65% realization rate
   const MOIC = model.fund_size_usd > 0 ? weightedExitValue / model.fund_size_usd : 0;
@@ -155,23 +191,23 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model, valuationSta
         </CardContent>
       </Card>
 
-      {/* Portfolio Outcome Distribution */}
+      {/* Dynamic Portfolio Outcome Distribution */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PieChart className="h-5 w-5" />
-            Portfolio Outcome Distribution
+            Portfolio Outcome Distribution (Based on Valuation Progression)
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {Object.entries(portfolioOutcomes).map(([outcome, data]) => (
-              <div key={outcome} className="text-center p-4 border rounded-lg">
-                <div className="text-2xl font-bold">{data.count}</div>
-                <div className="text-sm text-gray-600 capitalize">{outcome.replace(/([A-Z])/g, ' $1')}</div>
-                <Badge variant="secondary">{formatMultiple(data.avgReturn)}</Badge>
+            {portfolioOutcomes.map((outcome, index) => (
+              <div key={`${outcome.stage}-${index}`} className="text-center p-4 border rounded-lg">
+                <div className="text-2xl font-bold">{outcome.count}</div>
+                <div className="text-sm text-gray-600">{outcome.stage}</div>
+                <Badge variant="secondary">{formatMultiple(outcome.avgReturn)}</Badge>
                 <div className="text-xs text-gray-500 mt-1">
-                  {formatCurrency(data.count * data.avgReturn * model.avg_initial_check_usd)}
+                  {formatCurrency(outcome.count * outcome.avgReturn * model.avg_initial_check_usd)}
                 </div>
               </div>
             ))}
@@ -179,12 +215,12 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model, valuationSta
         </CardContent>
       </Card>
 
-      {/* Return Metrics & Portfolio Analysis */}
+      {/* Return Metrics & Portfolio Analysis - Now Fully Reactive */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Fund Performance Metrics (Updated with Entry Valuation)
+            Fund Performance Metrics (Fully Reactive to Valuation Progression)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -192,7 +228,7 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model, valuationSta
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-green-600">{formatCurrency(weightedExitValue)}</div>
               <div className="text-sm text-gray-600">Total Exit Value</div>
-              <div className="text-xs text-gray-500">Portfolio aggregate</div>
+              <div className="text-xs text-gray-500">Based on progression</div>
             </div>
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{formatMultiple(TVPI)}</div>
@@ -210,14 +246,14 @@ const FundModelMetrics: React.FC<FundModelMetricsProps> = ({ model, valuationSta
               <div className="text-xs text-gray-500">After fees & carry</div>
             </div>
             <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-red-600">{topPerformers}</div>
+              <div className="text-2xl font-bold text-red-600">{sortedOutcomes.slice(0, 2).reduce((sum, outcome) => sum + outcome.count, 0)}</div>
               <div className="text-sm text-gray-600">Top Performers</div>
-              <div className="text-xs text-gray-500">10x+ returns</div>
+              <div className="text-xs text-gray-500">Highest return stages</div>
             </div>
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-gray-600">{formatPercentage(concentrationRatio)}</div>
               <div className="text-sm text-gray-600">Concentration</div>
-              <div className="text-xs text-gray-500">Top 5% of portfolio</div>
+              <div className="text-xs text-gray-500">Top 20% outcomes</div>
             </div>
           </div>
         </CardContent>
