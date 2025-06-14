@@ -162,6 +162,42 @@ export type Database = {
         }
         Relationships: []
       }
+      funds: {
+        Row: {
+          check_size: number
+          created_at: string
+          created_by: string
+          fund_size: number
+          id: string
+          name: string
+          planned_investments: number
+          reserve_ratio: number
+          updated_at: string
+        }
+        Insert: {
+          check_size: number
+          created_at?: string
+          created_by: string
+          fund_size: number
+          id?: string
+          name: string
+          planned_investments: number
+          reserve_ratio: number
+          updated_at?: string
+        }
+        Update: {
+          check_size?: number
+          created_at?: string
+          created_by?: string
+          fund_size?: number
+          id?: string
+          name?: string
+          planned_investments?: number
+          reserve_ratio?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       help_requests: {
         Row: {
           assigned_to: string | null
@@ -200,6 +236,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      investments: {
+        Row: {
+          check_size: number
+          company_name: string
+          created_at: string
+          entry_valuation: number
+          fund_id: string
+          id: string
+          investment_date: string
+          marked_up_valuation: number | null
+          ownership_percentage: number
+          realized_return: number | null
+          updated_at: string
+        }
+        Insert: {
+          check_size: number
+          company_name: string
+          created_at?: string
+          entry_valuation: number
+          fund_id: string
+          id?: string
+          investment_date: string
+          marked_up_valuation?: number | null
+          ownership_percentage: number
+          realized_return?: number | null
+          updated_at?: string
+        }
+        Update: {
+          check_size?: number
+          company_name?: string
+          created_at?: string
+          entry_valuation?: number
+          fund_id?: string
+          id?: string
+          investment_date?: string
+          marked_up_valuation?: number | null
+          ownership_percentage?: number
+          realized_return?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       network_contacts: {
         Row: {
@@ -338,6 +424,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_simple_irr: {
+        Args: {
+          investment_amount: number
+          current_value: number
+          days_held: number
+        }
+        Returns: number
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string

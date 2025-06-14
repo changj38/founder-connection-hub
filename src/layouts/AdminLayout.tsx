@@ -13,7 +13,8 @@ import {
   X,
   Shield,
   ArrowLeft,
-  Mail
+  Mail,
+  Calculator
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -42,6 +43,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { tab: 'portfolio', label: 'Manage Portfolio', icon: <Building className="w-5 h-5" /> },
     { tab: 'forum', label: 'Manage Forum', icon: <MessagesSquare className="w-5 h-5" /> },
     { tab: 'authorized', label: 'Authorized Emails', icon: <Mail className="w-5 h-5" /> },
+    { tab: 'funds', label: 'Fund Modeling', icon: <Calculator className="w-5 h-5" /> },
   ];
 
   const handleNavClick = (tab: string) => {

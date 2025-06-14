@@ -13,13 +13,15 @@ import {
   MessageSquareText, 
   HelpCircle,
   Settings,
-  Mail
+  Mail,
+  Calculator
 } from 'lucide-react';
 import AdminHelpRequestsTab from './AdminHelpRequestsTab';
 import AdminNetworkTab from './AdminNetworkTab';
 import AdminPortfolioTab from './AdminPortfolioTab';
 import AdminForumTab from './AdminForumTab';
 import AdminAuthorizedEmailsTab from './AdminAuthorizedEmailsTab';
+import AdminFundModelingTab from './AdminFundModelingTab';
 import { useSearchParams } from 'react-router-dom';
 
 const AdminPage = () => {
@@ -58,6 +60,10 @@ const AdminPage = () => {
               <Mail className="h-4 w-4" />
               <span className="hidden sm:inline">Authorized</span>
             </TabsTrigger>
+            <TabsTrigger value="funds" className="flex items-center gap-2">
+              <Calculator className="h-4 w-4" />
+              <span className="hidden sm:inline">Fund Modeling</span>
+            </TabsTrigger>
           </TabsList>
         </div>
         
@@ -79,6 +85,10 @@ const AdminPage = () => {
         
         <TabsContent value="authorized" className="space-y-4">
           <AdminAuthorizedEmailsTab />
+        </TabsContent>
+        
+        <TabsContent value="funds" className="space-y-4">
+          <AdminFundModelingTab />
         </TabsContent>
       </Tabs>
     </div>
