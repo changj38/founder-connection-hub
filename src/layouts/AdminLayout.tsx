@@ -44,10 +44,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { tab: 'forum', label: 'Manage Forum', icon: <MessagesSquare className="w-5 h-5" /> },
     { tab: 'authorized', label: 'Authorized Emails', icon: <Mail className="w-5 h-5" /> },
     { tab: 'funds', label: 'Fund Modeling', icon: <Calculator className="w-5 h-5" /> },
+    { tab: 'simulator', label: 'Fund Simulator', icon: <Calculator className="w-5 h-5" /> },
   ];
 
   const handleNavClick = (tab: string) => {
-    navigate(`/admin?tab=${tab}`);
+    if (tab === 'simulator') {
+      navigate('/admin/fund-simulator');
+    } else {
+      navigate(`/admin?tab=${tab}`);
+    }
     setMobileMenuOpen(false);
   };
 

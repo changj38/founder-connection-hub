@@ -162,6 +162,57 @@ export type Database = {
         }
         Relationships: []
       }
+      fund_models: {
+        Row: {
+          avg_entry_valuation_usd: number
+          avg_initial_check_usd: number
+          carry_pct: number
+          created_at: string
+          created_by: string
+          fund_size_usd: number
+          gp_commit_usd: number
+          hold_period_years: number
+          id: string
+          mgmt_fee_pct: number
+          name: string
+          recycling_rate_pct: number
+          reserve_ratio_pct: number
+          updated_at: string
+        }
+        Insert: {
+          avg_entry_valuation_usd: number
+          avg_initial_check_usd: number
+          carry_pct: number
+          created_at?: string
+          created_by: string
+          fund_size_usd: number
+          gp_commit_usd: number
+          hold_period_years: number
+          id?: string
+          mgmt_fee_pct: number
+          name: string
+          recycling_rate_pct: number
+          reserve_ratio_pct: number
+          updated_at?: string
+        }
+        Update: {
+          avg_entry_valuation_usd?: number
+          avg_initial_check_usd?: number
+          carry_pct?: number
+          created_at?: string
+          created_by?: string
+          fund_size_usd?: number
+          gp_commit_usd?: number
+          hold_period_years?: number
+          id?: string
+          mgmt_fee_pct?: number
+          name?: string
+          recycling_rate_pct?: number
+          reserve_ratio_pct?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       funds: {
         Row: {
           check_size: number
