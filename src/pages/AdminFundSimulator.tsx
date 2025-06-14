@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
@@ -12,6 +11,7 @@ import FundModelInputs from '../components/fund-modeling/FundModelInputs';
 import FundModelMetrics from '../components/fund-modeling/FundModelMetrics';
 import FundModelCharts from '../components/fund-modeling/FundModelCharts';
 import ValuationProgressionEditor, { ValuationStage } from '../components/fund-modeling/ValuationProgressionEditor';
+import ScenarioSelector, { FundScenario } from '../components/fund-modeling/ScenarioSelector';
 
 interface FundModel {
   id?: string;
@@ -41,7 +41,7 @@ const AdminFundSimulator = () => {
     carry_pct: 20
   });
 
-  // Default valuation progression stages
+  // Default valuation progression stages (Base Case)
   const [valuationStages, setValuationStages] = useState<ValuationStage[]>([
     { stage: 'Entry (Seed/A)', valuationMultiple: 1.0, successRate: 1.0, timeToNext: 1.5, exitProbability: 0.05 },
     { stage: 'Series B', valuationMultiple: 3.2, successRate: 0.65, timeToNext: 2.0, exitProbability: 0.15 },
@@ -49,6 +49,14 @@ const AdminFundSimulator = () => {
     { stage: 'Growth/Pre-IPO', valuationMultiple: 22, successRate: 0.30, timeToNext: 3.0, exitProbability: 0.60 },
     { stage: 'Exit', valuationMultiple: 45, successRate: 0.18, timeToNext: 0, exitProbability: 1.0 }
   ]);
+
+  // Current scenario state
+  const [currentScenario, setCurrentScenario] = useState<FundScenario>({
+    name: 'Base Case',
+    description: 'Market consensus, moderate growth, typical success rates',
+    type: 'base',
+    valuationStages: valuationStages
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -110,6 +118,11 @@ const AdminFundSimulator = () => {
     });
   };
 
+  const handleScenarioChange = (scenario: FundScenario) => {
+    setCurrentScenario(scenario);
+    setValuationStages(scenario.valuationStages);
+  };
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -151,6 +164,13 @@ const AdminFundSimulator = () => {
 
       {/* Input Panel */}
       <FundModelInputs model={model} setModel={setModel} />
+
+      {/* Scenario Selector */}
+      <ScenarioSelector 
+        currentScenario={currentScenario}
+        onScenarioChange={handleScenarioChange}
+        entryValuation={model.avg_entry_valuation_usd}
+      />
 
       {/* Valuation Progression Editor */}
       <ValuationProgressionEditor 
