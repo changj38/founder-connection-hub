@@ -9,6 +9,15 @@ interface ActualFundMetricsProps {
   fundId: string;
 }
 
+interface Investment {
+  id: string;
+  check_size: number;
+  company_name: string;
+  entry_valuation: number;
+  marked_up_valuation: number | null;
+  valuation_type: string | null;
+}
+
 const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // Fetch investments for this fund
   const { data: investments, isLoading } = useQuery({
@@ -20,7 +29,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
         .eq('fund_id', fundId);
       
       if (error) throw error;
-      return data;
+      return data as Investment[];
     }
   });
 

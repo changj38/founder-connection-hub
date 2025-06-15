@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -25,9 +24,19 @@ interface InvestmentForm {
   valuation_type: string;
 }
 
+interface Investment {
+  id: string;
+  company_name: string;
+  check_size: number;
+  entry_valuation: number;
+  investment_date: string;
+  marked_up_valuation: number | null;
+  valuation_type: string | null;
+}
+
 const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId }) => {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingInvestment, setEditingInvestment] = useState<any>(null);
+  const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
   const [formData, setFormData] = useState<InvestmentForm>({
     company_name: '',
     check_size: '',
@@ -57,7 +66,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
         .order('investment_date', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as Investment[];
     }
   });
 
@@ -149,7 +158,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
     }
   };
 
-  const startEdit = (investment: any) => {
+  const startEdit = (investment: Investment) => {
     setEditingInvestment(investment);
     setFormData({
       company_name: investment.company_name,
