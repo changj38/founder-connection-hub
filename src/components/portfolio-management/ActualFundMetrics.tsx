@@ -16,6 +16,7 @@ interface Investment {
   entry_valuation: number;
   marked_up_valuation: number | null;
   valuation_type: string | null;
+  investment_date: string;
 }
 
 const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
@@ -25,7 +26,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('investments')
-        .select('*')
+        .select('id, check_size, company_name, entry_valuation, marked_up_valuation, valuation_type, investment_date')
         .eq('fund_id', fundId);
       
       if (error) throw error;

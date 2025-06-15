@@ -373,6 +373,7 @@ export type Database = {
           ownership_percentage: number
           realized_return: number | null
           updated_at: string
+          valuation_type: string | null
           variance_percentage: number | null
         }
         Insert: {
@@ -389,6 +390,7 @@ export type Database = {
           ownership_percentage: number
           realized_return?: number | null
           updated_at?: string
+          valuation_type?: string | null
           variance_percentage?: number | null
         }
         Update: {
@@ -405,6 +407,7 @@ export type Database = {
           ownership_percentage?: number
           realized_return?: number | null
           updated_at?: string
+          valuation_type?: string | null
           variance_percentage?: number | null
         }
         Relationships: [

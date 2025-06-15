@@ -61,7 +61,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
     queryFn: async () => {
       const { data, error } = await supabase
         .from('investments')
-        .select('*')
+        .select('id, company_name, check_size, entry_valuation, investment_date, marked_up_valuation, valuation_type')
         .eq('fund_id', fundId)
         .order('investment_date', { ascending: false });
       
