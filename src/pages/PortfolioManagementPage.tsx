@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
@@ -10,6 +9,7 @@ import FundDeploymentDialog from '../components/portfolio-management/FundDeploym
 import FundPerformanceOverview from '../components/portfolio-management/FundPerformanceOverview';
 import LiveInvestmentTracker from '../components/portfolio-management/LiveInvestmentTracker';
 import ModelVsActualMetrics from '../components/portfolio-management/ModelVsActualMetrics';
+import ActualFundMetrics from '../components/portfolio-management/ActualFundMetrics';
 
 const PortfolioManagementPage = () => {
   const [selectedFundId, setSelectedFundId] = useState<string | null>(null);
@@ -148,6 +148,7 @@ const PortfolioManagementPage = () => {
       {selectedFund && (
         <>
           <FundPerformanceOverview fund={selectedFund} />
+          <ActualFundMetrics fundId={selectedFund.id} />
           <ModelVsActualMetrics fund={selectedFund} />
           <LiveInvestmentTracker fundId={selectedFund.id} />
         </>
