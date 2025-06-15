@@ -46,20 +46,19 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // TVPI (Total Value to Paid-In): Current Portfolio Value / Total Invested
   const tvpi = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
 
-  // MOIC (Priced Round): Based on marked up valuations only for priced rounds
-  const pricedRoundValue = investments?.reduce((sum, inv) => {
-    if (inv.marked_up_valuation && inv.valuation_type === 'priced') {
-      return sum + Number(inv.marked_up_valuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
-    }
-    return sum;
-  }, 0) || 0;
+  // MOIC (Priced Round): Only include investments with priced rounds
+  const pricedRoundInvestments = investments?.filter(inv => inv.valuation_type === 'priced') || [];
   
-  const pricedRoundInvestment = investments?.reduce((sum, inv) => {
-    if (inv.marked_up_valuation && inv.valuation_type === 'priced') {
-      return sum + Number(inv.check_size);
-    }
-    return sum;
-  }, 0) || 0;
+  const pricedRoundValue = pricedRoundInvestments.reduce((sum, inv) => {
+    // Use marked_up_valuation if available, otherwise fall back to entry_valuation
+    const currentValuation = inv.marked_up_valuation || inv.entry_valuation;
+    const investmentCurrentValue = Number(currentValuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
+    return sum + investmentCurrentValue;
+  }, 0);
+  
+  const pricedRoundInvestment = pricedRoundInvestments.reduce((sum, inv) => {
+    return sum + Number(inv.check_size);
+  }, 0);
 
   const moicPricedRound = pricedRoundInvestment > 0 ? pricedRoundValue / pricedRoundInvestment : 0;
 
@@ -145,6 +144,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
             <div className="text-sm text-gray-500">
               <div>Priced Value: {formatCurrency(pricedRoundValue)}</div>
               <div>Priced Investment: {formatCurrency(pricedRoundInvestment)}</div>
+              <div>Count: {pricedRoundInvestments.length} companies</div>
             </div>
           </div>
 
