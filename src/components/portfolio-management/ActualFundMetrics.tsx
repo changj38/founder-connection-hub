@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -46,21 +45,24 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // TVPI (Total Value to Paid-In): Current Portfolio Value / Total Invested
   const tvpi = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
 
-  // MOIC (Priced Round): Only include investments with priced rounds
-  const pricedRoundInvestments = investments?.filter(inv => inv.valuation_type === 'priced') || [];
+  // MOIC (Priced Round): Only include priced investments that have actual markups
+  const pricedInvestmentsWithMarkups = investments?.filter(inv => 
+    inv.valuation_type === 'priced' && inv.marked_up_valuation
+  ) || [];
   
-  const pricedRoundValue = pricedRoundInvestments.reduce((sum, inv) => {
-    // Use marked_up_valuation if available, otherwise fall back to entry_valuation
-    const currentValuation = inv.marked_up_valuation || inv.entry_valuation;
-    const investmentCurrentValue = Number(currentValuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
+  const pricedRoundValue = pricedInvestmentsWithMarkups.reduce((sum, inv) => {
+    const investmentCurrentValue = Number(inv.marked_up_valuation!) * (Number(inv.check_size) / Number(inv.entry_valuation));
     return sum + investmentCurrentValue;
   }, 0);
   
-  const pricedRoundInvestment = pricedRoundInvestments.reduce((sum, inv) => {
+  const pricedRoundInvestment = pricedInvestmentsWithMarkups.reduce((sum, inv) => {
     return sum + Number(inv.check_size);
   }, 0);
 
   const moicPricedRound = pricedRoundInvestment > 0 ? pricedRoundValue / pricedRoundInvestment : 0;
+
+  // Total priced investments for context
+  const totalPricedInvestments = investments?.filter(inv => inv.valuation_type === 'priced').length || 0;
 
   // MOIC (Priced + SAFE): Include both priced rounds and SAFE/entry valuations
   const totalCurrentValue = investments?.reduce((sum, inv) => {
@@ -140,12 +142,25 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
               <DollarSign className="h-4 w-4 text-green-600" />
               <span className="text-sm text-gray-600">MOIC (Priced Round)</span>
             </div>
-            <p className="text-2xl font-bold">{formatMultiple(moicPricedRound)}</p>
-            <div className="text-sm text-gray-500">
-              <div>Priced Value: {formatCurrency(pricedRoundValue)}</div>
-              <div>Priced Investment: {formatCurrency(pricedRoundInvestment)}</div>
-              <div>Count: {pricedRoundInvestments.length} companies</div>
-            </div>
+            {pricedInvestmentsWithMarkups.length > 0 ? (
+              <>
+                <p className="text-2xl font-bold">{formatMultiple(moicPricedRound)}</p>
+                <div className="text-sm text-gray-500">
+                  <div>Marked-up Value: {formatCurrency(pricedRoundValue)}</div>
+                  <div>Investment: {formatCurrency(pricedRoundInvestment)}</div>
+                  <div>Marked-up: {pricedInvestmentsWithMarkups.length} of {totalPricedInvestments} priced</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-gray-400">N/A</p>
+                <div className="text-sm text-gray-500">
+                  <div>No priced investments</div>
+                  <div>with markups yet</div>
+                  <div>Total priced: {totalPricedInvestments}</div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* MOIC (Priced + SAFE) */}
