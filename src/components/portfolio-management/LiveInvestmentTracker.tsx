@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -21,6 +22,7 @@ interface InvestmentForm {
   entry_valuation: string;
   investment_date: string;
   marked_up_valuation: string;
+  valuation_type: string;
 }
 
 const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId }) => {
@@ -31,7 +33,8 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
     check_size: '',
     entry_valuation: '',
     investment_date: new Date().toISOString().split('T')[0],
-    marked_up_valuation: ''
+    marked_up_valuation: '',
+    valuation_type: 'safe'
   });
 
   const { toast } = useToast();
@@ -74,6 +77,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       queryClient.invalidateQueries({ queryKey: ['fund-investments-tracker', fundId] });
       queryClient.invalidateQueries({ queryKey: ['fund-investments', fundId] });
       queryClient.invalidateQueries({ queryKey: ['fund-investments-variance', fundId] });
+      queryClient.invalidateQueries({ queryKey: ['fund-actual-metrics', fundId] });
       toast({
         title: "Investment added successfully",
         description: "The investment has been tracked in your portfolio."
@@ -100,6 +104,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       queryClient.invalidateQueries({ queryKey: ['fund-investments-tracker', fundId] });
       queryClient.invalidateQueries({ queryKey: ['fund-investments', fundId] });
       queryClient.invalidateQueries({ queryKey: ['fund-investments-variance', fundId] });
+      queryClient.invalidateQueries({ queryKey: ['fund-actual-metrics', fundId] });
       toast({
         title: "Investment updated successfully",
         description: "The investment details have been updated."
@@ -115,7 +120,8 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       check_size: '',
       entry_valuation: '',
       investment_date: new Date().toISOString().split('T')[0],
-      marked_up_valuation: ''
+      marked_up_valuation: '',
+      valuation_type: 'safe'
     });
   };
 
@@ -132,7 +138,8 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       entry_valuation: entryValuation,
       ownership_percentage: ownershipPercentage,
       investment_date: formData.investment_date,
-      marked_up_valuation: formData.marked_up_valuation ? Number(formData.marked_up_valuation) : null
+      marked_up_valuation: formData.marked_up_valuation ? Number(formData.marked_up_valuation) : null,
+      valuation_type: formData.valuation_type
     };
 
     if (editingInvestment) {
@@ -149,7 +156,8 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       check_size: investment.check_size.toString(),
       entry_valuation: investment.entry_valuation.toString(),
       investment_date: investment.investment_date,
-      marked_up_valuation: investment.marked_up_valuation?.toString() || ''
+      marked_up_valuation: investment.marked_up_valuation?.toString() || '',
+      valuation_type: investment.valuation_type || 'safe'
     });
     setShowAddDialog(true);
   };
@@ -251,7 +259,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                   />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="marked-up-valuation">Current Valuation ($)</Label>
                   <Input
                     id="marked-up-valuation"
@@ -260,6 +268,22 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                     onChange={(e) => setFormData({ ...formData, marked_up_valuation: e.target.value })}
                     placeholder="15000000"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="valuation-type">Valuation Type</Label>
+                  <Select
+                    value={formData.valuation_type}
+                    onValueChange={(value) => setFormData({ ...formData, valuation_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select valuation type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="safe">SAFE</SelectItem>
+                      <SelectItem value="priced">Priced Round</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -307,6 +331,15 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                       <span className="text-sm text-gray-500">
                         {formatDate(investment.investment_date)}
                       </span>
+                      {investment.valuation_type && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          investment.valuation_type === 'priced' 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {investment.valuation_type === 'priced' ? 'Priced' : 'SAFE'}
+                        </span>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm">
                       <div>

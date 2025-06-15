@@ -36,16 +36,16 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // TVPI (Total Value to Paid-In): Current Portfolio Value / Total Invested
   const tvpi = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
 
-  // MOIC (Priced Round): Based on marked up valuations only
+  // MOIC (Priced Round): Based on marked up valuations only for priced rounds
   const pricedRoundValue = investments?.reduce((sum, inv) => {
-    if (inv.marked_up_valuation) {
+    if (inv.marked_up_valuation && inv.valuation_type === 'priced') {
       return sum + Number(inv.marked_up_valuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
     }
     return sum;
   }, 0) || 0;
   
   const pricedRoundInvestment = investments?.reduce((sum, inv) => {
-    if (inv.marked_up_valuation) {
+    if (inv.marked_up_valuation && inv.valuation_type === 'priced') {
       return sum + Number(inv.check_size);
     }
     return sum;
@@ -154,15 +154,21 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
 
         {/* Summary Stats */}
         <div className="mt-6 pt-4 border-t">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
             <div>
               <span className="text-gray-600">Companies:</span>
-              <div className="font-medium">{investments.length}</div>
+              <div className="font-medium">{investments?.length || 0}</div>
             </div>
             <div>
-              <span className="text-gray-600">Marked Up:</span>
+              <span className="text-gray-600">Priced Rounds:</span>
               <div className="font-medium">
-                {investments.filter(inv => inv.marked_up_valuation).length}
+                {investments?.filter(inv => inv.valuation_type === 'priced').length || 0}
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-600">SAFE Rounds:</span>
+              <div className="font-medium">
+                {investments?.filter(inv => inv.valuation_type === 'safe' || !inv.valuation_type).length || 0}
               </div>
             </div>
             <div>
@@ -174,7 +180,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
             <div>
               <span className="text-gray-600">Avg Check:</span>
               <div className="font-medium">
-                {formatCurrency(totalInvested / investments.length)}
+                {investments?.length ? formatCurrency(totalInvested / investments.length) : '$0'}
               </div>
             </div>
           </div>
