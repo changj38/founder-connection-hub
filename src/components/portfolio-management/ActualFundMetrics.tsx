@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -58,7 +59,8 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
     return sum + Number(inv.check_size);
   }, 0);
 
-  const moicPricedRound = pricedRoundInvestment > 0 ? pricedRoundValue / pricedRoundInvestment : 0;
+  // MOIC: Always show 1.0x if no priced investments, otherwise calculate actual MOIC
+  const moicPricedRound = pricedRoundInvestment > 0 ? pricedRoundValue / pricedRoundInvestment : 1.0;
 
   // Count how many priced investments have markups
   const pricedInvestmentsWithMarkups = pricedInvestments.filter(inv => inv.marked_up_valuation);
@@ -144,24 +146,21 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
               <DollarSign className="h-4 w-4 text-green-600" />
               <span className="text-sm text-gray-600">MOIC (Priced Round)</span>
             </div>
-            {pricedInvestments.length > 0 ? (
-              <>
-                <p className="text-2xl font-bold">{formatMultiple(moicPricedRound)}</p>
-                <div className="text-sm text-gray-500">
+            <p className="text-2xl font-bold">{formatMultiple(moicPricedRound)}</p>
+            <div className="text-sm text-gray-500">
+              {pricedInvestments.length > 0 ? (
+                <>
                   <div>Current Value: {formatCurrency(pricedRoundValue)}</div>
                   <div>Investment: {formatCurrency(pricedRoundInvestment)}</div>
                   <div>Marked-up: {pricedInvestmentsWithMarkups.length} of {pricedInvestments.length} priced</div>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-2xl font-bold text-gray-400">N/A</p>
-                <div className="text-sm text-gray-500">
-                  <div>No priced investments</div>
-                  <div>in portfolio yet</div>
-                </div>
-              </>
-            )}
+                </>
+              ) : (
+                <>
+                  <div>No priced investments yet</div>
+                  <div>Baseline 1.0x multiple</div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* MOIC (Priced + SAFE) */}
