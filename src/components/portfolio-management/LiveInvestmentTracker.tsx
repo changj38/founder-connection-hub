@@ -318,7 +318,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                     value={formData.marked_up_valuation}
                     onChange={(e) => setFormData({ ...formData, marked_up_valuation: e.target.value })}
                     placeholder="15000000"
-                    disabled={formData.valuation_type === 'priced' && formData.share_price && formData.share_count}
+                    disabled={formData.valuation_type === 'priced' && Boolean(formData.share_price) && Boolean(formData.share_count)}
                   />
                 </div>
 
