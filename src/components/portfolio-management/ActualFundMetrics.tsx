@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -38,8 +39,16 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   
   // Current portfolio value (using marked up valuations where available)
   const currentPortfolioValue = investments?.reduce((sum, inv) => {
-    const currentValue = inv.marked_up_valuation || inv.entry_valuation;
-    return sum + Number(currentValue) * (Number(inv.check_size) / Number(inv.entry_valuation));
+    let investmentValue;
+    if (inv.valuation_type === 'priced' && inv.marked_up_valuation) {
+      // For priced rounds: marked_up_valuation is the direct share value
+      investmentValue = Number(inv.marked_up_valuation);
+    } else {
+      // For SAFE rounds: calculate based on ownership percentage
+      const currentValue = inv.marked_up_valuation || inv.entry_valuation;
+      investmentValue = Number(currentValue) * (Number(inv.check_size) / Number(inv.entry_valuation));
+    }
+    return sum + investmentValue;
   }, 0) || 0;
 
   // TVPI (Total Value to Paid-In): Current Portfolio Value / Total Invested
@@ -51,25 +60,24 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   const pricedCheckSize = pricedInvestments.reduce((sum, inv) => sum + Number(inv.check_size), 0);
   
   const pricedCurrentValue = pricedInvestments.reduce((sum, inv) => {
-    // For priced investments: use marked_up_valuation if available, otherwise entry_valuation
-    const currentValuation = inv.marked_up_valuation || inv.entry_valuation;
-    const investmentCurrentValue = Number(currentValuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
-    return sum + investmentCurrentValue;
+    // For priced investments: use marked_up_valuation directly if available
+    if (inv.marked_up_valuation) {
+      return sum + Number(inv.marked_up_valuation);
+    } else {
+      // Fallback to ownership percentage calculation
+      const investmentCurrentValue = Number(inv.entry_valuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
+      return sum + investmentCurrentValue;
+    }
   }, 0);
 
-  // MOIC: Check size / current value, default to 1.0x if no priced investments
+  // MOIC: Current value / check size, default to 1.0x if no priced investments
   const moicPricedRound = pricedCheckSize > 0 ? pricedCurrentValue / pricedCheckSize : 1.0;
 
   // Count how many priced investments have markups
   const pricedInvestmentsWithMarkups = pricedInvestments.filter(inv => inv.marked_up_valuation);
 
   // MOIC (Priced + SAFE): Include both priced rounds and SAFE/entry valuations
-  const totalCurrentValue = investments?.reduce((sum, inv) => {
-    const currentValue = inv.marked_up_valuation || inv.entry_valuation;
-    return sum + Number(currentValue) * (Number(inv.check_size) / Number(inv.entry_valuation));
-  }, 0) || 0;
-
-  const moicPricedPlusSafe = totalInvested > 0 ? totalCurrentValue / totalInvested : 0;
+  const moicPricedPlusSafe = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -166,7 +174,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
             </div>
             <p className="text-2xl font-bold">{formatMultiple(moicPricedPlusSafe)}</p>
             <div className="text-sm text-gray-500">
-              <div>Total Current Value: {formatCurrency(totalCurrentValue)}</div>
+              <div>Total Current Value: {formatCurrency(currentPortfolioValue)}</div>
               <div>Total Invested: {formatCurrency(totalInvested)}</div>
             </div>
           </div>
