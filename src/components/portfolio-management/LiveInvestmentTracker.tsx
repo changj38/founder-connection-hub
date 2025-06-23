@@ -22,6 +22,8 @@ interface InvestmentForm {
   investment_date: string;
   marked_up_valuation: string;
   valuation_type: string;
+  share_price: string;
+  share_count: string;
 }
 
 interface Investment {
@@ -43,7 +45,9 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
     entry_valuation: '',
     investment_date: new Date().toISOString().split('T')[0],
     marked_up_valuation: '',
-    valuation_type: 'safe'
+    valuation_type: 'safe',
+    share_price: '',
+    share_count: ''
   });
 
   const { toast } = useToast();
@@ -130,9 +134,29 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       entry_valuation: '',
       investment_date: new Date().toISOString().split('T')[0],
       marked_up_valuation: '',
-      valuation_type: 'safe'
+      valuation_type: 'safe',
+      share_price: '',
+      share_count: ''
     });
   };
+
+  // Calculate marked up valuation from share price and count
+  const calculateMarkupFromShares = () => {
+    const sharePrice = Number(formData.share_price);
+    const shareCount = Number(formData.share_count);
+    
+    if (sharePrice > 0 && shareCount > 0) {
+      const calculatedValue = sharePrice * shareCount;
+      setFormData(prev => ({ ...prev, marked_up_valuation: calculatedValue.toString() }));
+    }
+  };
+
+  // Auto-calculate when share price or count changes
+  React.useEffect(() => {
+    if (formData.valuation_type === 'priced' && formData.share_price && formData.share_count) {
+      calculateMarkupFromShares();
+    }
+  }, [formData.share_price, formData.share_count, formData.valuation_type]);
 
   const handleSubmit = () => {
     // Calculate ownership percentage automatically
@@ -166,7 +190,9 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       entry_valuation: investment.entry_valuation.toString(),
       investment_date: investment.investment_date,
       marked_up_valuation: investment.marked_up_valuation?.toString() || '',
-      valuation_type: investment.valuation_type || 'safe'
+      valuation_type: investment.valuation_type || 'safe',
+      share_price: '',
+      share_count: ''
     });
     setShowAddDialog(true);
   };
@@ -269,17 +295,6 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="marked-up-valuation">Current Valuation ($)</Label>
-                  <Input
-                    id="marked-up-valuation"
-                    type="number"
-                    value={formData.marked_up_valuation}
-                    onChange={(e) => setFormData({ ...formData, marked_up_valuation: e.target.value })}
-                    placeholder="15000000"
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="valuation-type">Valuation Type</Label>
                   <Select
                     value={formData.valuation_type}
@@ -294,6 +309,59 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="marked-up-valuation">Current Valuation ($)</Label>
+                  <Input
+                    id="marked-up-valuation"
+                    type="number"
+                    value={formData.marked_up_valuation}
+                    onChange={(e) => setFormData({ ...formData, marked_up_valuation: e.target.value })}
+                    placeholder="15000000"
+                    disabled={formData.valuation_type === 'priced' && formData.share_price && formData.share_count}
+                  />
+                </div>
+
+                {formData.valuation_type === 'priced' && (
+                  <>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label className="text-sm font-medium text-gray-700">
+                        Priced Round Details (Optional - for dilution calculation)
+                      </Label>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="share-price">Share Price ($)</Label>
+                      <Input
+                        id="share-price"
+                        type="number"
+                        step="0.01"
+                        value={formData.share_price}
+                        onChange={(e) => setFormData({ ...formData, share_price: e.target.value })}
+                        placeholder="10.50"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="share-count">Number of Shares</Label>
+                      <Input
+                        id="share-count"
+                        type="number"
+                        value={formData.share_count}
+                        onChange={(e) => setFormData({ ...formData, share_count: e.target.value })}
+                        placeholder="95238"
+                      />
+                    </div>
+
+                    {formData.share_price && formData.share_count && (
+                      <div className="md:col-span-2 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-700">
+                          Calculated Value: ${(Number(formData.share_price) * Number(formData.share_count)).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 mt-6">
