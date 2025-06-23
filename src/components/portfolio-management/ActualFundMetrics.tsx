@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -46,27 +45,23 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // TVPI (Total Value to Paid-In): Current Portfolio Value / Total Invested
   const tvpi = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
 
-  // MOIC (Priced Round): Include all priced investments
+  // MOIC (Priced Round): Simple formula - check size / current value for priced investments only
   const pricedInvestments = investments?.filter(inv => inv.valuation_type === 'priced') || [];
   
-  const pricedRoundValue = pricedInvestments.reduce((sum, inv) => {
+  const pricedCheckSize = pricedInvestments.reduce((sum, inv) => sum + Number(inv.check_size), 0);
+  
+  const pricedCurrentValue = pricedInvestments.reduce((sum, inv) => {
+    // For priced investments: use marked_up_valuation if available, otherwise entry_valuation
     const currentValuation = inv.marked_up_valuation || inv.entry_valuation;
     const investmentCurrentValue = Number(currentValuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
     return sum + investmentCurrentValue;
   }, 0);
-  
-  const pricedRoundInvestment = pricedInvestments.reduce((sum, inv) => {
-    return sum + Number(inv.check_size);
-  }, 0);
 
-  // MOIC: Always show 1.0x if no priced investments, otherwise calculate actual MOIC
-  const moicPricedRound = pricedRoundInvestment > 0 ? pricedRoundValue / pricedRoundInvestment : 1.0;
+  // MOIC: Check size / current value, default to 1.0x if no priced investments
+  const moicPricedRound = pricedCheckSize > 0 ? pricedCurrentValue / pricedCheckSize : 1.0;
 
   // Count how many priced investments have markups
   const pricedInvestmentsWithMarkups = pricedInvestments.filter(inv => inv.marked_up_valuation);
-
-  // Total priced investments for context
-  const totalPricedInvestments = investments?.filter(inv => inv.valuation_type === 'priced').length || 0;
 
   // MOIC (Priced + SAFE): Include both priced rounds and SAFE/entry valuations
   const totalCurrentValue = investments?.reduce((sum, inv) => {
@@ -150,8 +145,8 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
             <div className="text-sm text-gray-500">
               {pricedInvestments.length > 0 ? (
                 <>
-                  <div>Current Value: {formatCurrency(pricedRoundValue)}</div>
-                  <div>Investment: {formatCurrency(pricedRoundInvestment)}</div>
+                  <div>Current Value: {formatCurrency(pricedCurrentValue)}</div>
+                  <div>Check Size: {formatCurrency(pricedCheckSize)}</div>
                   <div>Marked-up: {pricedInvestmentsWithMarkups.length} of {pricedInvestments.length} priced</div>
                 </>
               ) : (
