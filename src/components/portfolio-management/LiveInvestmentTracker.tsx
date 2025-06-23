@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -388,9 +387,20 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
           <div className="space-y-4">
             {investments?.map((investment) => {
               const currentValue = investment.marked_up_valuation || investment.entry_valuation;
-              const unrealizedGain = Number(currentValue) - Number(investment.entry_valuation);
-              const multiple = Number(currentValue) / Number(investment.entry_valuation);
-              const investmentValue = Number(currentValue) * (Number(investment.check_size) / Number(investment.entry_valuation));
+              
+              // For priced rounds, marked_up_valuation IS the current share value
+              // For SAFE rounds, we need to calculate based on ownership percentage
+              let investmentValue;
+              if (investment.valuation_type === 'priced' && investment.marked_up_valuation) {
+                // For priced rounds: marked_up_valuation is the direct share value
+                investmentValue = Number(investment.marked_up_valuation);
+              } else {
+                // For SAFE rounds: calculate based on ownership percentage
+                investmentValue = Number(currentValue) * (Number(investment.check_size) / Number(investment.entry_valuation));
+              }
+              
+              const unrealizedGain = investmentValue - Number(investment.check_size);
+              const multiple = investmentValue / Number(investment.check_size);
               
               return (
                 <div key={investment.id} className="flex items-center justify-between p-4 border rounded-lg">
