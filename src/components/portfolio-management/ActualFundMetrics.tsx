@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -54,7 +53,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // TVPI (Total Value to Paid-In): Current Portfolio Value / Total Invested
   const tvpi = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
 
-  // MOIC (Priced Round): Simple formula - check size / current value for priced investments only
+  // MOIC (Priced Round): Only priced investments
   const pricedInvestments = investments?.filter(inv => inv.valuation_type === 'priced') || [];
   
   const pricedCheckSize = pricedInvestments.reduce((sum, inv) => sum + Number(inv.check_size), 0);
@@ -64,9 +63,8 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
     if (inv.marked_up_valuation) {
       return sum + Number(inv.marked_up_valuation);
     } else {
-      // Fallback to ownership percentage calculation
-      const investmentCurrentValue = Number(inv.entry_valuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
-      return sum + investmentCurrentValue;
+      // Fallback to check size (no markup yet)
+      return sum + Number(inv.check_size);
     }
   }, 0);
 
@@ -76,7 +74,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // Count how many priced investments have markups
   const pricedInvestmentsWithMarkups = pricedInvestments.filter(inv => inv.marked_up_valuation);
 
-  // MOIC (Priced + SAFE): Include both priced rounds and SAFE/entry valuations
+  // MOIC (Priced + SAFE): Current portfolio value / Total invested (all check sizes)
   const moicPricedPlusSafe = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
 
   const formatCurrency = (value: number) => {
