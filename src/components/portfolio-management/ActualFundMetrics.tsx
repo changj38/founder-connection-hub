@@ -45,21 +45,23 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // TVPI (Total Value to Paid-In): Current Portfolio Value / Total Invested
   const tvpi = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
 
-  // MOIC (Priced Round): Only include priced investments that have actual markups
-  const pricedInvestmentsWithMarkups = investments?.filter(inv => 
-    inv.valuation_type === 'priced' && inv.marked_up_valuation
-  ) || [];
+  // MOIC (Priced Round): Include all priced investments
+  const pricedInvestments = investments?.filter(inv => inv.valuation_type === 'priced') || [];
   
-  const pricedRoundValue = pricedInvestmentsWithMarkups.reduce((sum, inv) => {
-    const investmentCurrentValue = Number(inv.marked_up_valuation!) * (Number(inv.check_size) / Number(inv.entry_valuation));
+  const pricedRoundValue = pricedInvestments.reduce((sum, inv) => {
+    const currentValuation = inv.marked_up_valuation || inv.entry_valuation;
+    const investmentCurrentValue = Number(currentValuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
     return sum + investmentCurrentValue;
   }, 0);
   
-  const pricedRoundInvestment = pricedInvestmentsWithMarkups.reduce((sum, inv) => {
+  const pricedRoundInvestment = pricedInvestments.reduce((sum, inv) => {
     return sum + Number(inv.check_size);
   }, 0);
 
   const moicPricedRound = pricedRoundInvestment > 0 ? pricedRoundValue / pricedRoundInvestment : 0;
+
+  // Count how many priced investments have markups
+  const pricedInvestmentsWithMarkups = pricedInvestments.filter(inv => inv.marked_up_valuation);
 
   // Total priced investments for context
   const totalPricedInvestments = investments?.filter(inv => inv.valuation_type === 'priced').length || 0;
@@ -142,13 +144,13 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
               <DollarSign className="h-4 w-4 text-green-600" />
               <span className="text-sm text-gray-600">MOIC (Priced Round)</span>
             </div>
-            {pricedInvestmentsWithMarkups.length > 0 ? (
+            {pricedInvestments.length > 0 ? (
               <>
                 <p className="text-2xl font-bold">{formatMultiple(moicPricedRound)}</p>
                 <div className="text-sm text-gray-500">
-                  <div>Marked-up Value: {formatCurrency(pricedRoundValue)}</div>
+                  <div>Current Value: {formatCurrency(pricedRoundValue)}</div>
                   <div>Investment: {formatCurrency(pricedRoundInvestment)}</div>
-                  <div>Marked-up: {pricedInvestmentsWithMarkups.length} of {totalPricedInvestments} priced</div>
+                  <div>Marked-up: {pricedInvestmentsWithMarkups.length} of {pricedInvestments.length} priced</div>
                 </div>
               </>
             ) : (
@@ -156,8 +158,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
                 <p className="text-2xl font-bold text-gray-400">N/A</p>
                 <div className="text-sm text-gray-500">
                   <div>No priced investments</div>
-                  <div>with markups yet</div>
-                  <div>Total priced: {totalPricedInvestments}</div>
+                  <div>in portfolio yet</div>
                 </div>
               </>
             )}
