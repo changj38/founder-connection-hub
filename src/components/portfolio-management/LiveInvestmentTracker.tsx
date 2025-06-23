@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
@@ -140,29 +141,19 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
     });
   };
 
-  // Calculate marked up valuation from share price and count
-  const calculateMarkupFromShares = () => {
-    const sharePrice = Number(formData.share_price);
-    const shareCount = Number(formData.share_count);
-    
-    if (sharePrice > 0 && shareCount > 0) {
-      const calculatedValue = sharePrice * shareCount;
-      setFormData(prev => ({ ...prev, marked_up_valuation: calculatedValue.toString() }));
-    }
-  };
-
-  // Auto-calculate when share price or count changes
-  React.useEffect(() => {
-    if (formData.valuation_type === 'priced' && formData.share_price && formData.share_count) {
-      calculateMarkupFromShares();
-    }
-  }, [formData.share_price, formData.share_count, formData.valuation_type]);
-
   const handleSubmit = () => {
     // Calculate ownership percentage automatically
     const checkSize = Number(formData.check_size);
     const entryValuation = Number(formData.entry_valuation);
     const ownershipPercentage = entryValuation > 0 ? (checkSize / entryValuation) * 100 : 0;
+
+    // For priced rounds, use share price × share count as marked up valuation
+    let markedUpValuation = null;
+    if (formData.valuation_type === 'priced' && formData.share_price && formData.share_count) {
+      markedUpValuation = Number(formData.share_price) * Number(formData.share_count);
+    } else if (formData.marked_up_valuation) {
+      markedUpValuation = Number(formData.marked_up_valuation);
+    }
 
     const investmentData = {
       fund_id: fundId,
@@ -171,7 +162,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
       entry_valuation: entryValuation,
       ownership_percentage: ownershipPercentage,
       investment_date: formData.investment_date,
-      marked_up_valuation: formData.marked_up_valuation ? Number(formData.marked_up_valuation) : null,
+      marked_up_valuation: markedUpValuation,
       valuation_type: formData.valuation_type
     };
 
@@ -310,23 +301,24 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="marked-up-valuation">Current Valuation ($)</Label>
-                  <Input
-                    id="marked-up-valuation"
-                    type="number"
-                    value={formData.marked_up_valuation}
-                    onChange={(e) => setFormData({ ...formData, marked_up_valuation: e.target.value })}
-                    placeholder="15000000"
-                    disabled={formData.valuation_type === 'priced' && Boolean(formData.share_price) && Boolean(formData.share_count)}
-                  />
-                </div>
+                {formData.valuation_type === 'safe' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="marked-up-valuation">Current Valuation ($)</Label>
+                    <Input
+                      id="marked-up-valuation"
+                      type="number"
+                      value={formData.marked_up_valuation}
+                      onChange={(e) => setFormData({ ...formData, marked_up_valuation: e.target.value })}
+                      placeholder="15000000"
+                    />
+                  </div>
+                )}
 
                 {formData.valuation_type === 'priced' && (
                   <>
                     <div className="space-y-2 md:col-span-2">
                       <Label className="text-sm font-medium text-gray-700">
-                        Priced Round Details (Optional - for dilution calculation)
+                        Priced Round Details - Share Value Calculation
                       </Label>
                     </div>
                     
@@ -356,7 +348,7 @@ const LiveInvestmentTracker: React.FC<LiveInvestmentTrackerProps> = ({ fundId })
                     {formData.share_price && formData.share_count && (
                       <div className="md:col-span-2 p-3 bg-blue-50 rounded-lg">
                         <p className="text-sm text-blue-700">
-                          Calculated Value: ${(Number(formData.share_price) * Number(formData.share_count)).toLocaleString()}
+                          Current Share Value: ${(Number(formData.share_price) * Number(formData.share_count)).toLocaleString()}
                         </p>
                       </div>
                     )}
