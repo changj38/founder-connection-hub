@@ -42,10 +42,12 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
     if (inv.valuation_type === 'priced' && inv.marked_up_valuation) {
       // For priced rounds: marked_up_valuation is the direct share value
       investmentValue = Number(inv.marked_up_valuation);
+    } else if (inv.marked_up_valuation) {
+      // For SAFE rounds with marked up valuation: calculate based on ownership percentage
+      investmentValue = Number(inv.marked_up_valuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
     } else {
-      // For SAFE rounds: calculate based on ownership percentage
-      const currentValue = inv.marked_up_valuation || inv.entry_valuation;
-      investmentValue = Number(currentValue) * (Number(inv.check_size) / Number(inv.entry_valuation));
+      // No markup available: use check size as current value
+      investmentValue = Number(inv.check_size);
     }
     return sum + investmentValue;
   }, 0) || 0;
