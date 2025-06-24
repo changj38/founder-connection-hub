@@ -36,21 +36,38 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
   // Calculate metrics
   const totalInvested = investments?.reduce((sum, inv) => sum + Number(inv.check_size), 0) || 0;
   
+  // Debug logging
+  console.log('Debug - Raw investments:', investments);
+  console.log('Debug - Total invested:', totalInvested);
+  
   // Current portfolio value (using marked up valuations where available)
   const currentPortfolioValue = investments?.reduce((sum, inv) => {
     let investmentValue;
+    console.log(`Debug - Processing ${inv.company_name}:`, {
+      valuation_type: inv.valuation_type,
+      check_size: inv.check_size,
+      entry_valuation: inv.entry_valuation,
+      marked_up_valuation: inv.marked_up_valuation
+    });
+    
     if (inv.valuation_type === 'priced' && inv.marked_up_valuation) {
       // For priced rounds: marked_up_valuation is the direct share value
       investmentValue = Number(inv.marked_up_valuation);
+      console.log(`Debug - Priced investment value: ${investmentValue}`);
     } else if (inv.valuation_type === 'safe' && inv.marked_up_valuation) {
       // For SAFE rounds with marked up valuation: calculate based on ownership percentage
-      investmentValue = Number(inv.marked_up_valuation) * (Number(inv.check_size) / Number(inv.entry_valuation));
+      const ownershipPercent = Number(inv.check_size) / Number(inv.entry_valuation);
+      investmentValue = Number(inv.marked_up_valuation) * ownershipPercent;
+      console.log(`Debug - SAFE investment: ownership ${ownershipPercent}, marked up val ${inv.marked_up_valuation}, calculated value: ${investmentValue}`);
     } else {
       // No markup available: use check size as current value
       investmentValue = Number(inv.check_size);
+      console.log(`Debug - No markup, using check size: ${investmentValue}`);
     }
     return sum + investmentValue;
   }, 0) || 0;
+
+  console.log('Debug - Current portfolio value:', currentPortfolioValue);
 
   // TVPI (Total Value to Paid-In): Current Portfolio Value / Total Invested
   const tvpi = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
@@ -78,6 +95,14 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
 
   // MOIC (Priced + SAFE): Current portfolio value / Total invested (all check sizes)
   const moicPricedPlusSafe = totalInvested > 0 ? currentPortfolioValue / totalInvested : 0;
+
+  console.log('Debug - Final calculations:', {
+    tvpi,
+    moicPricedRound,
+    moicPricedPlusSafe,
+    pricedCurrentValue,
+    pricedCheckSize
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
