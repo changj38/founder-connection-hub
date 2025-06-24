@@ -54,10 +54,10 @@ const RegisterPage = () => {
     try {
       await register(name, email, password, company);
       
-      // Show success toast
+      // Show success toast with email verification message
       toast({
         title: "Account created successfully!",
-        description: "Please sign in with your new credentials.",
+        description: "Please check your email to verify your account and then sign in.",
       });
       
       // Redirect to login page instead of letting auth state change redirect to dashboard
