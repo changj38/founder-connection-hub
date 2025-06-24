@@ -55,7 +55,7 @@ const ActualFundMetrics: React.FC<ActualFundMetricsProps> = ({ fundId }) => {
       investmentValue = Number(inv.marked_up_valuation);
       console.log(`Debug - Priced investment value: ${investmentValue}`);
     } else if (inv.valuation_type === 'safe' && inv.marked_up_valuation) {
-      // For SAFE rounds with marked up valuation: calculate based on ownership percentage
+      // For SAFE rounds: calculate current value based on ownership in the marked up company
       const ownershipPercent = Number(inv.check_size) / Number(inv.entry_valuation);
       investmentValue = Number(inv.marked_up_valuation) * ownershipPercent;
       console.log(`Debug - SAFE investment: ownership ${ownershipPercent}, marked up val ${inv.marked_up_valuation}, calculated value: ${investmentValue}`);
