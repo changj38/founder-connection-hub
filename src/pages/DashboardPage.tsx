@@ -164,7 +164,7 @@ const DashboardPage = () => {
               className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
             >
               <WhatsAppIcon className="w-4 h-4" />
-              Join Portfolio WhatsApp
+              Join the DayDream Portfolio WhatsApp
             </a>
           </div>
         </CardHeader>
