@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { HelpCircle, Users, Building2, MessageSquare, ClipboardList, MessageCircle } from 'lucide-react';
+import WhatsAppIcon from '@/components/WhatsAppIcon';
 import { fetchUserRequests, Request } from '../utils/requestsApi';
 
 const DashboardPage = () => {
@@ -146,13 +147,26 @@ const DashboardPage = () => {
 
       <Card className="border-slate-200/60">
         <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-          <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
-            <ClipboardList className="w-5 h-5 text-blue-500" />
-            Your Requests
-          </CardTitle>
-          <p className="text-sm text-slate-500">
-            Track the status of your portfolio asks and introduction requests
-          </p>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
+                <ClipboardList className="w-5 h-5 text-blue-500" />
+                Your Requests
+              </CardTitle>
+              <p className="text-sm text-slate-500">
+                Track the status of your portfolio asks and introduction requests
+              </p>
+            </div>
+            <a 
+              href="https://chat.whatsapp.com/CvPdcXIM2VnFywCMQQH4Pt" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+            >
+              <WhatsAppIcon className="w-4 h-4" />
+              Join Portfolio WhatsApp
+            </a>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="p-4 border-b border-slate-100">
