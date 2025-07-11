@@ -71,9 +71,13 @@ const AdminAuthorizedEmailsTab = () => {
       setNewEmail('');
       toast.success('Email added to authorized list');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error adding email:', error);
-      toast.error('Failed to add email to authorized list');
+      if (error?.code === '23505') {
+        toast.error('This email is already in the authorized list');
+      } else {
+        toast.error('Failed to add email to authorized list');
+      }
     }
   });
 
