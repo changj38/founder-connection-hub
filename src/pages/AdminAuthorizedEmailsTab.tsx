@@ -74,6 +74,7 @@ const AdminAuthorizedEmailsTab = () => {
     onError: (error: any) => {
       console.error('Error adding email:', error);
       if (error?.code === '23505') {
+        queryClient.invalidateQueries({ queryKey: ['authorizedEmails'] });
         toast.error('This email is already in the authorized list');
       } else {
         toast.error('Failed to add email to authorized list');
